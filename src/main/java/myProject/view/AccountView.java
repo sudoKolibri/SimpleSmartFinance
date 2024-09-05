@@ -17,6 +17,7 @@ public class AccountView {
 
     private final AccountController accountController = new AccountController();
     private final String currentUserId;
+    private Button createAccountButton;  // Declare createAccountButton at the class level
 
     public AccountView(String currentUserId) {
         this.currentUserId = currentUserId;
@@ -51,7 +52,6 @@ public class AccountView {
         accountsLayout.setAlignment(Pos.CENTER);  // Center content
         accountsLayout.setMaxWidth(Double.MAX_VALUE);  // Allow VBox to use full width
 
-
         // Account cards container
         VBox accountsContainer = new VBox(20);
         accountsContainer.setAlignment(Pos.CENTER);
@@ -63,14 +63,11 @@ public class AccountView {
             accountsContainer.getChildren().add(accountCard);
         }
 
-
-
-        Button createAccountButton = new Button("+ Add Account");
+        // Create the button at the class level
+        createAccountButton = new Button("+ Add Account");
         createAccountButton.setPrefWidth(150);  // Set the preferred width to 150px
         createAccountButton.setMaxWidth(200);  // Allow the button to take its full width
         createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));  // Pass the accounts layout to show form in the same area
-
-
 
         // Add components to the bottom layout (account list)
         accountsLayout.getChildren().addAll(createAccountButton, accountsContainer);
@@ -87,7 +84,7 @@ public class AccountView {
         VBox formCard = new VBox(10);
         formCard.setPadding(new Insets(20));
         formCard.setAlignment(Pos.CENTER);
-        formCard.setStyle("-fx-background-color: #44475a; -fx-border-color: #ff79c6; -fx-border-radius: 10px; -fx-background-radius: 10px;");
+        formCard.setStyle("-fx-background-color: #44475a; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
         formCard.setMaxWidth(300);  // Limit the width of the form card
 
         Label nameLabel = new Label("Account Name:");
@@ -113,7 +110,7 @@ public class AccountView {
             // Handle account creation
             if (accountController.addAccount(currentUserId, accountName, initialBalance)) {
                 accountsLayout.getChildren().remove(formCard);  // Remove the form after submission
-                refreshAccountList(accountsLayout);  // Refresh the account list after adding the new account
+                refreshAccountList(accountsLayout);  // Refresh account list
             }
         });
 
@@ -121,6 +118,20 @@ public class AccountView {
         accountsLayout.getChildren().add(0, formCard);  // Add the form at the top of the account list
     }
 
+    // Refresh the account list dynamically after adding a new account, but keep the "Add Account" button
+    private void refreshAccountList(VBox accountsLayout) {
+        accountsLayout.getChildren().clear();  // Clear existing account cards
+
+        // Re-add the "Add Account" button at the top
+        accountsLayout.getChildren().add(createAccountButton);
+
+        // Load and display the updated list of accounts
+        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
+        for (Account account : accounts) {
+            HBox accountCard = createAccountCard(account);
+            accountsLayout.getChildren().add(accountCard);
+        }
+    }
 
     // Create a square visual card for an account
     private HBox createAccountCard(Account account) {
@@ -144,15 +155,5 @@ public class AccountView {
         card.getChildren().add(cardContent);
         return card;
     }
-
-    // Refresh the account list dynamically after adding a new account
-    private void refreshAccountList(VBox accountsLayout) {
-        accountsLayout.getChildren().clear();  // Clear the existing accounts and form
-        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
-        for (Account account : accounts) {
-            HBox accountCard = createAccountCard(account);
-            accountsLayout.getChildren().add(accountCard);
-        }
-    }
-
 }
+

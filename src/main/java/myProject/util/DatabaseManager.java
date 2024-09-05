@@ -22,12 +22,22 @@ public class DatabaseManager {
         try (Connection connection = getConnection();
              Statement stmt = connection.createStatement()) {
 
-            // Create categories table if it doesn't exist
+            // Create the categories table if it doesn't exist
             stmt.execute("CREATE TABLE IF NOT EXISTS categories ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "name VARCHAR(255) NOT NULL, "
                     + "color VARCHAR(10), "
-                    + "is_standard BOOLEAN NOT NULL)");
+                    + "is_standard BOOLEAN NOT NULL, "
+                    + "is_custom BOOLEAN NOT NULL, "  // Make sure this column is created
+                    + "budget DOUBLE DEFAULT 0.0)");
+
+            /// Insert standard categories (is_custom is false for standard categories)
+            stmt.executeUpdate("INSERT INTO categories (id, name, color, is_standard, is_custom, budget) VALUES " +
+                    "('1', 'Income', '#50fa7b', true, false, 0.0), " +
+                    "('2', 'Housing', '#ff5555', true, false, 0.0), " +
+                    "('3', 'Food', '#f1fa8c', true, false, 0.0), " +
+                    "('4', 'Transportation', '#8be9fd', true, false, 0.0), " +
+                    "('5', 'Healthcare', '#ff79c6', true, false, 0.0)");
 
             // Create users table if it doesn't exist
             stmt.execute("CREATE TABLE IF NOT EXISTS users ("

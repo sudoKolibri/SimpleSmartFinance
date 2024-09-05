@@ -10,6 +10,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.util.Objects;
+
 public class MainView {
 
     private BorderPane root;  // Root layout for navigation and dynamic content
@@ -41,7 +43,6 @@ public class MainView {
         contentArea.setAlignment(Pos.CENTER);  // Center the content
         contentArea.setStyle("-fx-background-color: #282a36;");
         contentArea.setPrefSize(500, 400);  // Set preferred size for the content area
-        root.setCenter(contentArea);  // Set the default content area
 
         // Add navbar and content area to the root layout
         root.setLeft(navBar);
@@ -51,7 +52,8 @@ public class MainView {
         accountButton.setOnAction(e -> showAccountsView(loggedInUserId, loggedInUsername));  // Pass both userId and username
         transactionButton.setOnAction(e -> showPlaceholderView("Transactions"));
         budgetButton.setOnAction(e -> showPlaceholderView("Budgets"));
-        categoryButton.setOnAction(e -> showPlaceholderView("Categories"));
+        categoryButton.setOnAction(e -> new CategoryView(loggedInUserId).loadIntoPane(root));  // Load CategoryView dynamically
+
         reportButton.setOnAction(e -> showPlaceholderView("Reports"));
         profileButton.setOnAction(e -> showPlaceholderView("Profile"));
 
@@ -60,7 +62,7 @@ public class MainView {
 
         // ==================== Set Scene ====================
         Scene scene = new Scene(root, 700, 400);
-        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.setTitle("Smart Finance - Main View");
         primaryStage.show();
@@ -79,7 +81,7 @@ public class MainView {
         Label placeholder = new Label("This is the " + viewName + " view.");
         placeholder.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
 
-        GridPane contentArea = new GridPane();
+        VBox contentArea = new VBox();
         contentArea.setAlignment(Pos.CENTER);  // Center the content
         contentArea.getChildren().add(placeholder);
         contentArea.setStyle("-fx-background-color: #282a36;");
@@ -88,4 +90,5 @@ public class MainView {
         // Set the center of the root layout to the placeholder content
         root.setCenter(contentArea);
     }
+
 }
