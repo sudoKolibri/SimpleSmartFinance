@@ -64,7 +64,6 @@ public class AccountView {
         }
 
 
-        // shitty button
         Button createAccountButton = new Button("+ Add Account");
         createAccountButton.setPrefWidth(150);  // Set the preferred width to 150px
         createAccountButton.setMaxWidth(200);  // Allow the button to take its full width
