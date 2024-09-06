@@ -2,124 +2,194 @@ package myProject.view;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import myProject.controller.CategoryController;
 import myProject.model.Category;
+import myProject.repository.CategoryRepository;
+import myProject.service.CategoryService;
 
+import java.util.Comparator;
 import java.util.List;
 
 public class CategoryView {
 
-    private final CategoryController categoryController = new CategoryController();
-    private final String currentUserId;  // To track user for budget-related operations
+    private final CategoryController categoryController;
+    private final String currentUserId;
+    private HBox mainLayout;  // Horizontal layout for categories and form
+    private final BorderPane root; // Reference to root layout for dynamic updates
 
-    public CategoryView(String currentUserId) {
+    public CategoryView(String currentUserId, BorderPane root) {
         this.currentUserId = currentUserId;
+        this.root = root;
+
+        // Dependency injection for controller, service, and repository
+        CategoryRepository categoryRepository = new CategoryRepository();
+        CategoryService categoryService = new CategoryService(categoryRepository);
+        this.categoryController = new CategoryController(categoryService);
     }
 
-    // Load the CategoryView into the dynamic content area
-    public void loadIntoPane(BorderPane root) {
-        VBox mainLayout = new VBox(30);  // Vertical layout for the category list
+    // Load CategoryView into the dynamic content area of MainView
+    public void loadIntoPane() {
+        mainLayout = new HBox(40);  // Horizontal layout to hold categories and form
         mainLayout.setPadding(new Insets(20));
-        mainLayout.setAlignment(Pos.CENTER);
-        mainLayout.setSpacing(40);
+        mainLayout.setAlignment(Pos.CENTER);  // Center horizontally
 
-        // ==================== Category List ====================
-        VBox categoryLayout = new VBox(20);
-        categoryLayout.setPadding(new Insets(20));
+        VBox categoryLayout = new VBox(20);  // Vertical layout for category grid and button
         categoryLayout.setAlignment(Pos.CENTER);
 
-        // Category cards container
-        VBox categoryContainer = new VBox(20);
-        categoryContainer.setAlignment(Pos.CENTER);
+        loadCategories(categoryLayout);  // Pass layout to load categories
 
-        // Load and display categories as cards
-        List<Category> categories = categoryController.getAllCategories();
-        for (Category category : categories) {
-            HBox categoryCard = createCategoryCard(category);
-            categoryContainer.getChildren().add(categoryCard);
-        }
-
-        // Button to create a new custom category
+        // Create button for adding a new category
         Button createCategoryButton = new Button("+ Add Category");
         createCategoryButton.setPrefWidth(150);
         createCategoryButton.setMaxWidth(200);
-        createCategoryButton.setOnAction(e -> showCreateCategoryForm(categoryLayout));
+        createCategoryButton.setOnAction(e -> showCreateCategoryForm());
 
-        // Add components to the layout
-        categoryLayout.getChildren().addAll(createCategoryButton, categoryContainer);
-        mainLayout.getChildren().addAll(categoryLayout);
+        categoryLayout.getChildren().add(createCategoryButton);  // Add button below categories
+        mainLayout.getChildren().add(categoryLayout);  // Add to main layout
 
-        // Set the center content of MainView to CategoryView
-        root.setCenter(mainLayout);
+        root.setCenter(mainLayout);  // Set main layout into the dynamic window
     }
 
-    // Show a form to create a new custom category
-    private void showCreateCategoryForm(VBox categoryLayout) {
+    // Load and display both global and custom categories
+    private void loadCategories(VBox categoryLayout) {
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(20));
+        gridPane.setHgap(20);
+        gridPane.setVgap(20);
+        gridPane.setAlignment(Pos.CENTER);
+
+        // Get and sort categories with standard categories first
+        List<Category> categories = categoryController.getAllCategoriesForUser(currentUserId)
+                .stream()
+                .sorted(Comparator.comparing(Category::isStandard).reversed())
+                .toList();
+
+        int row = 0, col = 0;
+        for (Category category : categories) {
+            VBox categoryCard = createCategoryCard(category);
+            gridPane.add(categoryCard, col, row);
+
+            col++;
+            if (col == 3) {  // Max 3 columns per row
+                col = 0;
+                row++;
+            }
+        }
+        categoryLayout.getChildren().add(gridPane);
+    }
+
+    // Create a card for each category with progress bar and details
+    private VBox createCategoryCard(Category category) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(20));
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(200, 200);
+        card.setStyle("-fx-background-color: #6272a4; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
+
+        Label nameLabel = new Label(category.getName());
+        nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+
+        Label budgetLabel = new Label("$" + category.getBudget() + " Budget");
+        budgetLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #8be9fd;");
+
+        double spent = category.getBudget() * 0.4;  // Placeholder for spent calculation
+        Label spentLabel = new Label("$" + spent + " Spent");
+        spentLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
+
+        ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+        progressBar.setPrefWidth(150);
+
+        card.getChildren().addAll(nameLabel, budgetLabel, spentLabel, progressBar);
+
+        // Add click handler for detailed view
+        card.setOnMouseClicked(e -> showCategoryDetailView(category));
+
+        return card;
+    }
+
+    // Show detailed view of a specific category
+    private void showCategoryDetailView(Category category) {
+        VBox detailView = new VBox(20);
+        detailView.setPadding(new Insets(40));
+        detailView.setAlignment(Pos.TOP_LEFT);
+        detailView.setStyle("-fx-background-color: #282a36;");
+
+
+        Label nameLabel = new Label("Category: " + category.getName());
+        nameLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
+
+        Label budgetLabel = new Label("Budget: $" + category.getBudget());
+        budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
+
+        double spent = category.getBudget() * 0.4;  // Placeholder for spent calculation
+        Label spentLabel = new Label("Already Spent: $" + spent);
+        spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+
+        ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+        progressBar.setPrefWidth(600);  // Adjust the progress bar size
+        progressBar.setStyle("-fx-accent: #50fa7b;");
+
+        // Placeholder for recent transactions
+        Label transactionsLabel = new Label("Recent Transactions (Placeholder)");
+        transactionsLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+
+        detailView.getChildren().addAll(nameLabel, budgetLabel, spentLabel, progressBar, transactionsLabel);
+
+        // Ensure the detail view is set in the main layout
+        root.setCenter(detailView);
+    }
+
+    // Show the category creation form next to the category grid
+    private void showCreateCategoryForm() {
         VBox formCard = new VBox(10);
         formCard.setPadding(new Insets(20));
         formCard.setAlignment(Pos.CENTER);
         formCard.setStyle("-fx-background-color: #44475a; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
-        formCard.setMaxWidth(300);  // Limit the width of the form card
+        formCard.setMaxWidth(300);
 
-        // Fields for name and color
-        Label nameLabel = new Label("Category Name:");
-        nameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #f8f8f2;");
-        // Similar for color, budget...
+        TextField nameField = new TextField();
+        nameField.setPromptText("Category Name");
+        nameField.setMaxWidth(250);
 
-        // Submit and create a new category
+        TextField colorField = new TextField();
+        colorField.setPromptText("Category Color");
+        colorField.setMaxWidth(250);
+
+        TextField budgetField = new TextField();
+        budgetField.setPromptText("Budget");
+        budgetField.setMaxWidth(250);
+
+        Button submitButton = createSubmitButton(nameField, colorField, budgetField);
+        formCard.getChildren().addAll(new Label("New Category"), nameField, colorField, budgetField, submitButton);
+
+        // Clear any existing form and add the new one
+        if (mainLayout.getChildren().size() > 1) {
+            mainLayout.getChildren().remove(1);
+        }
+        mainLayout.getChildren().add(formCard);
+    }
+
+    // Create submit button for the form
+    private Button createSubmitButton(TextField nameField, TextField colorField, TextField budgetField) {
         Button submitButton = new Button("Create Category");
-        submitButton.setStyle("-fx-background-color: #50fa7b;");
+        submitButton.setStyle("-fx-background-color: #50fa7b; -fx-text-fill: #282a36;");
         submitButton.setOnAction(e -> {
-            // Logic to create category
-            categoryLayout.getChildren().remove(formCard);
-            refreshCategoryList(categoryLayout);  // Refresh list after adding category
+            String categoryName = nameField.getText();
+            String categoryColor = colorField.getText().isEmpty() ? "#FFFFFF" : colorField.getText();
+            double categoryBudget = Double.parseDouble(budgetField.getText());
+
+            Category newCategory = new Category(null, categoryName, categoryColor, false, true, categoryBudget);
+            categoryController.addCategory(newCategory, currentUserId);
+
+            // Refresh the categories and display
+            mainLayout.getChildren().clear();
+            loadIntoPane();
         });
-
-        formCard.getChildren().addAll(nameLabel, submitButton);
-        categoryLayout.getChildren().add(0, formCard);  // Add the form at the top
-    }
-
-    // Create a visual card for a category
-    private HBox createCategoryCard(Category category) {
-        HBox card = new HBox();
-        card.setPadding(new Insets(20));
-        card.setAlignment(Pos.CENTER);
-        card.setPrefSize(200, 200);
-        card.setMaxWidth(300);
-        card.setStyle("-fx-background-color: " + category.getColor() + "; -fx-border-radius: 10px;");
-
-        // Display category name and budget progress
-        Label nameLabel = new Label(category.getName());
-        nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
-
-        ProgressBar progressBar = new ProgressBar(0);  // Example, connect this to the budget
-        if (category.getBudget() > 0) {
-            // Calculate the progress based on spending (dummy example)
-            double progress = Math.random();  // Replace with actual budget progress logic
-            progressBar.setProgress(progress);
-        }
-
-        VBox cardContent = new VBox(10);
-        cardContent.setAlignment(Pos.CENTER);
-        cardContent.getChildren().addAll(nameLabel, progressBar);
-
-        card.getChildren().add(cardContent);
-        return card;
-    }
-
-    // Refresh the category list dynamically after adding or removing categories
-    private void refreshCategoryList(VBox categoryLayout) {
-        categoryLayout.getChildren().clear();
-        List<Category> categories = categoryController.getAllCategories();
-        for (Category category : categories) {
-            HBox categoryCard = createCategoryCard(category);
-            categoryLayout.getChildren().add(categoryCard);
-        }
+        return submitButton;
     }
 }

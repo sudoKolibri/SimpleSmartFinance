@@ -1,16 +1,18 @@
 package myProject.model;
 
+import java.util.UUID;
+
 public class Category {
     private String id;
     private String name;
-    private String color;  // Color for display
-    private boolean isStandard;  // Default category
-    private boolean isCustom;  // Custom category
-    private double budget;  // Budget for this category
+    private String color;
+    private boolean isStandard;
+    private boolean isCustom;
+    private double budget;
 
     // Constructor for custom categories
     public Category(String id, String name, String color, boolean isStandard, boolean isCustom, double budget) {
-        this.id = id;
+        this.id = (id == null) ? UUID.randomUUID().toString() : id;  // Assign a UUID if id is null
         this.name = name;
         this.color = color;
         this.isStandard = isStandard;
@@ -29,10 +31,10 @@ public class Category {
     public void setColor(String color) { this.color = color; }
 
     public boolean isStandard() { return isStandard; }
-    public void setStandard(boolean standard) { isStandard = standard; }
+    public void setStandard(boolean isStandard) { this.isStandard = isStandard; }
 
     public boolean isCustom() { return isCustom; }
-    public void setCustom(boolean custom) { isCustom = custom; }
+    public void setCustom(boolean isCustom) { this.isCustom = isCustom; }
 
     public double getBudget() { return budget; }
     public void setBudget(double budget) { this.budget = budget; }

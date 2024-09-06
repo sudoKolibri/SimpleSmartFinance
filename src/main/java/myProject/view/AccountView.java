@@ -18,6 +18,7 @@ public class AccountView {
     private final AccountController accountController = new AccountController();
     private final String currentUserId;
     private Button createAccountButton;  // Declare createAccountButton at the class level
+    private Label overallBalanceLabel;   // Declare overallBalanceLabel at the class level
 
     public AccountView(String currentUserId) {
         this.currentUserId = currentUserId;
@@ -36,7 +37,7 @@ public class AccountView {
         summaryLayout.setAlignment(Pos.CENTER);  // Center content
 
         // Prominent Overall Balance
-        Label overallBalanceLabel = new Label("Total Balance: $" + accountController.getOverallBalanceForUser(currentUserId));
+        overallBalanceLabel = new Label();
         overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
 
         // Recent Transactions (Placeholder)
@@ -77,7 +78,17 @@ public class AccountView {
 
         // Set the center content of MainView to AccountView
         root.setCenter(mainLayout);
+
+        // Update the balance initially
+        updateOverallBalance();
     }
+
+    // Update the overall balance label
+    private void updateOverallBalance() {
+        double totalBalance = accountController.getOverallBalanceForUser(currentUserId);
+        overallBalanceLabel.setText("Total Balance: $" + totalBalance);
+    }
+
 
     // Show the account creation form within the dynamic area
     private void showCreateAccountForm(VBox accountsLayout) {
@@ -111,6 +122,7 @@ public class AccountView {
             if (accountController.addAccount(currentUserId, accountName, initialBalance)) {
                 accountsLayout.getChildren().remove(formCard);  // Remove the form after submission
                 refreshAccountList(accountsLayout);  // Refresh account list
+                updateOverallBalance();  // Update the overall balance
             }
         });
 
@@ -156,4 +168,3 @@ public class AccountView {
         return card;
     }
 }
-

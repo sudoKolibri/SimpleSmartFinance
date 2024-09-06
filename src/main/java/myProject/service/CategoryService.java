@@ -8,16 +8,20 @@ import java.util.List;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
 
-    public CategoryService() {
-        this.categoryRepository = new CategoryRepository();
+    // Constructor with dependency injection
+    public CategoryService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
     }
 
-    public boolean addCategory(String name, String color, boolean isStandard, boolean isCustom, double budget) {
-        Category category = new Category(java.util.UUID.randomUUID().toString(), name, color, isStandard, isCustom, budget);
-        return categoryRepository.addCategory(category);
+    public boolean addCategory(Category category, String userId) {
+        return categoryRepository.addCategory(category, userId);
     }
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.getAllCategories();
+    public List<Category> getGlobalCategories() {
+        return categoryRepository.getGlobalCategories();
+    }
+
+    public List<Category> getCustomCategoriesForUser(String userId) {
+        return categoryRepository.getCustomCategoriesForUser(userId);
     }
 }
