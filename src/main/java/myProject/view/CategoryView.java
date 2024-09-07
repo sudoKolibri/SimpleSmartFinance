@@ -89,7 +89,7 @@ public class CategoryView {
         card.setPadding(new Insets(20));
         card.setAlignment(Pos.CENTER);
         card.setPrefSize(200, 200);
-        card.setStyle("-fx-background-color: #6272a4; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
+        card.setStyle("-fx-background-color: #6272a4; -fx-border-color: #ff79c6; -fx-border-radius: 10px; -fx-background-radius: 10px;");
 
         Label nameLabel = new Label(category.getName());
         nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
