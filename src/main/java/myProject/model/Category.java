@@ -1,34 +1,42 @@
 package myProject.model;
 
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.StringProperty;
+
 import java.util.UUID;
 
 public class Category {
-    private String id;
-    private String name;
-    private String color;
+    private StringProperty id;
+    private StringProperty name;
+    private StringProperty color;
     private boolean isStandard;
     private boolean isCustom;
-    private double budget;
+    private DoubleProperty budget;
 
     // Constructor for custom categories
     public Category(String id, String name, String color, boolean isStandard, boolean isCustom, double budget) {
-        this.id = (id == null) ? UUID.randomUUID().toString() : id;  // Assign a UUID if id is null
-        this.name = name;
-        this.color = color;
+        this.id = new SimpleStringProperty((id == null) ? UUID.randomUUID().toString() : id);
+        this.name = new SimpleStringProperty(name);
+        this.color = new SimpleStringProperty(color);
         this.isStandard = isStandard;
         this.isCustom = isCustom;
-        this.budget = budget;
+        this.budget = new SimpleDoubleProperty(budget);
     }
 
     // Getters and setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public StringProperty idProperty() { return id; }
+    public String getId() { return id.get(); }
+    public void setId(String id) { this.id.set(id); }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public StringProperty nameProperty() { return name; }
+    public String getName() { return name.get(); }
+    public void setName(String name) { this.name.set(name); }
 
-    public String getColor() { return color; }
-    public void setColor(String color) { this.color = color; }
+    public StringProperty colorProperty() { return color; }
+    public String getColor() { return color.get(); }
+    public void setColor(String color) { this.color.set(color); }
 
     public boolean isStandard() { return isStandard; }
     public void setStandard(boolean isStandard) { this.isStandard = isStandard; }
@@ -36,6 +44,7 @@ public class Category {
     public boolean isCustom() { return isCustom; }
     public void setCustom(boolean isCustom) { this.isCustom = isCustom; }
 
-    public double getBudget() { return budget; }
-    public void setBudget(double budget) { this.budget = budget; }
+    public DoubleProperty budgetProperty() { return budget; }
+    public double getBudget() { return budget.get(); }
+    public void setBudget(double budget) { this.budget.set(budget); }
 }

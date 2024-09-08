@@ -6,7 +6,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import myProject.controller.TransactionController;
 import myProject.controller.UserController;
+import myProject.repository.TransactionRepository;
+import myProject.service.TransactionService;
 
 import java.util.Objects;
 
@@ -81,7 +84,14 @@ public class WelcomeView {
         if (loginSuccessful) {
             String loggedInUsername = userController.getLoggedInUser().getUsername();
             String loggedInUserId = userController.getLoggedInUser().getId();
-            new MainView().start(primaryStage, loggedInUserId, loggedInUsername);
+
+            // Create the necessary controllers (TransactionController) or other dependencies
+            TransactionController transactionController = new TransactionController(new TransactionService(new TransactionRepository()));
+
+            // Pass the correct parameters to MainView
+            MainView mainView = new MainView(transactionController, loggedInUserId);
+            mainView.start(primaryStage, loggedInUserId, loggedInUsername);  // Pass the user ID and username to MainView
+
         } else {
             showAlert("Login Failed", "Incorrect username or password.");
         }

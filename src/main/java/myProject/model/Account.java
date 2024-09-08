@@ -1,60 +1,49 @@
 package myProject.model;
 
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.StringProperty;
+
 import java.util.UUID;
 
 public class Account {
 
-    private String id;
-    private String userId;  // This is used to associate the account with a specific user
-    private String name;
-    private double balance;
+    private StringProperty id;
+    private StringProperty userId;
+    private StringProperty name;
+    private DoubleProperty balance;
 
-    // Constructor without an ID, used when creating a new account (auto-generate ID)
+    // Constructor without an ID (auto-generate ID)
     public Account(String userId, String name, double balance) {
-        this.id = UUID.randomUUID().toString();  // Auto-generate a unique ID
-        this.userId = userId;
-        this.name = name;
-        this.balance = balance;
+        this.id = new SimpleStringProperty(UUID.randomUUID().toString());
+        this.userId = new SimpleStringProperty(userId);
+        this.name = new SimpleStringProperty(name);
+        this.balance = new SimpleDoubleProperty(balance);
     }
 
-    // Constructor with an ID, used when loading from the database
+    // Constructor with an ID (used when loading from the database)
     public Account(String id, String userId, String name, double balance) {
-        this.id = id;
-        this.userId = userId;
-        this.name = name;
-        this.balance = balance;
+        this.id = new SimpleStringProperty(id);
+        this.userId = new SimpleStringProperty(userId);
+        this.name = new SimpleStringProperty(name);
+        this.balance = new SimpleDoubleProperty(balance);
     }
 
     // Getters and Setters
-    public String getId() {
-        return id;
-    }
+    public StringProperty idProperty() { return id; }
+    public String getId() { return id.get(); }
+    public void setId(String id) { this.id.set(id); }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public StringProperty userIdProperty() { return userId; }
+    public String getUserId() { return userId.get(); }
+    public void setUserId(String userId) { this.userId.set(userId); }
 
-    public String getUserId() {
-        return userId;
-    }
+    public StringProperty nameProperty() { return name; }
+    public String getName() { return name.get(); }
+    public void setName(String name) { this.name.set(name); }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public double getBalance() {
-        return balance;
-    }
-
-    public void setBalance(double balance) {
-        this.balance = balance;
-    }
+    public DoubleProperty balanceProperty() { return balance; }
+    public double getBalance() { return balance.get(); }
+    public void setBalance(double balance) { this.balance.set(balance); }
 }

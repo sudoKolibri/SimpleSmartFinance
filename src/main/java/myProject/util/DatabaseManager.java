@@ -61,20 +61,31 @@ public class DatabaseManager {
                     + "balance DOUBLE NOT NULL, "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Create transactions table
+            // Create transactions table for regular transactions
             stmt.execute("CREATE TABLE IF NOT EXISTS transactions ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "amount DOUBLE NOT NULL, "
                     + "date DATE NOT NULL, "
                     + "description VARCHAR(255), "
                     + "category_id VARCHAR(255), "
-                    + "type VARCHAR(255), "
+                    + "type VARCHAR(255), " // income or expense
                     + "account_id VARCHAR(255), "
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
-
-            // Create Second table for reoccurring transactions.
+            // Create recurring transactions table
+            stmt.execute("CREATE TABLE IF NOT EXISTS recurring_transactions ("
+                    + "id VARCHAR(255) PRIMARY KEY, "
+                    + "amount DOUBLE NOT NULL, "
+                    + "description VARCHAR(255), "
+                    + "category_id VARCHAR(255), "
+                    + "type VARCHAR(255), " // income or expense
+                    + "account_id VARCHAR(255), "
+                    + "start_date DATE NOT NULL, "  // When the first transaction occurs
+                    + "recurrence_interval VARCHAR(50) NOT NULL, " // daily, weekly, monthly
+                    + "end_date DATE, "  // Optional, when the recurrence ends
+                    + "FOREIGN KEY (category_id) REFERENCES categories(id), "
+                    + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
             // Create budgets table if it doesn't exist
             stmt.execute("CREATE TABLE IF NOT EXISTS budgets ("
@@ -83,8 +94,7 @@ public class DatabaseManager {
                     + "amount DOUBLE NOT NULL, "
                     + "start_date DATE NOT NULL, "
                     + "end_date DATE NOT NULL, "
-                    + "FOREIGN KEY (user_id) REFERENCES users(id))");  // Link user_id to users table
-
+                    + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
             // Create budget_categories table to link multiple categories to a single budget
             stmt.execute("CREATE TABLE IF NOT EXISTS budget_categories ("
