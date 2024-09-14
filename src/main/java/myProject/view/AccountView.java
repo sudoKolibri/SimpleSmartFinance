@@ -145,14 +145,13 @@ public class AccountView {
         }
     }
 
-    // Create a square visual card for an account
     private HBox createAccountCard(Account account) {
         HBox card = new HBox();
+        card.getStyleClass().add("account-card");  // Apply the CSS class
+
+        // Add padding and alignment
         card.setPadding(new Insets(20));
-        card.setAlignment(Pos.CENTER);  // Center the content in the card
-        card.setPrefSize(200, 200);  // Make the cards square (200x200)
-        card.setMaxWidth(300);  // Limit the card's width to 300px
-        card.setStyle("-fx-background-color: #6272a4; -fx-border-color: #ff79c6; -fx-border-radius: 10px; -fx-background-radius: 10px;");
+        card.setAlignment(Pos.CENTER);
 
         Label nameLabel = new Label(account.getName());
         nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
@@ -160,11 +159,24 @@ public class AccountView {
         Label balanceLabel = new Label("$" + account.getBalance());
         balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
-        VBox cardContent = new VBox(10);  // Container for account name and balance, centered
+        VBox cardContent = new VBox(10);  // Vertical box for account name and balance, with spacing
         cardContent.setAlignment(Pos.CENTER);
         cardContent.getChildren().addAll(nameLabel, balanceLabel);
 
         card.getChildren().add(cardContent);
+
+        // Add hover effect (scaling)
+        card.setOnMouseEntered(e -> {
+            card.setScaleX(1.05);
+            card.setScaleY(1.05);
+        });
+        card.setOnMouseExited(e -> {
+            card.setScaleX(1.0);
+            card.setScaleY(1.0);
+        });
+
         return card;
     }
+
+
 }

@@ -89,7 +89,7 @@ public class CategoryView {
         card.setPadding(new Insets(20));
         card.setAlignment(Pos.CENTER);
         card.setPrefSize(200, 200);
-        card.setStyle("-fx-background-color: #6272a4; -fx-border-color: #ff79c6; -fx-border-radius: 10px; -fx-background-radius: 10px;");
+        card.getStyleClass().add("account-card");
 
         Label nameLabel = new Label(category.getName());
         nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
@@ -109,8 +109,19 @@ public class CategoryView {
         // Add click handler for detailed view
         card.setOnMouseClicked(e -> showCategoryDetailView(category));
 
+        // Add hover effect (scaling)
+        card.setOnMouseEntered(e -> {
+            card.setScaleX(1.05);
+            card.setScaleY(1.05);
+        });
+        card.setOnMouseExited(e -> {
+            card.setScaleX(1.0);
+            card.setScaleY(1.0);
+        });
+
         return card;
     }
+
 
     // Show detailed view of a specific category
     private void showCategoryDetailView(Category category) {
@@ -118,7 +129,6 @@ public class CategoryView {
         detailView.setPadding(new Insets(40));
         detailView.setAlignment(Pos.TOP_LEFT);
         detailView.setStyle("-fx-background-color: #282a36;");
-
 
         Label nameLabel = new Label("Category: " + category.getName());
         nameLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");

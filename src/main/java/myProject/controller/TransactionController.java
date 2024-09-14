@@ -20,7 +20,11 @@ public class TransactionController {
 
     // Handle request to create a new regular transaction
     public void createTransaction(Transaction transaction) {
+        // Log the ID of the transaction before it's passed to the service layer
+        System.out.println("Creating transaction with ID: " + transaction.getId());  // Log the ID
+
         try {
+            // Pass the transaction to the service layer to be added to the database
             transactionService.addTransaction(transaction);
             System.out.println("Transaction created successfully.");
         } catch (SQLException e) {
@@ -28,6 +32,7 @@ public class TransactionController {
             e.printStackTrace();
         }
     }
+
 
     // Handle request to update an existing transaction
     public void updateTransaction(Transaction transaction) {
@@ -44,12 +49,13 @@ public class TransactionController {
     public void deleteTransaction(Transaction transaction) {
         try {
             transactionService.deleteTransaction(transaction);
-            System.out.println("Transaction deleted successfully.");
+            System.out.println("Transaction deleted successfully. ID: " + transaction.getId());
         } catch (SQLException e) {
             System.err.println("Error deleting transaction: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
     // Get all transactions as an ObservableList for TableView
     public ObservableList<Transaction> getAllTransactions() {

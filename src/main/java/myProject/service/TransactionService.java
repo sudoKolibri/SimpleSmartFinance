@@ -29,8 +29,11 @@ public class TransactionService {
 
     // Delete a transaction
     public void deleteTransaction(Transaction transaction) throws SQLException {
+        System.out.println("Attempting to delete transaction with ID: " + transaction.getId());
         transactionRepository.deleteTransaction(transaction);
+        // You could query the database again to check if the row was actually deleted.
     }
+
 
     // Get all transactions
     public List<Transaction> getAllTransactions() throws SQLException {

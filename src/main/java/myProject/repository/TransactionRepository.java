@@ -22,9 +22,9 @@ public class TransactionRepository {
             pstmt.setDouble(2, transaction.getAmount());
             pstmt.setDate(3, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setString(4, transaction.getDescription());
-            pstmt.setString(5, transaction.getCategory().getId());
+            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getId() : null);  // Ensure category ID is being saved
             pstmt.setString(6, transaction.getType());
-            pstmt.setString(7, transaction.getAccount().getId());
+            pstmt.setString(7, transaction.getAccount() != null ? transaction.getAccount().getId() : null);  // Ensure account ID is being saved
             pstmt.executeUpdate();
         }
     }
@@ -49,12 +49,28 @@ public class TransactionRepository {
 
     // Delete a transaction
     public void deleteTransaction(Transaction transaction) throws SQLException {
+        logAllTransactionIds();
+        System.out.println("Deleting transaction with ID: " + transaction.getId());
+
         String sql = "DELETE FROM transactions WHERE id = ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
-            pstmt.executeUpdate();
+            int rowsAffected = pstmt.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
+        }
+    }
+
+    // Log all transaction IDs in the database
+    public void logAllTransactionIds() throws SQLException {
+        String sql = "SELECT id FROM transactions";
+        try (Connection connection = DatabaseManager.getConnection();
+             Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                System.out.println("Transaction ID in DB: " + rs.getString("id"));
+            }
         }
     }
 
@@ -67,6 +83,7 @@ public class TransactionRepository {
              Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
+                // Map each row to a Transaction object
                 Transaction transaction = mapResultSetToTransaction(rs);
                 transactions.add(transaction);
             }
@@ -180,14 +197,70 @@ public class TransactionRepository {
 
     // Map ResultSet to regular Transaction object
     private Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
-        return new Transaction(
-                rs.getString("description"),
-                rs.getDouble("amount"),
-                rs.getString("type"),
-                null,
-                null,
-                null,
-                rs.getDate("date")
+        // Fetch the category and account from their respective IDs
+        Category category = findCategoryById(rs.getString("category_id"));
+        Account account = findAccountById(rs.getString("account_id"));
+
+        // Create a new Transaction object using the retrieved data from the ResultSet
+        Transaction transaction = new Transaction(
+                rs.getString("description"),  // Get description from the database row
+                rs.getDouble("amount"),       // Get amount from the database row
+                rs.getString("type"),         // Get type (e.g., income/expense) from the database row
+                null,                         // User is not set here (you may need to handle that separately)
+                account,                      // Set the Account object retrieved from the database
+                category,                     // Set the Category object retrieved from the database
+                rs.getDate("date")            // Get transaction date from the database row
         );
+
+        // Set the Transaction ID from the ResultSet
+        transaction.setId(rs.getString("id"));
+
+        // Return the mapped Transaction object
+        return transaction;
+    }
+
+
+    // Helper method to fetch Category by ID
+    private Category findCategoryById(String categoryId) throws SQLException {
+        if (categoryId == null) return null;
+        String sql = "SELECT * FROM categories WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, categoryId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Category(
+                            rs.getString("id"),
+                            rs.getString("name"),
+                            rs.getString("color"),
+                            rs.getBoolean("is_standard"),
+                            rs.getBoolean("is_custom"),
+                            rs.getDouble("budget")
+                    );
+                }
+            }
+        }
+        return null;
+    }
+
+    // Helper method to fetch Account by ID
+    private Account findAccountById(String accountId) throws SQLException {
+        if (accountId == null) return null;
+        String sql = "SELECT * FROM accounts WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, accountId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Account(
+                            rs.getString("id"),
+                            rs.getString("user_id"),
+                            rs.getString("name"),
+                            rs.getDouble("balance")
+                    );
+                }
+            }
+        }
+        return null;
     }
 }

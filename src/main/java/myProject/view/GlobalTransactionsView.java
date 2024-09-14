@@ -161,12 +161,17 @@ public class GlobalTransactionsView {
 
     // Method to create and add a new transaction
     private void createTransaction(String description, double amount, LocalDate date, Category category, Account account) {
+        // Log to check if Category and Account are being set
+        System.out.println("Creating transaction with category: " + (category != null ? category.getName() : "null"));
+        System.out.println("Creating transaction with account: " + (account != null ? account.getName() : "null"));
+
         // Convert LocalDate to java.sql.Date before saving
         Transaction newTransaction = new Transaction(description, amount, "expense", null, account, category, Date.valueOf(date));
         transactionController.createTransaction(newTransaction);
         refreshTransactionsTable();  // Refresh the table after adding a new transaction
         clearForm();  // Reset the form after saving
     }
+
 
     private void editTransaction(Transaction transaction) {
         // Populate the form with transaction data for editing
@@ -207,14 +212,18 @@ public class GlobalTransactionsView {
 
     // Method to delete an existing transaction
     private void deleteTransaction(Transaction transaction) {
+        System.out.println("Deleting transaction with ID: " + transaction.getId());  // Log the transaction ID before deletion
+
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to permanently delete this transaction?", ButtonType.YES, ButtonType.NO);
         alert.showAndWait();
 
         if (alert.getResult() == ButtonType.YES) {
             transactionController.deleteTransaction(transaction);
             refreshTransactionsTable();  // Refresh the table after deletion
+            clearForm();
         }
     }
+
 
     // Refresh the transactions table after creating/updating/deleting a transaction
     private void refreshTransactionsTable() {
@@ -240,24 +249,27 @@ public class GlobalTransactionsView {
         categoryDropdown.setItems(transactionController.getAllCategoriesForUser(userId));  // Fetch categories for user
         categoryDropdown.setPromptText("Choose Category");
 
+        // Set custom cell factory to display the category name
         categoryDropdown.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Category item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
+                setText(empty ? "" : item.getName());  // Display the name of the category
             }
         });
 
+        // Set custom button cell to display selected category name
         categoryDropdown.setButtonCell(new ListCell<>() {
             @Override
             protected void updateItem(Category item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
+                setText(empty ? "" : item.getName());  // Display the name of the selected category
             }
         });
 
         return categoryDropdown;
     }
+
 
     // Create Account Dropdown for the logged-in user
     private ComboBox<Account> createAccountDropdown(String userId) {
@@ -265,22 +277,25 @@ public class GlobalTransactionsView {
         accountDropdown.setItems(transactionController.getAccountsForUser(userId));  // Fetch accounts for user
         accountDropdown.setPromptText("Choose Account");
 
+        // Set custom cell factory to display the account name
         accountDropdown.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Account item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
+                setText(empty ? "" : item.getName());  // Display the name of the account
             }
         });
 
+        // Set custom button cell to display selected account name
         accountDropdown.setButtonCell(new ListCell<>() {
             @Override
             protected void updateItem(Account item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
+                setText(empty ? "" : item.getName());  // Display the name of the selected account
             }
         });
 
         return accountDropdown;
     }
+
 }
