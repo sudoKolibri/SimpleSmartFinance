@@ -14,6 +14,7 @@ public class CategoryController {
     }
 
     public boolean addCategory(Category category, String userId) {
+        System.out.println("New Category with name " + category.getName() + " and ID: " + category.getId() + " is passed to CategoryService.");
         return categoryService.addCategory(category, userId);
     }
 

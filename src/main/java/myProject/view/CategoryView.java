@@ -1,5 +1,7 @@
 package myProject.view;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -8,7 +10,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import myProject.controller.CategoryController;
+import myProject.controller.TransactionController;
 import myProject.model.Category;
+import myProject.model.Transaction;
 import myProject.repository.CategoryRepository;
 import myProject.service.CategoryService;
 
@@ -18,13 +22,15 @@ import java.util.List;
 public class CategoryView {
 
     private final CategoryController categoryController;
+    private final TransactionController transactionController;
     private final String currentUserId;
     private HBox mainLayout;  // Horizontal layout for categories and form
     private final BorderPane root; // Reference to root layout for dynamic updates
 
-    public CategoryView(String currentUserId, BorderPane root) {
+    public CategoryView(String currentUserId, BorderPane root, TransactionController transactionController) {
         this.currentUserId = currentUserId;
         this.root = root;
+        this.transactionController = transactionController;
 
         // Dependency injection for controller, service, and repository
         CategoryRepository categoryRepository = new CategoryRepository();
@@ -93,18 +99,28 @@ public class CategoryView {
 
         Label nameLabel = new Label(category.getName());
         nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        card.getChildren().add(nameLabel);
 
-        Label budgetLabel = new Label("$" + category.getBudget() + " Budget");
-        budgetLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #8be9fd;");
+        // Handle cases where budget is null or less than 0
+        if (category.getBudget() != null && category.getBudget() > 0) {
+            Label budgetLabel = new Label("$" + category.getBudget() + " Budget");
+            budgetLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #8be9fd;");
+            card.getChildren().add(budgetLabel);
 
-        double spent = category.getBudget() * 0.4;  // Placeholder for spent calculation
-        Label spentLabel = new Label("$" + spent + " Spent");
-        spentLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
+            // Fetch the spent amount from the controller
+            double spent = transactionController.getSpentAmountForCategory(category);
+            Label spentLabel = new Label("$" + spent + " Spent");
+            spentLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
+            card.getChildren().add(spentLabel);
 
-        ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
-        progressBar.setPrefWidth(150);
-
-        card.getChildren().addAll(nameLabel, budgetLabel, spentLabel, progressBar);
+            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+            progressBar.setPrefWidth(150);
+            card.getChildren().add(progressBar);
+        } else {
+            Label noBudgetLabel = new Label("No Budget Set");
+            noBudgetLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
+            card.getChildren().add(noBudgetLabel);
+        }
 
         // Add click handler for detailed view
         card.setOnMouseClicked(e -> showCategoryDetailView(category));
@@ -130,51 +146,113 @@ public class CategoryView {
         detailView.setAlignment(Pos.TOP_LEFT);
         detailView.setStyle("-fx-background-color: #282a36;");
 
-        Label nameLabel = new Label("Category: " + category.getName());
+        Label nameLabel = new Label(category.getName());
         nameLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
+        detailView.getChildren().add(nameLabel);
 
-        Label budgetLabel = new Label("Budget: $" + category.getBudget());
-        budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
+        // Handle cases where budget is null
+        if (category.getBudget() != null) {
+            Label budgetLabel = new Label("Budget: $" + category.getBudget());
+            budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
+            detailView.getChildren().add(budgetLabel);
 
-        double spent = category.getBudget() * 0.4;  // Placeholder for spent calculation
-        Label spentLabel = new Label("Already Spent: $" + spent);
-        spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+            double spent = transactionController.getSpentAmountForCategory(category);
+            Label spentLabel = new Label("Already Spent: $" + spent);
+            spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+            detailView.getChildren().add(spentLabel);
 
-        ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
-        progressBar.setPrefWidth(600);  // Adjust the progress bar size
-        progressBar.setStyle("-fx-accent: #50fa7b;");
+            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+            progressBar.setPrefWidth(600);  // Adjust the progress bar size
+            progressBar.setStyle("-fx-accent: #50fa7b;");
+            detailView.getChildren().add(progressBar);
+        } else {
+            Label noBudgetLabel = new Label("No Budget Set");
+            noBudgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+            detailView.getChildren().add(noBudgetLabel);
+        }
 
-        // Placeholder for recent transactions
-        Label transactionsLabel = new Label("Recent Transactions (Placeholder)");
+        // Transactions Table specific to the current category
+        Label transactionsLabel = new Label("Transactions for this category:");
         transactionsLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        detailView.getChildren().add(transactionsLabel);
 
-        detailView.getChildren().addAll(nameLabel, budgetLabel, spentLabel, progressBar, transactionsLabel);
+        // Create the transactions table for the category
+        TableView<Transaction> transactionsTable = createTransactionsTable(category);
+        detailView.getChildren().add(transactionsTable);
 
         // Ensure the detail view is set in the main layout
         root.setCenter(detailView);
     }
+
+    // Create a transactions table for the given category
+    private TableView<Transaction> createTransactionsTable(Category category) {
+        TableView<Transaction> transactionsTable = new TableView<>();
+
+        // Set up table columns
+        TableColumn<Transaction, String> descriptionColumn = new TableColumn<>("Description");
+        descriptionColumn.setCellValueFactory(data -> data.getValue().descriptionProperty());
+
+        TableColumn<Transaction, String> amountColumn = new TableColumn<>("Amount");
+        amountColumn.setCellValueFactory(data -> data.getValue().amountProperty().asString());
+
+        TableColumn<Transaction, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(data -> data.getValue().dateProperty().asString());
+
+        TableColumn<Transaction, String> accountColumn = new TableColumn<>("Account");
+        accountColumn.setCellValueFactory(data -> {
+            if (data.getValue().getAccount() != null) {
+                return data.getValue().getAccount().nameProperty();
+            } else {
+                return new SimpleStringProperty("No Account");
+            }
+        });
+
+        transactionsTable.getColumns().addAll(descriptionColumn, amountColumn, dateColumn, accountColumn);
+
+        // Fetch all transactions and filter by the given category
+        ObservableList<Transaction> allTransactions = transactionController.getAllTransactions();
+        ObservableList<Transaction> filteredTransactions = allTransactions.filtered(transaction ->
+                transaction.getCategory() != null && transaction.getCategory().getId().equals(category.getId())
+        );
+
+        // Set the filtered transactions to the table
+        transactionsTable.setItems(filteredTransactions);
+
+        return transactionsTable;
+    }
+
 
     // Show the category creation form next to the category grid
     private void showCreateCategoryForm() {
         VBox formCard = new VBox(10);
         formCard.setPadding(new Insets(20));
         formCard.setAlignment(Pos.CENTER);
-        formCard.setStyle("-fx-background-color: #44475a; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
+        formCard.getStyleClass().add("account-card");
         formCard.setMaxWidth(300);
 
+        // Category Name field
         TextField nameField = new TextField();
         nameField.setPromptText("Category Name");
         nameField.setMaxWidth(250);
+        nameField.getStyleClass().add("text-field");
 
+        // Category Color field
         TextField colorField = new TextField();
         colorField.setPromptText("Category Color");
         colorField.setMaxWidth(250);
+        colorField.getStyleClass().add("text-field");
 
+        // Budget field
         TextField budgetField = new TextField();
         budgetField.setPromptText("Budget");
         budgetField.setMaxWidth(250);
+        budgetField.getStyleClass().add("text-field");
 
+        // Submit Button
         Button submitButton = createSubmitButton(nameField, colorField, budgetField);
+        submitButton.getStyleClass().add("button");
+
+        // Add all elements to formCard
         formCard.getChildren().addAll(new Label("New Category"), nameField, colorField, budgetField, submitButton);
 
         // Clear any existing form and add the new one
@@ -188,11 +266,14 @@ public class CategoryView {
     private Button createSubmitButton(TextField nameField, TextField colorField, TextField budgetField) {
         Button submitButton = new Button("Create Category");
         submitButton.setStyle("-fx-background-color: #50fa7b; -fx-text-fill: #282a36;");
+
         submitButton.setOnAction(e -> {
+            // Retrieve the category name and color
             String categoryName = nameField.getText();
             String categoryColor = colorField.getText().isEmpty() ? "#FFFFFF" : colorField.getText();
-            double categoryBudget = Double.parseDouble(budgetField.getText());
+            Double categoryBudget = getCategoryBudget(budgetField);
 
+            // Create the new category with the provided details
             Category newCategory = new Category(null, categoryName, categoryColor, false, true, categoryBudget);
             categoryController.addCategory(newCategory, currentUserId);
 
@@ -200,6 +281,23 @@ public class CategoryView {
             mainLayout.getChildren().clear();
             loadIntoPane();
         });
+
         return submitButton;
     }
+
+    /// Helper for optional budget (category)
+    private static Double getCategoryBudget(TextField budgetField) {
+        Double categoryBudget = null; // Default value is null (no budget)
+        if (!budgetField.getText().isEmpty()) {
+            try {
+                categoryBudget = Double.parseDouble(budgetField.getText());
+            } catch (NumberFormatException ex) {
+                // Log invalid input or display an error message
+                categoryBudget = null;  // If invalid input, treat as no budget
+            }
+        }
+        return categoryBudget;
+    }
+
+
 }

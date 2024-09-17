@@ -24,21 +24,31 @@ public class CategoryRepository {
             pstmt.setString(3, category.getColor());
             pstmt.setBoolean(4, category.isStandard());
             pstmt.setBoolean(5, category.isCustom());
-            pstmt.setDouble(6, category.getBudget());
-            pstmt.setString(7, category.isCustom() ? userId : null);  // Set user_id only for custom categories
+
+            // Check if budget is null, then set it as 0.0 (or another default value)
+            if (category.getBudget() != null) {
+                pstmt.setDouble(6, category.getBudget());
+            } else {
+                pstmt.setNull(6, java.sql.Types.DOUBLE);  // Store null in the budget field if no budget is provided
+            }
+
+            // Set user_id only for custom categories
+            pstmt.setString(7, category.isCustom() ? userId : null);
 
             pstmt.executeUpdate();
 
             System.out.println("Category added successfully");
-
             return true;
 
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("New Category with name " + category.getName() + " and ID: " + category.getId() + " failed to add to the repository.");
             return false;
         }
     }
 
+
+    // Get all global categories
     // Get all global categories
     public List<Category> getGlobalCategories() {
         String sql = "SELECT * FROM categories WHERE user_id IS NULL AND is_custom = false";
@@ -54,7 +64,9 @@ public class CategoryRepository {
                 String color = rs.getString("color");
                 boolean isStandard = rs.getBoolean("is_standard");
                 boolean isCustom = rs.getBoolean("is_custom");
-                double budget = rs.getDouble("budget");
+
+                // Handle the budget being nullable in the result set
+                Double budget = rs.getObject("budget") != null ? rs.getDouble("budget") : null;
 
                 categories.add(new Category(id, name, color, isStandard, isCustom, budget));
             }
@@ -65,6 +77,7 @@ public class CategoryRepository {
 
         return categories;
     }
+
 
     // Get custom categories for a specific user
     public List<Category> getCustomCategoriesForUser(String userId) {
@@ -83,7 +96,9 @@ public class CategoryRepository {
                     String color = rs.getString("color");
                     boolean isStandard = rs.getBoolean("is_standard");
                     boolean isCustom = rs.getBoolean("is_custom");
-                    double budget = rs.getDouble("budget");
+
+                    // Handle nullable budget
+                    Double budget = rs.getObject("budget") != null ? rs.getDouble("budget") : null;
 
                     categories.add(new Category(id, name, color, isStandard, isCustom, budget));
                 }
@@ -95,4 +110,5 @@ public class CategoryRepository {
 
         return categories;
     }
+
 }

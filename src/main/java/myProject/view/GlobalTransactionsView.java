@@ -141,7 +141,7 @@ public class GlobalTransactionsView {
 
         transactionsTable.getColumns().addAll(descriptionColumn, amountColumn, dateColumn, categoryColumn, accountColumn);
 
-        // Add context menu for editing or deleting a transaction
+        // Add right-click-context menu for editing or deleting a transaction
         transactionsTable.setRowFactory(tv -> {
             TableRow<Transaction> row = new TableRow<>();
             ContextMenu contextMenu = new ContextMenu();

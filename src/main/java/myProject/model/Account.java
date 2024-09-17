@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.StringProperty;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class Account {
@@ -31,19 +32,65 @@ public class Account {
     }
 
     // Getters and Setters
-    public StringProperty idProperty() { return id; }
-    public String getId() { return id.get(); }
-    public void setId(String id) { this.id.set(id); }
+    public StringProperty idProperty() {
+        return id;
+    }
 
-    public StringProperty userIdProperty() { return userId; }
-    public String getUserId() { return userId.get(); }
-    public void setUserId(String userId) { this.userId.set(userId); }
+    public String getId() {
+        return id.get();
+    }
 
-    public StringProperty nameProperty() { return name; }
-    public String getName() { return name.get(); }
-    public void setName(String name) { this.name.set(name); }
+    public void setId(String id) {
+        this.id.set(id);
+    }
 
-    public DoubleProperty balanceProperty() { return balance; }
-    public double getBalance() { return balance.get(); }
-    public void setBalance(double balance) { this.balance.set(balance); }
+    public StringProperty userIdProperty() {
+        return userId;
+    }
+
+    public String getUserId() {
+        return userId.get();
+    }
+
+    public void setUserId(String userId) {
+        this.userId.set(userId);
+    }
+
+    public StringProperty nameProperty() {
+        return name;
+    }
+
+    public String getName() {
+        return name.get();
+    }
+
+    public void setName(String name) {
+        this.name.set(name);
+    }
+
+    public DoubleProperty balanceProperty() {
+        return balance;
+    }
+
+    public double getBalance() {
+        return balance.get();
+    }
+
+    public void setBalance(double balance) {
+        this.balance.set(balance);
+    }
+
+    // equals() and hashCode() based on the 'id' property
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id.get(), account.id.get());  // Compare based on 'id'
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id.get());  // Hash based on 'id'
+    }
 }

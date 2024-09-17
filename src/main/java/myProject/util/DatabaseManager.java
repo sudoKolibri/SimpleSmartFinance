@@ -35,17 +35,17 @@ public class DatabaseManager {
                     + "color VARCHAR(10), "
                     + "is_standard BOOLEAN NOT NULL, "
                     + "is_custom BOOLEAN NOT NULL, "
-                    + "budget DOUBLE DEFAULT 0.0, "
+                    + "budget DOUBLE DEFAULT NULL, "  // Allow null for the budget column
                     + "user_id VARCHAR(255), "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
             // Insert standard categories
             String[] defaultCategories = {
-                    "('1', 'Income', '#50fa7b', true, false, 0.0, NULL)",
-                    "('2', 'Housing', '#ff5555', true, false, 0.0, NULL)",
-                    "('3', 'Food', '#f1fa8c', true, false, 0.0, NULL)",
-                    "('4', 'Transportation', '#8be9fd', true, false, 0.0, NULL)",
-                    "('5', 'Healthcare', '#ff79c6', true, false, 0.0, NULL)"
+                    "('1', 'Income', '#50fa7b', true, false, NULL, NULL)",
+                    "('2', 'Housing', '#ff5555', true, false, NULL, NULL)",
+                    "('3', 'Food', '#f1fa8c', true, false, NULL, NULL)",
+                    "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL)",
+                    "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)"
             };
 
             for (String category : defaultCategories) {

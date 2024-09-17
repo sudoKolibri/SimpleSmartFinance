@@ -14,6 +14,7 @@ public class CategoryService {
     }
 
     public boolean addCategory(Category category, String userId) {
+        System.out.println("New Category with name " + category.getName() + " and ID: " + category.getId() + " is passed to CategoryRepository.");
         return categoryRepository.addCategory(category, userId);
     }
 

@@ -109,6 +109,26 @@ public class TransactionRepository {
         return transactions;
     }
 
+    // Add this method to TransactionRepository
+    public List<Transaction> getTransactionsByCategory(String categoryId) throws SQLException {
+        List<Transaction> transactions = new ArrayList<>();
+        String sql = "SELECT * FROM transactions WHERE category_id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, categoryId);  // Set the category ID in the query
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    // Map each row to a Transaction object
+                    Transaction transaction = mapResultSetToTransaction(rs);
+                    transactions.add(transaction);
+                }
+            }
+        }
+        return transactions;
+    }
+
+
     // Fetch all account names
     public List<String> getAllAccountNames() throws SQLException {
         List<String> accountNames = new ArrayList<>();

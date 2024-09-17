@@ -81,7 +81,7 @@ public class MainView {
 
     // Method to show the Category view
     private void showCategoryView() {
-        CategoryView categoryView = new CategoryView(loggedInUserId, root);
+        CategoryView categoryView = new CategoryView(loggedInUserId, root, transactionController);
         categoryView.loadIntoPane();  // Load CategoryView dynamically
     }
 

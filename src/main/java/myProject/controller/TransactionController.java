@@ -8,6 +8,7 @@ import myProject.model.Transaction;
 import myProject.service.TransactionService;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionController {
@@ -68,6 +69,35 @@ public class TransactionController {
             return FXCollections.observableArrayList();  // Return empty ObservableList on error
         }
     }
+
+    // Get all transactions for a specific category
+    public List<Transaction> getTransactionsForCategory(Category category) {
+        try {
+            return transactionService.getTransactionsByCategory(category);
+        } catch (SQLException e) {
+            System.err.println("Error fetching transactions for category: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();  // Return an empty list on error
+        }
+    }
+
+    // Method to get total spent amount for a specific category
+    public double getSpentAmountForCategory(Category category) {
+        try {
+            // Get transactions from the service
+            List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
+            // Sum the amounts of all transactions in this category
+            return transactions.stream()
+                    .mapToDouble(Transaction::getAmount)
+                    .sum();
+        } catch (SQLException e) {
+            System.err.println("Error fetching transactions for category: " + e.getMessage());
+            e.printStackTrace();
+            return 0.0;  // Return 0 if there's an error
+        }
+    }
+
+
 
     // Filter transactions by account and return as ObservableList for TableView
     public ObservableList<Transaction> getTransactionsByAccount(String accountName) {

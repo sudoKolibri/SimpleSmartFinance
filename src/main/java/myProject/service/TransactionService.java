@@ -45,6 +45,12 @@ public class TransactionService {
         return transactionRepository.getTransactionsByAccount(accountName);
     }
 
+    // Fetch transactions for a specific category
+    public List<Transaction> getTransactionsByCategory(Category category) throws SQLException {
+        return transactionRepository.getTransactionsByCategory(category.getId());
+    }
+
+
     // Get all account names for filtering
     public List<String> getAllAccountNames() throws SQLException {
         return transactionRepository.getAllAccountNames();
