@@ -8,8 +8,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import myProject.controller.TransactionController;
 import myProject.controller.UserController;
+import myProject.controller.AccountController;
+import myProject.controller.CategoryController;
 import myProject.repository.TransactionRepository;
 import myProject.service.TransactionService;
+import myProject.repository.AccountRepository;
+import myProject.service.AccountService;
+import myProject.repository.CategoryRepository;
+import myProject.service.CategoryService;
 
 import java.util.Objects;
 
@@ -55,16 +61,16 @@ public class WelcomeView {
     // Simplified method to create the username TextField
     private TextField createUsernameField() {
         TextField textField = new TextField();
-        textField.setPromptText("Username");  // Hardcoded prompt text
-        textField.setMaxWidth(250);  // Hardcoded max width
+        textField.setPromptText("Username");
+        textField.setMaxWidth(250);
         return textField;
     }
 
     // Simplified method to create the password PasswordField
     private PasswordField createPasswordField() {
         PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password");  // Hardcoded prompt text
-        passwordField.setMaxWidth(250);  // Hardcoded max width
+        passwordField.setPromptText("Password");
+        passwordField.setMaxWidth(250);
         return passwordField;
     }
 
@@ -85,11 +91,13 @@ public class WelcomeView {
             String loggedInUsername = userController.getLoggedInUser().getUsername();
             String loggedInUserId = userController.getLoggedInUser().getId();
 
-            // Create the necessary controllers (TransactionController) or other dependencies
+            // Initialize necessary controllers with the appropriate services and repositories
+            AccountController accountController = new AccountController(new AccountService(new AccountRepository()));
             TransactionController transactionController = new TransactionController(new TransactionService(new TransactionRepository()));
+            CategoryController categoryController = new CategoryController(new CategoryService(new CategoryRepository()));
 
             // Pass the correct parameters to MainView
-            MainView mainView = new MainView(transactionController, loggedInUserId);
+            MainView mainView = new MainView(transactionController, accountController, categoryController, loggedInUserId);
             mainView.start(primaryStage, loggedInUserId, loggedInUsername);  // Pass the user ID and username to MainView
 
         } else {

@@ -1,6 +1,7 @@
 package myProject.controller;
 
 import myProject.model.Account;
+import myProject.repository.AccountRepository;
 import myProject.service.AccountService;
 
 import java.util.List;
@@ -9,8 +10,8 @@ public class AccountController {
 
     private final AccountService accountService;
 
-    public AccountController() {
-        this.accountService = new AccountService();
+    public AccountController(AccountService accountService) {
+        this.accountService = new AccountService(new AccountRepository());
     }
 
     // Add a new account (requires userId as a parameter)

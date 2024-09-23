@@ -1,24 +1,25 @@
 package myProject.model;
 
 import javafx.beans.property.*;
+
 import java.util.Date;
 import java.util.UUID;
 
 public class Transaction {
 
-    private StringProperty id; // UUID for uniqueness, internal use only
-    private StringProperty description; // Visible to the user, acts as the title of the transaction
-    private ObjectProperty<Date> date;
-    private DoubleProperty amount;
-    private StringProperty type; // "income" or "expense"
+    private final StringProperty id;
+    private final StringProperty description; // Visible to the user, acts as the title of the transaction
+    private final ObjectProperty<Date> date;
+    private final DoubleProperty amount;
+    private final StringProperty type; // "income" or "expense"
 
     // Relationships
-    private ObjectProperty<User> user; // Foreign key linking to the user
-    private ObjectProperty<Account> account; // Foreign key linking to the account
-    private ObjectProperty<Category> category; // Foreign key linking to the category
+    private final ObjectProperty<User> user; // Foreign key linking to the user
+    private final ObjectProperty<Account> account; // Foreign key linking to the account
+    private final ObjectProperty<Category> category; // Foreign key linking to the category
 
     // Recurring transactions
-    private BooleanProperty isRecurring;
+    private final BooleanProperty isRecurring;
     private StringProperty recurrenceInterval; // "daily", "weekly", "monthly"
     private ObjectProperty<Date> endDate; // Optional end date for recurring transactions
 
@@ -26,8 +27,8 @@ public class Transaction {
     private StringProperty status; // "pending", "completed", etc.
 
     // Timestamps
-    private ObjectProperty<Date> createdAt;
-    private ObjectProperty<Date> updatedAt;
+    private final ObjectProperty<Date> createdAt;
+    private final ObjectProperty<Date> updatedAt;
 
     // Constructor
     public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date) {
@@ -227,7 +228,7 @@ public class Transaction {
         this.updatedAt.set(updatedAt);
     }
 
-    // Methods to handle recurring transactions
+    // Method to handle recurring transactions
     public void markAsRecurring(String interval, Date endDate) {
         this.isRecurring.set(true);
         this.recurrenceInterval.set(interval);

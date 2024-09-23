@@ -6,18 +6,16 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class Category {
-    private StringProperty id;
-    private StringProperty name;
-    private StringProperty color;
+    private final StringProperty id;
+    private final StringProperty name;
     private boolean isStandard;
     private boolean isCustom;
     private ObjectProperty<Double> budget;
 
     // Constructor for custom categories
-    public Category(String id, String name, String color, boolean isStandard, boolean isCustom, Double budget) {
+    public Category(String id, String name, boolean isStandard, boolean isCustom, Double budget) {
         this.id = new SimpleStringProperty((id == null) ? UUID.randomUUID().toString() : id);
         this.name = new SimpleStringProperty(name);
-        this.color = new SimpleStringProperty(color);
         this.isStandard = isStandard;
         this.isCustom = isCustom;
         this.budget = new SimpleObjectProperty<>(budget);
@@ -47,17 +45,6 @@ public class Category {
         this.name.set(name);
     }
 
-    public String getColor() {
-        return color.get();
-    }
-
-    public StringProperty colorProperty() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color.set(color);
-    }
 
     public boolean isStandard() {
         return isStandard;

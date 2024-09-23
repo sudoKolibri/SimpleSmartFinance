@@ -10,17 +10,19 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import myProject.controller.AccountController;
 import myProject.model.Account;
+import myProject.repository.AccountRepository;
+import myProject.service.AccountService;
 
 import java.util.List;
 
 public class AccountView {
 
-    private final AccountController accountController = new AccountController();
+    private final AccountController accountController = new AccountController(new AccountService(new AccountRepository()));
     private final String currentUserId;
     private Button createAccountButton;  // Declare createAccountButton at the class level
     private Label overallBalanceLabel;   // Declare overallBalanceLabel at the class level
 
-    public AccountView(String currentUserId) {
+    public AccountView(String currentUserId, AccountController accountController) {
         this.currentUserId = currentUserId;
     }
 

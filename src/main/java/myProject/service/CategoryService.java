@@ -18,6 +18,11 @@ public class CategoryService {
         return categoryRepository.addCategory(category, userId);
     }
 
+    public boolean updateCategory(Category category) {
+        return categoryRepository.updateCategory(category);
+    }
+
+
     public List<Category> getGlobalCategories() {
         return categoryRepository.getGlobalCategories();
     }

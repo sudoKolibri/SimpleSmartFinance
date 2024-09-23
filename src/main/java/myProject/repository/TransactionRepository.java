@@ -3,7 +3,7 @@ package myProject.repository;
 import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
-import myProject.util.DatabaseManager;
+import myProject.db.DatabaseManager;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -157,7 +157,6 @@ public class TransactionRepository {
                     Category category = new Category(
                             rs.getString("id"),
                             rs.getString("name"),
-                            rs.getString("color"),
                             rs.getBoolean("is_standard"),
                             rs.getBoolean("is_custom"),
                             rs.getDouble("budget")
@@ -181,7 +180,6 @@ public class TransactionRepository {
                 Category category = new Category(
                         rs.getString("id"),
                         rs.getString("name"),
-                        rs.getString("color"),
                         rs.getBoolean("is_standard"),
                         rs.getBoolean("is_custom"),
                         rs.getDouble("budget")
@@ -252,7 +250,6 @@ public class TransactionRepository {
                     return new Category(
                             rs.getString("id"),
                             rs.getString("name"),
-                            rs.getString("color"),
                             rs.getBoolean("is_standard"),
                             rs.getBoolean("is_custom"),
                             rs.getDouble("budget")

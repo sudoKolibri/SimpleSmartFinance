@@ -10,10 +10,10 @@ import java.util.UUID;
 
 public class Account {
 
-    private StringProperty id;
-    private StringProperty userId;
-    private StringProperty name;
-    private DoubleProperty balance;
+    private final StringProperty id;
+    private final StringProperty userId;
+    private final StringProperty name;
+    private final DoubleProperty balance;
 
     // Constructor without an ID (auto-generate ID)
     public Account(String userId, String name, double balance) {

@@ -1,6 +1,6 @@
 package myProject;
 
-import myProject.util.DatabaseManager;
+import myProject.db.DatabaseManager;
 import myProject.view.WelcomeView;
 import javafx.application.Application;
 import javafx.stage.Stage;

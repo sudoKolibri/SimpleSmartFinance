@@ -18,6 +18,12 @@ public class CategoryController {
         return categoryService.addCategory(category, userId);
     }
 
+    public boolean updateCategory(Category category) {
+        System.out.println("Updating Category with ID: " + category.getId());
+        return categoryService.updateCategory(category);
+    }
+
+
     public List<Category> getGlobalCategories() {
         return categoryService.getGlobalCategories();
     }

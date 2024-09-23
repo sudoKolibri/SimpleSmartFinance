@@ -1,7 +1,7 @@
 package myProject.repository;
 
 import myProject.model.User;
-import myProject.util.DatabaseManager;
+import myProject.db.DatabaseManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

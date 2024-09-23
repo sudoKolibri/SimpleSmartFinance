@@ -9,7 +9,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public AccountService() {
+    public AccountService(AccountRepository accountRepository) {
         this.accountRepository = new AccountRepository();
     }
 
