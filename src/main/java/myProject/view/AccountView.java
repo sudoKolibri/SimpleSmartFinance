@@ -6,77 +6,71 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import myProject.controller.AccountController;
+import myProject.controller.TransactionController;
 import myProject.model.Account;
-import myProject.repository.AccountRepository;
-import myProject.service.AccountService;
+import myProject.view.detail.AccountDetailView;
+import myProject.view.util.ViewUtils;
 
 import java.util.List;
 
 public class AccountView {
 
-    private final AccountController accountController = new AccountController(new AccountService(new AccountRepository()));
+    private final AccountController accountController;
+    private final TransactionController transactionController;
     private final String currentUserId;
-    private Button createAccountButton;  // Declare createAccountButton at the class level
-    private Label overallBalanceLabel;   // Declare overallBalanceLabel at the class level
+    private Button createAccountButton;
+    private Label overallBalanceLabel;
+    private BorderPane root;
 
-    public AccountView(String currentUserId, AccountController accountController) {
+    // Constructor with necessary controllers
+    public AccountView(String currentUserId, AccountController accountController, TransactionController transactionController) {
         this.currentUserId = currentUserId;
+        this.accountController = accountController;
+        this.transactionController = transactionController;
     }
 
-    // Load AccountView into the dynamic content area of MainView (vertical split layout)
+    // Load AccountView into the dynamic content area of MainView
     public void loadIntoPane(BorderPane root) {
-        VBox mainLayout = new VBox(30);  // Vertical layout for both the summary and account list
+        this.root = root;
+        VBox mainLayout = new VBox(30);
         mainLayout.setPadding(new Insets(20));
-        mainLayout.setAlignment(Pos.CENTER);  // Center the content
-        mainLayout.setSpacing(40);  // Space between the summary and account list
+        mainLayout.setAlignment(Pos.CENTER);
+        mainLayout.setSpacing(40);
 
-        // ==================== Top Section: Summary Panel ====================
-        VBox summaryLayout = new VBox(20);  // Summary content centered
+        // Top Section: Summary Panel
+        VBox summaryLayout = new VBox(20);
         summaryLayout.setPadding(new Insets(20));
-        summaryLayout.setAlignment(Pos.CENTER);  // Center content
+        summaryLayout.setAlignment(Pos.CENTER);
 
         // Prominent Overall Balance
         overallBalanceLabel = new Label();
         overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
+        summaryLayout.getChildren().add(overallBalanceLabel);
 
-        // Recent Transactions (Placeholder)
-        Label recentTransactionsLabel = new Label("Recent Transactions (placeholder)");
-        recentTransactionsLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
-
-        // Add summary components
-        summaryLayout.getChildren().addAll(overallBalanceLabel, recentTransactionsLabel);
-
-        // ==================== Bottom Section: Account List ====================
+        // Bottom Section: Account List
         VBox accountsLayout = new VBox(20);
         accountsLayout.setPadding(new Insets(20));
-        accountsLayout.setAlignment(Pos.CENTER);  // Center content
-        accountsLayout.setMaxWidth(Double.MAX_VALUE);  // Allow VBox to use full width
+        accountsLayout.setAlignment(Pos.CENTER);
+        accountsLayout.setMaxWidth(Double.MAX_VALUE);
 
-        // Account cards container
-        VBox accountsContainer = new VBox(20);
-        accountsContainer.setAlignment(Pos.CENTER);
-
-        // Load and display accounts as square cards (bigger, centered)
-        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
-        for (Account account : accounts) {
-            HBox accountCard = createAccountCard(account);
-            accountsContainer.getChildren().add(accountCard);
-        }
+        // Show accounts in a grid format
+        showAccounts(accountsLayout);
 
         // Create the button at the class level
         createAccountButton = new Button("+ Add Account");
-        createAccountButton.setPrefWidth(150);  // Set the preferred width to 150px
-        createAccountButton.setMaxWidth(200);  // Allow the button to take its full width
-        createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));  // Pass the accounts layout to show form in the same area
+        createAccountButton.setPrefWidth(150);
+        createAccountButton.setMaxWidth(200);
+        createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));
 
-        // Add components to the bottom layout (account list)
-        accountsLayout.getChildren().addAll(createAccountButton, accountsContainer);
+        // Add components to the bottom layout
+        accountsLayout.getChildren().add(createAccountButton);
 
-        // ==================== Add Summary and Account List ====================
-        mainLayout.getChildren().addAll(summaryLayout, accountsLayout);  // Add both sections to the vertical layout
+        // Add Summary and Account List
+        mainLayout.getChildren().addAll(summaryLayout, accountsLayout);
 
         // Set the center content of MainView to AccountView
         root.setCenter(mainLayout);
@@ -91,94 +85,131 @@ public class AccountView {
         overallBalanceLabel.setText("Total Balance: $" + totalBalance);
     }
 
+    // Show all accounts in a grid layout
+    private void showAccounts(VBox accountsLayout) {
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(20));
+        gridPane.setHgap(20);
+        gridPane.setVgap(20);
+        gridPane.setAlignment(Pos.CENTER);
 
-    // Show the account creation form within the dynamic area
+        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
+
+        int row = 0, col = 0;
+        for (Account account : accounts) {
+            HBox accountCard = createAccountCard(account); // Correctly call without passing an unnecessary parameter
+            gridPane.add(accountCard, col, row);
+
+            col++;
+            if (col == 3) {  // Adjust column count to fit your desired layout
+                col = 0;
+                row++;
+            }
+        }
+
+        // Add the grid pane to the accounts layout
+        accountsLayout.getChildren().add(gridPane);
+    }
+
+    // Show the account creation form below the account grid
     private void showCreateAccountForm(VBox accountsLayout) {
-        VBox formCard = new VBox(10);
-        formCard.setPadding(new Insets(20));
-        formCard.setAlignment(Pos.CENTER);
-        formCard.setStyle("-fx-background-color: #44475a; -fx-border-color: #ff79c6; -fx-border-radius: 10px;");
-        formCard.setMaxWidth(300);  // Limit the width of the form card
+        VBox formContainer = new VBox(10);
+        formContainer.setAlignment(Pos.CENTER);
+        formContainer.setPadding(new Insets(10));
 
-        Label nameLabel = new Label("Account Name:");
-        nameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #f8f8f2;");
+        VBox formLayout = new VBox(10);
+        formLayout.setPadding(new Insets(20));
+        formLayout.setAlignment(Pos.CENTER);
+        formLayout.setMaxWidth(200);  // Set the width to match the account cards
 
-        TextField nameField = new TextField();
-        nameField.setPromptText("Enter account name");
-        nameField.setMaxWidth(250);
+        Label formTitle = new Label("Create New Account");
+        formTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        Label balanceLabel = new Label("Initial Balance:");
-        balanceLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #f8f8f2;");
+        // Input fields
+        TextField accountNameField = new TextField();
+        accountNameField.setPromptText("Account Name");
+        accountNameField.setMaxWidth(Double.MAX_VALUE);
 
         TextField balanceField = new TextField();
-        balanceField.setPromptText("Enter initial balance");
-        balanceField.setMaxWidth(250);
+        balanceField.setPromptText("Initial Balance");
+        balanceField.setMaxWidth(Double.MAX_VALUE);
 
-        Button submitButton = new Button("Create Account");
-        submitButton.setStyle("-fx-background-color: #50fa7b; -fx-text-fill: #282a36;");
-        submitButton.setOnAction(e -> {
-            String accountName = nameField.getText();
-            double initialBalance = Double.parseDouble(balanceField.getText());
+        // Save button
+        Button saveButton = getButton(accountsLayout, accountNameField, balanceField);
 
-            // Handle account creation
-            if (accountController.addAccount(currentUserId, accountName, initialBalance)) {
-                accountsLayout.getChildren().remove(formCard);  // Remove the form after submission
-                refreshAccountList(accountsLayout);  // Refresh account list
-                updateOverallBalance();  // Update the overall balance
+        // Cancel button
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(e -> accountsLayout.getChildren().remove(formContainer));
+
+        // Button box
+        HBox buttonBox = new HBox(10, saveButton, cancelButton);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        // Add components to form layout
+        formLayout.getChildren().addAll(formTitle, accountNameField, balanceField, buttonBox);
+        formContainer.getChildren().add(formLayout);
+
+        // Add the form container below the account grid
+        accountsLayout.getChildren().add(formContainer);
+    }
+
+    private Button getButton(VBox accountsLayout, TextField accountNameField, TextField balanceField) {
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> {
+            try {
+                String accountName = accountNameField.getText();
+                double initialBalance = Double.parseDouble(balanceField.getText());
+
+                // Add account using the controller
+                boolean success = accountController.addAccount(currentUserId, accountName, initialBalance);
+                if (success) {
+                    System.out.println("Account created successfully.");
+                    refreshAccountList(accountsLayout); // Refresh the list to show the new account
+                    updateOverallBalance(); // Ensure the balance is updated immediately
+                } else {
+                    System.err.println("Failed to create account.");
+                }
+            } catch (NumberFormatException ex) {
+                System.err.println("Invalid balance. Please enter a valid number.");
             }
         });
-
-        formCard.getChildren().addAll(nameLabel, nameField, balanceLabel, balanceField, submitButton);
-        accountsLayout.getChildren().add(0, formCard);  // Add the form at the top of the account list
+        return saveButton;
     }
 
-    // Refresh the account list dynamically after adding a new account, but keep the "Add Account" button
+    // Refresh the account list
     private void refreshAccountList(VBox accountsLayout) {
-        accountsLayout.getChildren().clear();  // Clear existing account cards
-
-        // Re-add the "Add Account" button at the top
+        accountsLayout.getChildren().clear();
+        showAccounts(accountsLayout);
         accountsLayout.getChildren().add(createAccountButton);
-
-        // Load and display the updated list of accounts
-        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
-        for (Account account : accounts) {
-            HBox accountCard = createAccountCard(account);
-            accountsLayout.getChildren().add(accountCard);
-        }
+        updateOverallBalance();
     }
 
+    // Create an account card
     private HBox createAccountCard(Account account) {
         HBox card = new HBox();
-        card.getStyleClass().add("account-card");  // Apply the CSS class
+        card.getStyleClass().add("account-card");
 
-        // Add padding and alignment
         card.setPadding(new Insets(20));
         card.setAlignment(Pos.CENTER);
 
         Label nameLabel = new Label(account.getName());
         nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
 
-        Label balanceLabel = new Label("$" + account.getBalance());
+        Label balanceLabel = new Label(ViewUtils.formatCurrency(account.getBalance()));
         balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
-        VBox cardContent = new VBox(10);  // Vertical box for account name and balance, with spacing
+        VBox cardContent = new VBox(10);
         cardContent.setAlignment(Pos.CENTER);
         cardContent.getChildren().addAll(nameLabel, balanceLabel);
 
         card.getChildren().add(cardContent);
 
-        // Add hover effect (scaling)
-        card.setOnMouseEntered(e -> {
-            card.setScaleX(1.05);
-            card.setScaleY(1.05);
-        });
-        card.setOnMouseExited(e -> {
-            card.setScaleX(1.0);
-            card.setScaleY(1.0);
+        // Open AccountDetailView when clicked
+        card.setOnMouseClicked(e -> {
+            AccountDetailView accountDetailView = new AccountDetailView(accountController, transactionController, root);
+            accountDetailView.showAccountDetailView(account);
         });
 
         return card;
     }
-
-
 }

@@ -22,12 +22,26 @@ public class CategoryService {
         return categoryRepository.updateCategory(category);
     }
 
-
     public List<Category> getGlobalCategories() {
         return categoryRepository.getGlobalCategories();
     }
 
     public List<Category> getCustomCategoriesForUser(String userId) {
         return categoryRepository.getCustomCategoriesForUser(userId);
+    }
+
+    // Get all categories (both global and custom) for a specific user
+    public List<Category> getAllCategoriesForUser(String userId) {
+        // Fetch global categories
+        List<Category> globalCategories = getGlobalCategories();
+
+        // Fetch custom categories for the given user
+        List<Category> customCategories = getCustomCategoriesForUser(userId);
+
+        // Combine both lists
+        globalCategories.addAll(customCategories);
+
+        // Return the combined list
+        return globalCategories;
     }
 }

@@ -8,23 +8,23 @@ import java.util.UUID;
 public class Transaction {
 
     private final StringProperty id;
-    private final StringProperty description; // Visible to the user, acts as the title of the transaction
+    private final StringProperty description;
     private final ObjectProperty<Date> date;
     private final DoubleProperty amount;
-    private final StringProperty type; // "income" or "expense"
+    private final StringProperty type;
 
     // Relationships
-    private final ObjectProperty<User> user; // Foreign key linking to the user
-    private final ObjectProperty<Account> account; // Foreign key linking to the account
-    private final ObjectProperty<Category> category; // Foreign key linking to the category
+    private final ObjectProperty<User> user;
+    private final ObjectProperty<Account> account;
+    private final ObjectProperty<Category> category;
 
     // Recurring transactions
     private final BooleanProperty isRecurring;
-    private StringProperty recurrenceInterval; // "daily", "weekly", "monthly"
-    private ObjectProperty<Date> endDate; // Optional end date for recurring transactions
+    private StringProperty recurrenceInterval; // Initialized later if recurring
+    private ObjectProperty<Date> endDate; // Initialized later if recurring
 
-    private StringProperty currency; // Optional, for multi-currency support
-    private StringProperty status; // "pending", "completed", etc.
+    private StringProperty currency;
+    private StringProperty status;
 
     // Timestamps
     private final ObjectProperty<Date> createdAt;
@@ -32,7 +32,7 @@ public class Transaction {
 
     // Constructor
     public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date) {
-        this.id = new SimpleStringProperty(UUID.randomUUID().toString()); // Generate a UUID, hidden from users
+        this.id = new SimpleStringProperty(UUID.randomUUID().toString());
         this.description = new SimpleStringProperty(description);
         this.amount = new SimpleDoubleProperty(amount);
         this.type = new SimpleStringProperty(type);
@@ -40,10 +40,13 @@ public class Transaction {
         this.account = new SimpleObjectProperty<>(account);
         this.category = new SimpleObjectProperty<>(category);
         this.date = new SimpleObjectProperty<>(date);
-        this.isRecurring = new SimpleBooleanProperty(false); // Default to non-recurring
-        this.status = new SimpleStringProperty("completed"); // Default status
-        this.createdAt = new SimpleObjectProperty<>(new Date()); // Current time as createdAt
-        this.updatedAt = new SimpleObjectProperty<>(new Date()); // Current time as updatedAt
+        this.isRecurring = new SimpleBooleanProperty(false);
+        this.recurrenceInterval = new SimpleStringProperty(""); // Initialize with an empty string
+        this.endDate = new SimpleObjectProperty<>(null); // Initialize with null
+        this.currency = new SimpleStringProperty("USD"); // Optional default currency
+        this.status = new SimpleStringProperty("completed");
+        this.createdAt = new SimpleObjectProperty<>(new Date());
+        this.updatedAt = new SimpleObjectProperty<>(new Date());
     }
 
     // Properties (Getters for JavaFX binding)
@@ -231,6 +234,9 @@ public class Transaction {
     // Method to handle recurring transactions
     public void markAsRecurring(String interval, Date endDate) {
         this.isRecurring.set(true);
+        if (this.recurrenceInterval == null) {
+            this.recurrenceInterval = new SimpleStringProperty(""); // Safeguard initialization
+        }
         this.recurrenceInterval.set(interval);
         this.endDate.set(endDate);
     }

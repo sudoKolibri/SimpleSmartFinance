@@ -21,7 +21,7 @@ public class CategoryDetailView {
         this.categoryController = categoryController;
         this.transactionController = transactionController;
         if (root == null) {
-            throw new IllegalArgumentException("Root layout cannot be null.");  // Immediate fail if root is not passed correctly
+            throw new IllegalArgumentException("Root layout cannot be null.");
         }
         this.root = root;
     }
@@ -50,10 +50,11 @@ public class CategoryDetailView {
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             detailView.getChildren().add(spentLabel);
 
-            // Calculate and set the progress bar with the correct color
-            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+            // Safely handle null budget when calculating the progress bar
+            double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero or null issues
+            ProgressBar progressBar = new ProgressBar(spent / budgetValue);
             progressBar.setPrefWidth(600);  // Adjust width as necessary
-            progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, category.getBudget()) + ";");
+            progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             detailView.getChildren().add(progressBar);
         } else {
             Label noBudgetLabel = new Label("No Budget Set");
@@ -76,54 +77,77 @@ public class CategoryDetailView {
         root.setCenter(detailView);
     }
 
-
-
-
     // Show the edit form for a category
     private void showEditCategoryForm(Category category) {
-        if (root == null) {
-            System.err.println("Error: root layout is null. Cannot display edit form.");
-            return;
-        }
+        VBox editView = new VBox(20);
+        editView.getStyleClass().add("detail-view");
 
-        VBox formCard = new VBox(10);
-        formCard.getStyleClass().add("account-card");
-        formCard.setMaxWidth(300);
-
+        // Convert the name and budget labels to TextFields when editing
         TextField nameField = new TextField(category.getName());
-        nameField.setPromptText("Category Name");
-        nameField.setMaxWidth(250);
+        nameField.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        editView.getChildren().add(nameField);
 
         TextField budgetField = new TextField(category.getBudget() != null ? category.getBudget().toString() : "");
-        budgetField.setPromptText("Budget");
-        budgetField.setMaxWidth(250);
+        budgetField.setPromptText("No Budget Set");
+        budgetField.setStyle("-fx-font-size: 20px; -fx-text-fill: #ffb86c;");
+        editView.getChildren().add(budgetField);
 
-        Button saveButton = new Button("Save Changes");
+        double spent = transactionController.getSpentAmountForCategory(category);
+        Label spentLabel = new Label("Already Spent: $" + spent);
+        spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+        editView.getChildren().add(spentLabel);
+
+        // Handle potential null budget when calculating the progress bar
+        double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero
+        ProgressBar progressBar = new ProgressBar(spent / budgetValue);
+        progressBar.setPrefWidth(600);
+        progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
+        editView.getChildren().add(progressBar);
+
+        // Save and Cancel buttons
+        Button saveButton = new Button("Save");
         saveButton.getStyleClass().add("button");
+        saveButton.setOnAction(e -> saveCategoryChanges(category, nameField, budgetField));
 
-        saveButton.setOnAction(e -> {
-            try {
-                category.setName(nameField.getText());
-                Double newBudget = ViewUtils.getCategoryBudget(budgetField);
+        Button cancelButton = new Button("Cancel");
+        cancelButton.getStyleClass().add("button");
+        cancelButton.setOnAction(e -> showCategoryDetailView(category));
 
-                if (category.isStandard() && newBudget != null) {
-                    category.setBudget(newBudget);
-                } else if (category.isCustom() && newBudget == null) {
-                    category.setBudget(null);
-                }
+        // VBox to hold Save and Cancel buttons
+        VBox buttonBox = new VBox(10);
+        buttonBox.getChildren().addAll(saveButton, cancelButton);
+        editView.getChildren().add(buttonBox);
 
-                categoryController.updateCategory(category);
-                System.out.println("Category updated successfully: " + category.getName());
-                showCategoryDetailView(category);
+        root.setCenter(editView);
+    }
 
-            } catch (Exception ex) {
-                System.err.println("Failed to update category: " + ex.getMessage());
-                ex.printStackTrace();
+    // Save the changes made to the category
+    private void saveCategoryChanges(Category category, TextField nameField, TextField budgetField) {
+        try {
+            String newName = nameField.getText();
+            Double newBudget = ViewUtils.getCategoryBudget(budgetField);
+
+            // Check for duplicate category names
+            if (categoryController.isCategoryNameDuplicate(newName, category.getId())) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Category name already exists.", ButtonType.OK);
+                alert.showAndWait();
+                return;
             }
-        });
 
-        formCard.getChildren().addAll(new Label("Edit Category"), nameField, budgetField, saveButton);
-        root.setCenter(formCard);
+            category.setName(newName);
+            category.setBudget(newBudget);
+
+            // Update category in the controller
+            categoryController.updateCategory(category);
+            System.out.println("Category updated successfully: " + category.getName());
+
+            // Reload the detailed view with updated information
+            showCategoryDetailView(category);
+
+        } catch (Exception ex) {
+            System.err.println("Failed to update category: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     // Create a transactions table for the given category

@@ -36,6 +36,29 @@ public class AccountRepository {
         }
     }
 
+    // Update an existing account in the database
+    public boolean updateAccount(Account account) {
+        String sql = "UPDATE accounts SET name = ?, balance = ? WHERE id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1, account.getName());
+            pstmt.setDouble(2, account.getBalance());
+            pstmt.setString(3, account.getId());
+
+            pstmt.executeUpdate();
+
+            System.out.println("Account updated successfully: " + account.getName());
+
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Get all accounts for a specific user
     public List<Account> getAllAccountsForUser(String userId) {
         String sql = "SELECT * FROM accounts WHERE user_id = ?";

@@ -19,18 +19,21 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
-    // Handle request to create a new regular transaction
+    // Handle request to create a new regular or recurring transaction
     public void createTransaction(Transaction transaction) {
-        // Log the ID of the transaction before it's passed to the service layer
-        System.out.println("Creating transaction with ID: " + transaction.getId());  // Log the ID
-
         try {
-            // Pass the transaction to the service layer to be added to the database
-            transactionService.addTransaction(transaction);
+            if (transaction.isRecurring()) {
+                transactionService.addRecurringTransaction(transaction);
+            } else {
+                transactionService.addTransaction(transaction);
+            }
             System.out.println("Transaction created successfully.");
         } catch (SQLException e) {
-            System.err.println("Error creating transaction: " + e.getMessage());
-            e.printStackTrace();
+
+            e.printStackTrace(); // Log full stack trace for debugging
+        } catch (Exception e) {
+
+            e.printStackTrace(); // Log full stack trace for debugging
         }
     }
 
@@ -38,7 +41,11 @@ public class TransactionController {
     // Handle request to update an existing transaction
     public void updateTransaction(Transaction transaction) {
         try {
-            transactionService.updateTransaction(transaction);
+            if (transaction.isRecurring()) {
+                transactionService.updateRecurringTransaction(transaction);
+            } else {
+                transactionService.updateTransaction(transaction);
+            }
             System.out.println("Transaction updated successfully.");
         } catch (SQLException e) {
             System.err.println("Error updating transaction: " + e.getMessage());
@@ -57,16 +64,27 @@ public class TransactionController {
         }
     }
 
+    // Handle money transfer between accounts
+    public void transferBetweenAccounts(Transaction transferOut, Transaction transferIn) {
+        try {
+            transactionService.addTransaction(transferOut);
+            transactionService.addTransaction(transferIn);
+            System.out.println("Transfer completed successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error during transfer: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     // Get all transactions as an ObservableList for TableView
     public ObservableList<Transaction> getAllTransactions() {
         try {
             List<Transaction> transactions = transactionService.getAllTransactions();
-            return FXCollections.observableArrayList(transactions);  // Convert List to ObservableList
+            return FXCollections.observableArrayList(transactions);
         } catch (SQLException e) {
             System.err.println("Error fetching transactions: " + e.getMessage());
             e.printStackTrace();
-            return FXCollections.observableArrayList();  // Return empty ObservableList on error
+            return FXCollections.observableArrayList();
         }
     }
 
@@ -77,37 +95,31 @@ public class TransactionController {
         } catch (SQLException e) {
             System.err.println("Error fetching transactions for category: " + e.getMessage());
             e.printStackTrace();
-            return new ArrayList<>();  // Return an empty list on error
+            return new ArrayList<>();
         }
     }
 
     // Method to get total spent amount for a specific category
     public double getSpentAmountForCategory(Category category) {
         try {
-            // Get transactions from the service
             List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
-            // Sum the amounts of all transactions in this category
-            return transactions.stream()
-                    .mapToDouble(Transaction::getAmount)
-                    .sum();
+            return transactions.stream().mapToDouble(Transaction::getAmount).sum();
         } catch (SQLException e) {
             System.err.println("Error fetching transactions for category: " + e.getMessage());
             e.printStackTrace();
-            return 0.0;  // Return 0 if there's an error
+            return 0.0;
         }
     }
-
-
 
     // Filter transactions by account and return as ObservableList for TableView
     public ObservableList<Transaction> getTransactionsByAccount(String accountName) {
         try {
             List<Transaction> transactions = transactionService.getTransactionsByAccount(accountName);
-            return FXCollections.observableArrayList(transactions);  // Convert List to ObservableList
+            return FXCollections.observableArrayList(transactions);
         } catch (SQLException e) {
             System.err.println("Error fetching transactions by account: " + e.getMessage());
             e.printStackTrace();
-            return FXCollections.observableArrayList();  // Return empty ObservableList on error
+            return FXCollections.observableArrayList();
         }
     }
 
@@ -118,7 +130,7 @@ public class TransactionController {
         } catch (SQLException e) {
             System.err.println("Error fetching account names: " + e.getMessage());
             e.printStackTrace();
-            return List.of();  // Return an empty List on error
+            return List.of();
         }
     }
 
@@ -126,11 +138,11 @@ public class TransactionController {
     public ObservableList<Category> getAllCategoriesForUser(String userId) {
         try {
             List<Category> categories = transactionService.getAllCategoriesForUser(userId);
-            return FXCollections.observableArrayList(categories);  // Convert List to ObservableList
+            return FXCollections.observableArrayList(categories);
         } catch (SQLException e) {
             System.err.println("Error fetching categories for user: " + e.getMessage());
             e.printStackTrace();
-            return FXCollections.observableArrayList();  // Return empty ObservableList on error
+            return FXCollections.observableArrayList();
         }
     }
 
@@ -138,11 +150,11 @@ public class TransactionController {
     public ObservableList<Account> getAccountsForUser(String userId) {
         try {
             List<Account> accounts = transactionService.getAccountsForUser(userId);
-            return FXCollections.observableArrayList(accounts);  // Convert List to ObservableList
+            return FXCollections.observableArrayList(accounts);
         } catch (SQLException e) {
             System.err.println("Error fetching accounts for user: " + e.getMessage());
             e.printStackTrace();
-            return FXCollections.observableArrayList();  // Return empty ObservableList on error
+            return FXCollections.observableArrayList();
         }
     }
 }

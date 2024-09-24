@@ -13,64 +13,79 @@ public class TransactionRepository {
 
     // Save a new transaction
     public void saveTransaction(Transaction transaction) throws SQLException {
-        String sql = "INSERT INTO transactions (id, amount, date, description, category_id, type, account_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
+        String sql = "INSERT INTO transactions (id, amount, date, description, category_id, type, account_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
             pstmt.setDouble(2, transaction.getAmount());
             pstmt.setDate(3, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setString(4, transaction.getDescription());
-            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getId() : null);  // Ensure category ID is being saved
+            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
             pstmt.setString(6, transaction.getType());
-            pstmt.setString(7, transaction.getAccount() != null ? transaction.getAccount().getId() : null);  // Ensure account ID is being saved
+            pstmt.setString(7, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.executeUpdate();
+        }
+    }
+
+    // Save a new recurring transaction
+    public void saveRecurringTransaction(Transaction transaction) throws SQLException {
+        String sql = "INSERT INTO recurring_transactions (id, amount, description, category_id, type, account_id, start_date, recurrence_interval, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, transaction.getId());
+            pstmt.setDouble(2, transaction.getAmount());
+            pstmt.setString(3, transaction.getDescription());
+            pstmt.setString(4, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
+            pstmt.setString(5, transaction.getType());
+            pstmt.setString(6, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.setDate(7, new java.sql.Date(transaction.getDate().getTime()));
+            pstmt.setString(8, transaction.getRecurrenceInterval());
+            pstmt.setDate(9, transaction.getEndDate() != null ? new java.sql.Date(transaction.getEndDate().getTime()) : null);
             pstmt.executeUpdate();
         }
     }
 
     // Update an existing transaction
     public void updateTransaction(Transaction transaction) throws SQLException {
-        String sql = "UPDATE transactions SET amount = ?, date = ?, description = ?, category_id = ?, type = ?, account_id = ? " +
-                "WHERE id = ?";
-
+        String sql = "UPDATE transactions SET amount = ?, date = ?, description = ?, category_id = ?, type = ?, account_id = ? WHERE id = ?";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setDouble(1, transaction.getAmount());
             pstmt.setDate(2, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setString(3, transaction.getDescription());
-            pstmt.setString(4, transaction.getCategory().getId());
+            pstmt.setString(4, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
             pstmt.setString(5, transaction.getType());
-            pstmt.setString(6, transaction.getAccount().getId());
+            pstmt.setString(6, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
             pstmt.setString(7, transaction.getId());
+            pstmt.executeUpdate();
+        }
+    }
+
+    // Update an existing recurring transaction
+    public void updateRecurringTransaction(Transaction transaction) throws SQLException {
+        String sql = "UPDATE recurring_transactions SET amount = ?, description = ?, category_id = ?, type = ?, account_id = ?, start_date = ?, recurrence_interval = ?, end_date = ? WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setDouble(1, transaction.getAmount());
+            pstmt.setString(2, transaction.getDescription());
+            pstmt.setString(3, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
+            pstmt.setString(4, transaction.getType());
+            pstmt.setString(5, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.setDate(6, new java.sql.Date(transaction.getDate().getTime()));
+            pstmt.setString(7, transaction.getRecurrenceInterval());
+            pstmt.setDate(8, transaction.getEndDate() != null ? new java.sql.Date(transaction.getEndDate().getTime()) : null);
+            pstmt.setString(9, transaction.getId());
             pstmt.executeUpdate();
         }
     }
 
     // Delete a transaction
     public void deleteTransaction(Transaction transaction) throws SQLException {
-        logAllTransactionIds();
-        System.out.println("Deleting transaction with ID: " + transaction.getId());
-
         String sql = "DELETE FROM transactions WHERE id = ?";
-
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
-            int rowsAffected = pstmt.executeUpdate();
-            System.out.println("Rows affected: " + rowsAffected);
-        }
-    }
-
-    // Log all transaction IDs in the database
-    public void logAllTransactionIds() throws SQLException {
-        String sql = "SELECT id FROM transactions";
-        try (Connection connection = DatabaseManager.getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                System.out.println("Transaction ID in DB: " + rs.getString("id"));
-            }
+            pstmt.executeUpdate();
         }
     }
 
@@ -78,12 +93,10 @@ public class TransactionRepository {
     public List<Transaction> getAllTransactions() throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions";
-
         try (Connection connection = DatabaseManager.getConnection();
              Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                // Map each row to a Transaction object
                 Transaction transaction = mapResultSetToTransaction(rs);
                 transactions.add(transaction);
             }
@@ -95,7 +108,6 @@ public class TransactionRepository {
     public List<Transaction> getTransactionsByAccount(String accountName) throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE account_id = (SELECT id FROM accounts WHERE name = ?)";
-
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, accountName);
@@ -109,17 +121,15 @@ public class TransactionRepository {
         return transactions;
     }
 
-    // Add this method to TransactionRepository
+    // Fetch transactions by category
     public List<Transaction> getTransactionsByCategory(String categoryId) throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE category_id = ?";
-
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, categoryId);  // Set the category ID in the query
+            pstmt.setString(1, categoryId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    // Map each row to a Transaction object
                     Transaction transaction = mapResultSetToTransaction(rs);
                     transactions.add(transaction);
                 }
@@ -128,12 +138,10 @@ public class TransactionRepository {
         return transactions;
     }
 
-
     // Fetch all account names
     public List<String> getAllAccountNames() throws SQLException {
         List<String> accountNames = new ArrayList<>();
         String sql = "SELECT name FROM accounts";
-
         try (Connection connection = DatabaseManager.getConnection();
              Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -144,24 +152,24 @@ public class TransactionRepository {
         return accountNames;
     }
 
+    // Fetch all custom and standard categories for a specific user
+    public List<Category> getAllCustomAndStandardCategories(String userId) throws SQLException {
+        List<Category> categories = new ArrayList<>();
+        categories.addAll(getCustomCategoriesForUser(userId));
+        categories.addAll(getStandardCategories());
+        return categories;
+    }
+
     // Fetch custom categories for a specific user
     public List<Category> getCustomCategoriesForUser(String userId) throws SQLException {
         List<Category> categories = new ArrayList<>();
         String sql = "SELECT * FROM categories WHERE user_id = ? AND is_custom = true";
-
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Category category = new Category(
-                            rs.getString("id"),
-                            rs.getString("name"),
-                            rs.getBoolean("is_standard"),
-                            rs.getBoolean("is_custom"),
-                            rs.getDouble("budget")
-                    );
-                    categories.add(category);
+                    categories.add(mapResultSetToCategory(rs));
                 }
             }
         }
@@ -172,19 +180,11 @@ public class TransactionRepository {
     public List<Category> getStandardCategories() throws SQLException {
         List<Category> categories = new ArrayList<>();
         String sql = "SELECT * FROM categories WHERE is_standard = true";
-
         try (Connection connection = DatabaseManager.getConnection();
              Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Category category = new Category(
-                        rs.getString("id"),
-                        rs.getString("name"),
-                        rs.getBoolean("is_standard"),
-                        rs.getBoolean("is_custom"),
-                        rs.getDouble("budget")
-                );
-                categories.add(category);
+                categories.add(mapResultSetToCategory(rs));
             }
         }
         return categories;
@@ -194,49 +194,55 @@ public class TransactionRepository {
     public List<Account> getAllAccountsForUser(String userId) throws SQLException {
         List<Account> accounts = new ArrayList<>();
         String sql = "SELECT * FROM accounts WHERE user_id = ?";
-
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Account account = new Account(
-                            rs.getString("id"),
-                            rs.getString("user_id"),
-                            rs.getString("name"),
-                            rs.getDouble("balance")
-                    );
-                    accounts.add(account);
+                    accounts.add(mapResultSetToAccount(rs));
                 }
             }
         }
         return accounts;
     }
 
-    // Map ResultSet to regular Transaction object
+    // Map ResultSet to Transaction object
     private Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
-        // Fetch the category and account from their respective IDs
         Category category = findCategoryById(rs.getString("category_id"));
         Account account = findAccountById(rs.getString("account_id"));
-
-        // Create a new Transaction object using the retrieved data from the ResultSet
         Transaction transaction = new Transaction(
-                rs.getString("description"),  // Get description from the database row
-                rs.getDouble("amount"),       // Get amount from the database row
-                rs.getString("type"),         // Get type (e.g., income/expense) from the database row
-                null,                         // User is not set here (you may need to handle that separately)
-                account,                      // Set the Account object retrieved from the database
-                category,                     // Set the Category object retrieved from the database
-                rs.getDate("date")            // Get transaction date from the database row
+                rs.getString("description"),
+                rs.getDouble("amount"),
+                rs.getString("type"),
+                null,
+                account,
+                category,
+                rs.getDate("date")
         );
-
-        // Set the Transaction ID from the ResultSet
         transaction.setId(rs.getString("id"));
-
-        // Return the mapped Transaction object
         return transaction;
     }
 
+    // Map ResultSet to Category object
+    private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
+        return new Category(
+                rs.getString("id"),
+                rs.getString("name"),
+                rs.getBoolean("is_standard"),
+                rs.getBoolean("is_custom"),
+                rs.getDouble("budget")
+        );
+    }
+
+    // Map ResultSet to Account object
+    private Account mapResultSetToAccount(ResultSet rs) throws SQLException {
+        return new Account(
+                rs.getString("id"),
+                rs.getString("user_id"),
+                rs.getString("name"),
+                rs.getDouble("balance")
+        );
+    }
 
     // Helper method to fetch Category by ID
     private Category findCategoryById(String categoryId) throws SQLException {
@@ -247,13 +253,7 @@ public class TransactionRepository {
             pstmt.setString(1, categoryId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Category(
-                            rs.getString("id"),
-                            rs.getString("name"),
-                            rs.getBoolean("is_standard"),
-                            rs.getBoolean("is_custom"),
-                            rs.getDouble("budget")
-                    );
+                    return mapResultSetToCategory(rs);
                 }
             }
         }
@@ -269,12 +269,7 @@ public class TransactionRepository {
             pstmt.setString(1, accountId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Account(
-                            rs.getString("id"),
-                            rs.getString("user_id"),
-                            rs.getString("name"),
-                            rs.getDouble("balance")
-                    );
+                    return mapResultSetToAccount(rs);
                 }
             }
         }

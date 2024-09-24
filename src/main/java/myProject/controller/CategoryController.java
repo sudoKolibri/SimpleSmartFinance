@@ -23,7 +23,6 @@ public class CategoryController {
         return categoryService.updateCategory(category);
     }
 
-
     public List<Category> getGlobalCategories() {
         return categoryService.getGlobalCategories();
     }
@@ -32,16 +31,9 @@ public class CategoryController {
         return categoryService.getCustomCategoriesForUser(userId);
     }
 
+    // Refactor: Delegate the call to the service layer
     public List<Category> getAllCategoriesForUser(String userId) {
-        // Fetch both global and custom categories
-        List<Category> globalCategories = getGlobalCategories();
-        List<Category> customCategories = getCustomCategoriesForUser(userId);
-
-        // Combine both lists
-        globalCategories.addAll(customCategories);
-
-        // Return the combined list
-        return globalCategories;
+        return categoryService.getAllCategoriesForUser(userId);
     }
 
     public Category getCategoryById(String categoryId, String userId) {
@@ -52,6 +44,10 @@ public class CategoryController {
                 .orElse(null);  // Return null if category not found
     }
 
-
-
+    // Method to check if a category name is duplicate within the user's categories
+    public boolean isCategoryNameDuplicate(String name, String currentCategoryId) {
+        List<Category> allCategories = categoryService.getAllCategoriesForUser(null); // Adjust to pass the correct user ID if necessary
+        return allCategories.stream()
+                .anyMatch(category -> category.getName().equalsIgnoreCase(name) && !category.getId().equals(currentCategoryId));
+    }
 }

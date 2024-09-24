@@ -10,13 +10,18 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     public AccountService(AccountRepository accountRepository) {
-        this.accountRepository = new AccountRepository();
+        this.accountRepository = accountRepository;
     }
 
     // Add a new account for a specific user
     public boolean addAccount(String userId, String name, double balance) {
         Account newAccount = new Account(userId, name, balance);  // Link account to user
         return accountRepository.addAccount(newAccount);
+    }
+
+    // Update an existing account
+    public boolean updateAccount(Account account) {
+        return accountRepository.updateAccount(account);
     }
 
     // Get all accounts for a specific user

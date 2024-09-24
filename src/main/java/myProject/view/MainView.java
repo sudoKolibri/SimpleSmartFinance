@@ -80,10 +80,10 @@ public class MainView {
 
     // Method to show the Accounts view
     private void showAccountsView() {
-        // Pass AccountController explicitly and load the view
-        AccountView accountView = new AccountView(loggedInUserId, accountController);
-        accountView.loadIntoPane(root);  // Only root passed for layout management
+        AccountView accountView = new AccountView(loggedInUserId, accountController, transactionController);
+        accountView.loadIntoPane(root);
     }
+
 
     // Method to show the Transactions view
     private void showTransactionsView() {

@@ -6,7 +6,6 @@ import myProject.model.Transaction;
 import myProject.repository.TransactionRepository;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionService {
@@ -22,18 +21,34 @@ public class TransactionService {
         transactionRepository.saveTransaction(transaction);
     }
 
+    public void addRecurringTransaction(Transaction transaction) throws SQLException {
+        System.out.println("Adding Recurring Transaction: " + transaction.toString()); // Log transaction details
+        transactionRepository.saveTransaction(transaction);
+        transactionRepository.saveRecurringTransaction(transaction);
+        scheduleNextRecurringTransaction(transaction);
+    }
+
+
     // Update an existing transaction
     public void updateTransaction(Transaction transaction) throws SQLException {
         transactionRepository.updateTransaction(transaction);
     }
 
-    // Delete a transaction
-    public void deleteTransaction(Transaction transaction) throws SQLException {
-        System.out.println("Attempting to delete transaction with ID: " + transaction.getId());
-        transactionRepository.deleteTransaction(transaction);
-        // You could query the database again to check if the row was actually deleted.
+    // Update an existing recurring transaction
+    public void updateRecurringTransaction(Transaction transaction) throws SQLException {
+        transactionRepository.updateTransaction(transaction);
+        transactionRepository.updateRecurringTransaction(transaction);
     }
 
+    // Delete a transaction
+    public void deleteTransaction(Transaction transaction) throws SQLException {
+        transactionRepository.deleteTransaction(transaction);
+    }
+
+    // Schedule the next occurrence of a recurring transaction
+    private void scheduleNextRecurringTransaction(Transaction transaction) {
+        // Implement scheduling logic based on recurrence interval (daily, weekly, monthly)
+    }
 
     // Get all transactions
     public List<Transaction> getAllTransactions() throws SQLException {
@@ -50,7 +65,6 @@ public class TransactionService {
         return transactionRepository.getTransactionsByCategory(category.getId());
     }
 
-
     // Get all account names for filtering
     public List<String> getAllAccountNames() throws SQLException {
         return transactionRepository.getAllAccountNames();
@@ -58,13 +72,7 @@ public class TransactionService {
 
     // Get all categories (custom for the user + standard)
     public List<Category> getAllCategoriesForUser(String userId) throws SQLException {
-        List<Category> allCategories = new ArrayList<>();
-        List<Category> customCategories = transactionRepository.getCustomCategoriesForUser(userId);
-        List<Category> standardCategories = transactionRepository.getStandardCategories();
-
-        allCategories.addAll(customCategories);
-        allCategories.addAll(standardCategories);
-
+        List<Category> allCategories = transactionRepository.getAllCustomAndStandardCategories(userId);
         return allCategories;
     }
 
