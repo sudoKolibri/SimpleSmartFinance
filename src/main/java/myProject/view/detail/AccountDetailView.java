@@ -76,7 +76,7 @@ public class AccountDetailView {
         formView.setPadding(new Insets(20));
         formView.getStyleClass().add("form-view");
 
-        Label formLabel = new Label("Add " + (type.equals("income") ? "Income to " + account.getName() : "Expense to " + account.getName()));
+        Label formLabel = new Label("Add " + (type.equals("income") ? "Income to " + account.getName() + " with current Balance: " + ViewUtils.formatCurrency(account.getBalance()) + " $" : "Expense to " + account.getName() + " with current Balance: " + ViewUtils.formatCurrency(account.getBalance()) + " $" ));
         formLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         formView.getChildren().add(formLabel);
 
@@ -229,10 +229,12 @@ public class AccountDetailView {
         return categoryDropdown;
     }
 
-    // Show the transfer form
+    // Show the transfer form with validation and a slider for transfer amounts
     private void showTransferForm() {
         VBox transferForm = new VBox(15);
         transferForm.setPadding(new Insets(20));
+
+        Label availableBalanceLabel = new Label("Available Balance: " + ViewUtils.formatCurrency(account.getBalance()));
 
         TextField amountField = new TextField();
         amountField.setPromptText("Amount");
@@ -240,12 +242,55 @@ public class AccountDetailView {
         ComboBox<Account> targetAccountDropdown = createAccountDropdown(account.getUserId());
         targetAccountDropdown.setPromptText("Select Target Account");
 
+        // Slider for transfer amount
+        Slider amountSlider = new Slider(0, account.getBalance(), 0); // Min: 0, Max: current balance, Initial: 0
+        amountSlider.setShowTickLabels(true);
+        amountSlider.setShowTickMarks(true);
+        amountSlider.setMajorTickUnit(account.getBalance() / 4); // Adjust tick units
+
+        // Flag to avoid recursive updates
+        final boolean[] isUpdating = {false};
+
+        // Update the TextField when the Slider is moved
+        amountSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (!isUpdating[0]) {
+                isUpdating[0] = true; // Set flag to true to indicate update is happening
+                amountField.setText(String.format("%.2f", newVal.doubleValue()));
+                isUpdating[0] = false; // Reset flag after update
+            }
+        });
+
+        // Update the Slider when the TextField changes
+        amountField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!isUpdating[0]) {
+                try {
+                    double value = Double.parseDouble(newVal);
+                    if (value >= 0 && value <= account.getBalance()) {
+                        isUpdating[0] = true; // Set flag to true to indicate update is happening
+                        amountSlider.setValue(value);
+                        isUpdating[0] = false; // Reset flag after update
+                    } else {
+                        // Revert to old value if input is out of bounds
+                        amountField.setText(oldVal);
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid numbers and keep the previous value
+                    amountField.setText(oldVal);
+                }
+            }
+        });
+
+        // Transfer all button
+        Button transferAllButton = new Button("Transfer All");
+        transferAllButton.setOnAction(e -> amountSlider.setValue(account.getBalance())); // Set slider to maximum balance
+
         Button transferButton = new Button("Execute Transfer");
         transferButton.setOnAction(e -> executeTransfer(amountField, targetAccountDropdown));
 
         transferForm.getChildren().addAll(
-                new Label("Transfer Funds:"),
-                new Label("Amount:"), amountField,
+                new Label("Transfer Funds from " + account.getName()),
+                availableBalanceLabel,
+                new Label("Amount:"), amountField, amountSlider, transferAllButton,
                 new Label("To Account:"), targetAccountDropdown,
                 transferButton
         );
@@ -253,10 +298,20 @@ public class AccountDetailView {
         root.setCenter(transferForm);
     }
 
+
+
+
     private void executeTransfer(TextField amountField, ComboBox<Account> targetAccountDropdown) {
         try {
             double amount = Double.parseDouble(amountField.getText());
             Account targetAccount = targetAccountDropdown.getValue();
+
+            // Validation: Check if the account has enough balance
+            if (account.getBalance() < amount || amount <= 0) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Insufficient funds or invalid amount.", ButtonType.OK);
+                alert.showAndWait();
+                return;
+            }
 
             // Create transactions for the transfer
             Transaction expense = new Transaction("Transfer to " + targetAccount.getName(), -amount, "expense", null, account, null, new java.sql.Date(System.currentTimeMillis()));
@@ -283,10 +338,16 @@ public class AccountDetailView {
         }
     }
 
+
     // Create Account Dropdown for the logged-in user
     private ComboBox<Account> createAccountDropdown(String userId) {
         ComboBox<Account> accountDropdown = new ComboBox<>();
-        accountDropdown.setItems(transactionController.getAccountsForUser(userId));  // Fetch accounts for user
+
+        // Fetch accounts for user and filter out the current account
+
+        accountDropdown.setItems(transactionController.getAccountsForUser(userId)
+                .filtered(acc -> !acc.getId().equals(account.getId())));
+                // Fetch accounts for user
         accountDropdown.setPromptText("Choose Account");
 
         // Set custom cell factory to display the account name

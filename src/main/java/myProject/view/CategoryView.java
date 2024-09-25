@@ -105,13 +105,13 @@ public class CategoryView {
             budgetLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #8be9fd;");
             card.getChildren().add(budgetLabel);
 
-            double spent = transactionController.getSpentAmountForCategory(category);
-            Label spentLabel = new Label("$" + spent + " Spent");
+            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));  // Use absolute value
+            Label spentLabel = new Label("$" + spent + " Spent");  // Display spent without negative sign
             spentLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
             card.getChildren().add(spentLabel);
 
-            // Set up the progress bar
-            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());
+            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());  // Use absolute value for progress calculation
+
             progressBar.setPrefWidth(150);
             progressBar.setMaxWidth(Double.MAX_VALUE);
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, category.getBudget()) + ";");

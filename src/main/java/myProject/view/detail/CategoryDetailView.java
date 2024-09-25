@@ -45,14 +45,14 @@ public class CategoryDetailView {
             budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
             detailView.getChildren().add(budgetLabel);
 
-            double spent = transactionController.getSpentAmountForCategory(category);
-            Label spentLabel = new Label("Already Spent: $" + spent);
+            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));  // Use absolute value
+            Label spentLabel = new Label("Already Spent: $" + spent);  // Display spent without negative sign
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             detailView.getChildren().add(spentLabel);
 
-            // Safely handle null budget when calculating the progress bar
-            double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero or null issues
-            ProgressBar progressBar = new ProgressBar(spent / budgetValue);
+            double budgetValue = category.getBudget() != null ? category.getBudget() : 1;
+            ProgressBar progressBar = new ProgressBar(Math.abs(spent) / budgetValue);  // Use absolute value for progress calculation
+
             progressBar.setPrefWidth(600);  // Adjust width as necessary
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             detailView.getChildren().add(progressBar);

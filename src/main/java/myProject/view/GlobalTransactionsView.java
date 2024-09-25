@@ -168,6 +168,7 @@ public class GlobalTransactionsView {
         // Convert LocalDate to java.sql.Date before saving
         Transaction newTransaction = new Transaction(description, amount, "expense", null, account, category, Date.valueOf(date));
         transactionController.createTransaction(newTransaction);
+
         refreshTransactionsTable();  // Refresh the table after adding a new transaction
         clearForm();  // Reset the form after saving
     }

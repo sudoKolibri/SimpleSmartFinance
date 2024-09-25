@@ -128,13 +128,13 @@ public class WelcomeView {
     private void setEnterKeyTriggers(TextField usernameField, PasswordField passwordField, Button loginButton) {
         usernameField.setOnKeyPressed(event -> {
             if (event.getCode().toString().equals("ENTER")) {
-                loginButton.fire();  // Simulate login button click
+                loginButton.fire();
             }
         });
 
         passwordField.setOnKeyPressed(event -> {
             if (event.getCode().toString().equals("ENTER")) {
-                loginButton.fire();  // Simulate login button click
+                loginButton.fire();
             }
         });
     }

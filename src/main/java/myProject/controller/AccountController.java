@@ -20,6 +20,7 @@ public class AccountController {
 
     // Update an existing account
     public boolean updateAccount(Account account) {
+        System.out.println("AC: Account with ID: " + account.getId() + " is updated.");
         return accountService.updateAccount(account);
     }
 

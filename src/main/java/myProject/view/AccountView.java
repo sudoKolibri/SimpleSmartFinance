@@ -113,6 +113,9 @@ public class AccountView {
 
     // Show the account creation form below the account grid
     private void showCreateAccountForm(VBox accountsLayout) {
+
+        createAccountButton.setVisible(false);
+
         VBox formContainer = new VBox(10);
         formContainer.setAlignment(Pos.CENTER);
         formContainer.setPadding(new Insets(10));
@@ -166,6 +169,7 @@ public class AccountView {
                     System.out.println("Account created successfully.");
                     refreshAccountList(accountsLayout); // Refresh the list to show the new account
                     updateOverallBalance(); // Ensure the balance is updated immediately
+                    createAccountButton.setVisible(true);
                 } else {
                     System.err.println("Failed to create account.");
                 }
