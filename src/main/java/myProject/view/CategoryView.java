@@ -6,8 +6,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import myProject.controller.AccountController;
 import myProject.controller.CategoryController;
 import myProject.controller.TransactionController;
+import myProject.model.Account;
 import myProject.model.Category;
 import myProject.view.detail.CategoryDetailView;
 import myProject.view.util.ViewUtils;
@@ -21,15 +23,17 @@ public class CategoryView {
 
     private final CategoryController categoryController;
     private final TransactionController transactionController;
+    private final AccountController accountController; // Add AccountController
     private final String currentUserId;
     private VBox mainLayout;  // Main layout for displaying content
     private BorderPane root;
 
     // Constructor to initialize the view with necessary dependencies
-    public CategoryView(String currentUserId, CategoryController categoryController, TransactionController transactionController) {
+    public CategoryView(String currentUserId, CategoryController categoryController, TransactionController transactionController, AccountController accountController) {
         this.currentUserId = currentUserId;
         this.categoryController = categoryController;
         this.transactionController = transactionController;
+        this.accountController = accountController; // Initialize AccountController
     }
 
     private Button createCategoryButton;  // Declare the button at the class level
@@ -63,6 +67,11 @@ public class CategoryView {
 
     // Show all categories (standard and custom) as cards within the main layout
     private void showCategories() {
+        mainLayout.getChildren().clear(); // Clear any previous content
+
+        // Show the balances of each account and the total balance
+        showAccountBalances();
+
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(20));
         gridPane.setHgap(20);
@@ -86,6 +95,32 @@ public class CategoryView {
             }
         }
         mainLayout.getChildren().add(gridPane);
+    }
+
+    // Show balances of each account and the total balance
+    private void showAccountBalances() {
+        VBox balanceLayout = new VBox(10);
+        balanceLayout.setPadding(new Insets(10));
+        balanceLayout.setAlignment(Pos.CENTER_LEFT);
+
+        // Fetch all accounts and their balances using AccountController
+        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
+
+        // Display each account's balance
+        for (Account account : accounts) {
+            Label accountLabel = new Label(account.getName() + ": $" + account.getBalance());
+            accountLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #f8f8f2;");
+            balanceLayout.getChildren().add(accountLabel);
+        }
+
+        // Calculate and display the total balance of all accounts
+        double totalBalance = accountController.getOverallBalanceForUser(currentUserId);
+        Label totalBalanceLabel = new Label("Total Balance: $" + totalBalance);
+        totalBalanceLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #50fa7b; -fx-font-weight: bold;");
+        balanceLayout.getChildren().add(totalBalanceLabel);
+
+        // Add the balance layout to the main layout at the top
+        mainLayout.getChildren().add(balanceLayout);
     }
 
     // Create a card for each category with progress bar and details

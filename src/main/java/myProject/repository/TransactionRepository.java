@@ -194,22 +194,52 @@ public class TransactionRepository {
         System.out.println("TransactionRepository.getTransactionsByCategory: Fetching transactions for category ID - " + categoryId);
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE category_id = ?";
+
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, categoryId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Transaction transaction = mapResultSetToTransaction(rs, true);
+                    // Set isRecurring to false when mapping regular transactions
+                    Transaction transaction = mapResultSetToTransaction(rs, false);
                     transactions.add(transaction);
                 }
             }
-            System.out.println("TransactionRepository.getTransactionsByCategory: Fetched transactions - " + transactions);
         } catch (SQLException e) {
             System.err.println("TransactionRepository.getTransactionsByCategory: Error fetching transactions - " + e.getMessage());
             throw e;
         }
+
+        // Fetch recurring transactions as well
+        transactions.addAll(getRecurringTransactionsByCategory(categoryId));
+        System.out.println("TransactionRepository.getTransactionsByCategory: Fetched transactions - " + transactions);
         return transactions;
     }
+
+
+    // Fetch recurring transactions by category
+    public List<Transaction> getRecurringTransactionsByCategory(String categoryId) throws SQLException {
+        System.out.println("TransactionRepository.getRecurringTransactionsByCategory: Fetching recurring transactions for category ID - " + categoryId);
+        List<Transaction> transactions = new ArrayList<>();
+        String sql = "SELECT * FROM recurring_transactions WHERE category_id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, categoryId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    // Map the ResultSet to a Transaction object with isRecurring set to true
+                    Transaction transaction = mapResultSetToTransaction(rs, true);
+                    transactions.add(transaction);
+                }
+            }
+            System.out.println("TransactionRepository.getRecurringTransactionsByCategory: Fetched recurring transactions - " + transactions);
+        } catch (SQLException e) {
+            System.err.println("TransactionRepository.getRecurringTransactionsByCategory: Error fetching recurring transactions - " + e.getMessage());
+            throw e;
+        }
+        return transactions;
+    }
+
 
     // Fetch all account names
     public List<String> getAllAccountNames() throws SQLException {
@@ -278,6 +308,7 @@ public class TransactionRepository {
         Date date = rs.getDate(columnExists(rs, "start_date") ? "start_date" : "date");
         Time time = rs.getTime("time");
 
+        // Initialize the Transaction object
         Transaction transaction = new Transaction(
                 rs.getString("description"),
                 rs.getDouble("amount"),
@@ -291,12 +322,17 @@ public class TransactionRepository {
         );
         transaction.setId(rs.getString("id"));
         transaction.setRecurring(isRecurring);
-        if (isRecurring) {
+
+        // Only set the recurrence interval and end date if the transaction is recurring
+        if (isRecurring && columnExists(rs, "recurrence_interval")) {
             transaction.setRecurrenceInterval(rs.getString("recurrence_interval"));
             transaction.setEndDate(rs.getDate("end_date"));
         }
+
         return transaction;
     }
+
+
 
 
     // Helper method to check if a column exists in the ResultSet

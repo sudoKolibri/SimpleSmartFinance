@@ -152,6 +152,15 @@ public class TransactionService {
         return transactions;
     }
 
+    // Fetch recurring transactions for a specific category
+    public List<Transaction> getRecurringTransactionsByCategory(Category category) throws SQLException {
+        System.out.println("TransactionService.getRecurringTransactionsByCategory: Fetching recurring transactions for category - " + category);
+        List<Transaction> recurringTransactions = transactionRepository.getRecurringTransactionsByCategory(category.getId());
+        System.out.println("TransactionService.getRecurringTransactionsByCategory: Recurring transactions fetched - " + recurringTransactions);
+        return recurringTransactions;
+    }
+
+
     // Get all account names for filtering
     public List<String> getAllAccountNames() throws SQLException {
         System.out.println("TransactionService.getAllAccountNames: Fetching all account names.");

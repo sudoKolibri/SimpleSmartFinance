@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Objects;
 
 
 public class AccountDetailView {
@@ -96,7 +97,7 @@ public class AccountDetailView {
 
     // Helper method to create round buttons with larger icons
     private Button createRoundIconButton(String iconPath) {
-        ImageView iconView = new ImageView(new Image(getClass().getResourceAsStream(iconPath)));
+        ImageView iconView = new ImageView(new Image(Objects.requireNonNull(getClass().getResourceAsStream(iconPath))));
         iconView.setFitHeight(30); // Increase icon size for better visibility
         iconView.setFitWidth(30);
 

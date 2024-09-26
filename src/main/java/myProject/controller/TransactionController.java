@@ -165,17 +165,28 @@ public class TransactionController {
 
 
 
-    // Method to get total spent amount for a specific category
+    // Method to get total spent amount for a specific category, including recurring transactions
     public double getSpentAmountForCategory(Category category) {
         try {
-            List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
-            return transactions.stream().mapToDouble(Transaction::getAmount).sum();
+            // Fetch regular transactions for the category
+            List<Transaction> regularTransactions = transactionService.getTransactionsByCategory(category);
+            // Fetch recurring transactions for the category
+            List<Transaction> recurringTransactions = transactionService.getRecurringTransactionsByCategory(category);
+
+            // Combine both lists
+            List<Transaction> allTransactions = new ArrayList<>();
+            allTransactions.addAll(regularTransactions);
+            allTransactions.addAll(recurringTransactions);
+
+            // Calculate the total amount spent
+            return allTransactions.stream().mapToDouble(Transaction::getAmount).sum();
         } catch (SQLException e) {
             System.err.println("Error fetching transactions for category: " + e.getMessage());
             e.printStackTrace();
             return 0.0;
         }
     }
+
 
     // Filter transactions by account and return as ObservableList for TableView
     public ObservableList<Transaction> getTransactionsByAccount(String accountName) {

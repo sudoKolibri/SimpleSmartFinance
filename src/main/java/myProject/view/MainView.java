@@ -95,7 +95,7 @@ public class MainView {
     // Method to show the Category view
     private void showCategoryView() {
         // Pass CategoryController explicitly to the CategoryView
-        CategoryView categoryView = new CategoryView(loggedInUserId, categoryController,transactionController);
+        CategoryView categoryView = new CategoryView(loggedInUserId, categoryController,transactionController, accountController);
         categoryView.loadIntoPane(root);
     }
 
