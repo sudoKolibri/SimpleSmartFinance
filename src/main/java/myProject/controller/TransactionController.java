@@ -66,6 +66,19 @@ public class TransactionController {
         }
     }
 
+    // Fetch next occurrence of recurring transactions for a specific account
+    public ObservableList<Transaction> getNextRecurringTransactionsByAccount(String accountId) {
+        try {
+            List<Transaction> recurringTransactions = transactionService.getNextRecurringTransactionsByAccount(accountId);
+            return FXCollections.observableArrayList(recurringTransactions);
+        } catch (SQLException e) {
+            System.err.println("Error fetching next occurrences of recurring transactions: " + e.getMessage());
+            e.printStackTrace();
+            return FXCollections.observableArrayList();
+        }
+    }
+
+
     // Handle money transfer between accounts
     public void transferBetweenAccounts(Transaction transferOut, Transaction transferIn) {
         try {

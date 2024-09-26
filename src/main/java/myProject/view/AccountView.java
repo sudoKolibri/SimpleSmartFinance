@@ -112,8 +112,10 @@ public class AccountView {
     // Show the account creation form below the account grid
     private void showCreateAccountForm(VBox accountsLayout) {
 
+        // Hide the "Add Account" button when showing the form
         createAccountButton.setVisible(false);
 
+        // Create the container for the form
         VBox formContainer = new VBox(10);
         formContainer.setAlignment(Pos.CENTER);
         formContainer.setPadding(new Insets(10));
@@ -121,7 +123,7 @@ public class AccountView {
         VBox formLayout = new VBox(10);
         formLayout.setPadding(new Insets(20));
         formLayout.setAlignment(Pos.CENTER);
-        formLayout.setMaxWidth(200);  // Set the width to match the account cards
+        formLayout.setMaxWidth(200); // Set the width to match the account cards
 
         Label formTitle = new Label("Create New Account");
         formTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
@@ -135,14 +137,18 @@ public class AccountView {
         balanceField.setPromptText("Initial Balance");
         balanceField.setMaxWidth(Double.MAX_VALUE);
 
-        // Save button
-        Button saveButton = getButton(accountsLayout, accountNameField, balanceField);
+        // Save button with improved error handling
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> handleSaveButtonClick(accountsLayout, accountNameField, balanceField, formContainer));
 
-        // Cancel button
+        // Cancel button that restores visibility of the "Add Account" button
         Button cancelButton = new Button("Cancel");
-        cancelButton.setOnAction(e -> accountsLayout.getChildren().remove(formContainer));
+        cancelButton.setOnAction(e -> {
+            accountsLayout.getChildren().remove(formContainer);
+            createAccountButton.setVisible(true);
+        });
 
-        // Button box
+        // Button box layout
         HBox buttonBox = new HBox(10, saveButton, cancelButton);
         buttonBox.setAlignment(Pos.CENTER);
 
@@ -153,6 +159,38 @@ public class AccountView {
         // Add the form container below the account grid
         accountsLayout.getChildren().add(formContainer);
     }
+
+    // Method to handle the save button click with improved error handling
+    private void handleSaveButtonClick(VBox accountsLayout, TextField accountNameField, TextField balanceField, VBox formContainer) {
+        try {
+            String accountName = accountNameField.getText();
+            double initialBalance = Double.parseDouble(balanceField.getText());
+
+            // Check if account with the same name already exists for the user
+            if (accountController.doesAccountExist(currentUserId, accountName)) {
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
+                return;
+            }
+
+            // Attempt to add the new account
+            boolean success = accountController.addAccount(currentUserId, accountName, initialBalance);
+            if (success) {
+                refreshAccountList(accountsLayout);
+                updateOverallBalance();
+                createAccountButton.setVisible(true);
+            } else {
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to create account. Please try again.");
+            }
+        } catch (NumberFormatException ex) {
+            // Display an alert when the balance input is invalid
+            ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
+        } finally {
+            // Ensure the form container is removed after processing
+            accountsLayout.getChildren().remove(formContainer);
+            createAccountButton.setVisible(true);
+        }
+    }
+
 
     private Button getButton(VBox accountsLayout, TextField accountNameField, TextField balanceField) {
         Button saveButton = new Button("Save");
@@ -207,7 +245,8 @@ public class AccountView {
         Label nameLabel = new Label(account.getName());
         nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
 
-        Label balanceLabel = new Label(ViewUtils.formatCurrency(account.getBalance()));
+        // Updated the balance display to show two decimal places
+        Label balanceLabel = new Label(String.format("%.2f", account.getBalance()));
         balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
         VBox cardContent = new VBox(10);
@@ -224,4 +263,5 @@ public class AccountView {
 
         return card;
     }
+
 }

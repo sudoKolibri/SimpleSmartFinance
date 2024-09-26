@@ -58,7 +58,7 @@ public class CategoryDetailView {
             detailView.getChildren().add(noBudgetLabel);
         }
 
-        Button editButton = new Button("Edit Category");
+        Button editButton = new Button("Edit");
         editButton.getStyleClass().add("edit-button");
         editButton.setOnAction(e -> showEditCategoryForm(category));
         detailView.getChildren().add(editButton);
@@ -83,7 +83,11 @@ public class CategoryDetailView {
         nameField.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         editView.getChildren().add(nameField);
 
-        TextField budgetField = new TextField(category.getBudget() != null ? category.getBudget().toString() : "");
+        // Format the budget value to ensure it displays with two decimal places
+        String formattedBudget = (category.getBudget() != null) ?
+                String.format("%.2f", category.getBudget()) : "";
+
+        TextField budgetField = new TextField(formattedBudget);
         budgetField.setPromptText("No Budget Set");
         budgetField.setStyle("-fx-font-size: 20px; -fx-text-fill: #ffb86c;");
         editView.getChildren().add(budgetField);
@@ -124,7 +128,19 @@ public class CategoryDetailView {
     private void saveCategoryChanges(Category category, TextField nameField, TextField budgetField) {
         try {
             String newName = nameField.getText();
-            Double newBudget = ViewUtils.getCategoryBudget(budgetField);
+
+            // Attempt to parse the budget field value correctly
+            Double newBudget = null;
+            if (!budgetField.getText().isEmpty()) {
+                try {
+                    newBudget = Double.parseDouble(budgetField.getText());
+                } catch (NumberFormatException e) {
+                    // Show an error alert if the input is not a valid number
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid budget amount. Please enter a valid number.", ButtonType.OK);
+                    alert.showAndWait();
+                    return;
+                }
+            }
 
             // Check for duplicate category names
             if (categoryController.isCategoryNameDuplicate(newName, category.getId())) {
@@ -133,6 +149,7 @@ public class CategoryDetailView {
                 return;
             }
 
+            // Update the category with the new values
             category.setName(newName);
             category.setBudget(newBudget);
 
@@ -148,6 +165,7 @@ public class CategoryDetailView {
             ex.printStackTrace();
         }
     }
+
 
     // Create a transactions table for the given category
     private TableView<Transaction> createTransactionsTable(Category category) {

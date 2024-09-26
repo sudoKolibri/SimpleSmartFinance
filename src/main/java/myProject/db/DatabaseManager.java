@@ -40,11 +40,10 @@ public class DatabaseManager {
                     + "user_id VARCHAR(255), "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Check if default categories are already inserted
+            // Insert standard categories if not already present
             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM categories WHERE is_standard = true");
             rs.next();
             if (rs.getInt(1) == 0) {
-                // Insert standard categories
                 String[] defaultCategories = {
                         "('1', 'Income', '#50fa7b', true, false, NULL, NULL)",
                         "('2', 'Housing', '#ff5555', true, false, NULL, NULL)",

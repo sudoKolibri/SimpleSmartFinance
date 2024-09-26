@@ -181,7 +181,7 @@ public class CategoryView {
 
     // Create submit button for the form
     private Button createSubmitButton(TextField nameField, TextField budgetField, BorderPane root) {
-        Button submitButton = new Button("Create Category");
+        Button submitButton = new Button("Create");
         submitButton.setStyle("-fx-background-color: #50fa7b; -fx-text-fill: #282a36;");
 
         submitButton.setOnAction(e -> {

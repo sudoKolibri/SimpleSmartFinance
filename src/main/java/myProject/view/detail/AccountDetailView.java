@@ -1,18 +1,16 @@
 package myProject.view.detail;
 
 import javafx.beans.property.SimpleStringProperty;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
-import javafx.scene.chart.PieChart;
+
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
 import myProject.controller.AccountController;
 import myProject.controller.TransactionController;
 import myProject.model.Account;
@@ -26,7 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Objects;
+
 
 public class AccountDetailView {
     private final AccountController accountController;
@@ -49,67 +47,94 @@ public class AccountDetailView {
     public void showAccountDetailView(Account account) {
         this.account = account;
 
-        // Create a new GridPane to structure the layout neatly
-        GridPane detailView = new GridPane();
-        detailView.setPadding(new Insets(20));
-        detailView.setHgap(20);
-        detailView.setVgap(15);
+        // Top Section: Account Name and Balance
+        HBox topSection = new HBox(10);
+        topSection.setPadding(new Insets(10));
+        topSection.setAlignment(Pos.TOP_LEFT);
 
-        // Account Name Label
         Label nameLabel = new Label("Account: " + account.getName());
-        nameLabel.getStyleClass().add("detail-label");
-        GridPane.setConstraints(nameLabel, 0, 0, 2, 1); // Spanning two columns
+        nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
 
-        // Account Balance Label
-        balanceLabel = new Label("Balance: " + ViewUtils.formatCurrency(account.getBalance()));
-        balanceLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
-        GridPane.setConstraints(balanceLabel, 0, 1, 2, 1); // Spanning two columns
+        // Format the balance to show two decimal places
+        balanceLabel = new Label("Balance: " + String.format("%.2f", account.getBalance()));
+        balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
-        // Buttons for actions (Income, Expense, Transfer)
-        Button incomeButton = new Button("Add Income");
+        topSection.getChildren().addAll(nameLabel, balanceLabel);
+
+        // Main Section: TableView for Transactions centered horizontally
+        setupTransactionTable(new GridPane());
+
+        // Centering the table
+        StackPane tableContainer = new StackPane(transactionsTable);
+        tableContainer.setAlignment(Pos.CENTER);
+
+        // Bottom Section: Icon-Based Action Buttons centered horizontally
+        HBox buttonBox = new HBox(20); // Spacing between the buttons
+        buttonBox.setPadding(new Insets(10, 0, 10, 0));
+        buttonBox.setAlignment(Pos.CENTER);
+
+        // Buttons with round icons
+        Button incomeButton = createRoundIconButton("/icons/icons8-add-dollar-50.png");
         incomeButton.setOnAction(e -> showTransactionForm("income"));
 
-        Button expenseButton = new Button("Add Expense");
+        Button expenseButton = createRoundIconButton("/icons/icons8-delete-dollar-50.png");
         expenseButton.setOnAction(e -> showTransactionForm("expense"));
 
-        Button transferButton = new Button("Transfer");
+        Button transferButton = createRoundIconButton("/icons/icons8-exchange-48.png");
         transferButton.setOnAction(e -> showTransferForm());
 
-        HBox buttonBox = new HBox(10, incomeButton, expenseButton, transferButton);
-        buttonBox.setAlignment(Pos.CENTER);
-        GridPane.setConstraints(buttonBox, 0, 2, 2, 1); // Spanning two columns
+        buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton);
 
-        // PieChart for spending by category
-        PieChart spendingChart = new PieChart();
-        spendingChart.setTitle("Spending by Category");
+        // Main layout to stack sections vertically
+        VBox mainLayout = new VBox(20); // Increase spacing to avoid crowding
+        mainLayout.getChildren().addAll(topSection, tableContainer, buttonBox);
 
-        // Fetch data from the TransactionController
-        ObservableList<PieChart.Data> pieChartData = transactionController.getSpendingByCategoryForAccount(account);
-
-        // Ensure pie chart data is properly set
-        if (pieChartData == null || pieChartData.isEmpty()) {
-            pieChartData = FXCollections.observableArrayList(new PieChart.Data("No Data Available", 1));
-        }
-        spendingChart.setData(pieChartData);
-        spendingChart.setLabelsVisible(true);
-        spendingChart.setLegendVisible(true);
-        spendingChart.setLegendSide(Side.RIGHT); // Place the legend on the right
-
-        // Add style for a more appealing legend
-        spendingChart.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
-        GridPane.setConstraints(spendingChart, 2, 0, 1, 3); // Positioning chart, spanning 3 rows
-
-        // Initialize and set up the transaction table
-        setupTransactionTable(detailView);
-        GridPane.setConstraints(transactionsTable, 0, 3, 3, 1); // Position table below, spanning 3 columns
-
-        // Add all components to the GridPane in order
-        detailView.getChildren().clear(); // Clear any existing children to avoid duplicates
-        detailView.getChildren().addAll(nameLabel, balanceLabel, spendingChart, transactionsTable,buttonBox);
-
-        // Set the GridPane as the center content of the root layout
-        root.setCenter(detailView);
+        // Set the layout to the root center
+        root.setCenter(mainLayout);
     }
+
+
+    // Helper method to create round buttons with larger icons
+    private Button createRoundIconButton(String iconPath) {
+        ImageView iconView = new ImageView(new Image(getClass().getResourceAsStream(iconPath)));
+        iconView.setFitHeight(30); // Increase icon size for better visibility
+        iconView.setFitWidth(30);
+
+        Button button = new Button("", iconView); // Set empty text to use only the icon
+        button.setStyle(
+                "-fx-background-color: #50fa7b; " +
+                        "-fx-padding: 15px; " + // Padding to create a round appearance around the icon
+                        "-fx-border-radius: 50%; " + // Fully rounded shape
+                        "-fx-min-width: 50px; " + // Set minimum width and height for consistency
+                        "-fx-min-height: 50px; " +
+                        "-fx-max-width: 50px; " +
+                        "-fx-max-height: 50px;"
+        );
+
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-background-color: #ff79c6; " +
+                        "-fx-padding: 15px; " +
+                        "-fx-border-radius: 50%; " +
+                        "-fx-min-width: 50px; " +
+                        "-fx-min-height: 50px; " +
+                        "-fx-max-width: 50px; " +
+                        "-fx-max-height: 50px;"
+        ));
+
+        button.setOnMouseExited(e -> button.setStyle(
+                "-fx-background-color: #50fa7b; " +
+                        "-fx-padding: 15px; " +
+                        "-fx-border-radius: 50%; " +
+                        "-fx-min-width: 50px; " +
+                        "-fx-min-height: 50px; " +
+                        "-fx-max-width: 50px; " +
+                        "-fx-max-height: 50px;"
+        ));
+
+        return button;
+    }
+
+
 
     // Method to show the transaction form for income or expense
     private void showTransactionForm(String type) {
@@ -148,7 +173,8 @@ public class AccountDetailView {
 
         // Show end date picker when recurrence is not "None"
         recurrenceDropdown.setOnAction(e -> {
-            endDatePicker.setVisible(!recurrenceDropdown.getValue().equals("None"));
+            boolean isRecurring = !recurrenceDropdown.getValue().equals("None");
+            endDatePicker.setVisible(isRecurring);
         });
 
         Button saveButton = new Button("Save");
@@ -181,22 +207,19 @@ public class AccountDetailView {
 
             // Ensure the time field is not empty, and set a default time if it is
             try {
-                if (timeField.getText().isEmpty()) {
-                    time = LocalTime.now(); // Set to current time if empty
-                } else {
-                    time = LocalTime.parse(timeField.getText(), DateTimeFormatter.ofPattern("HH:mm"));
-                }
+                time = LocalTime.parse(timeField.getText(), DateTimeFormatter.ofPattern("HH:mm"));
             } catch (DateTimeParseException ex) {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid time format. Please enter time as HH:mm.");
                 return;
             }
+
 
             Category category = categoryDropdown.getValue();
             String recurrence = recurrenceDropdown.getValue();
             LocalDate endDate = endDatePicker.getValue();
             String status = date.isAfter(LocalDate.now()) ? "pending" : "completed";
 
-            // Create the transaction object
+            // Create the transaction object ensuring the time is never null
             Transaction transaction = new Transaction(
                     description,
                     type.equals("income") ? amount : -amount,
@@ -227,6 +250,7 @@ public class AccountDetailView {
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to save transaction: " + e.getMessage());
         }
     }
+
 
     // Method to update the account balance
     private void updateAccountBalance(double amount) {
@@ -337,10 +361,28 @@ public class AccountDetailView {
     }
 
 
-    // Method to refresh the transactions table
+    // Method to refresh the transactions table, including regular and recurring transactions
     private void refreshTransactionTable() {
-        transactionsTable.setItems(transactionController.getTransactionsByAccount(account.getName()));
+        // Fetch all regular transactions for the account
+        ObservableList<Transaction> regularTransactions = transactionController.getTransactionsByAccount(account.getName());
+
+        // Fetch all recurring transactions for the account
+        ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
+
+        // Combine both lists to ensure all transactions are displayed
+        ObservableList<Transaction> allTransactions = FXCollections.observableArrayList();
+        allTransactions.addAll(regularTransactions);
+        allTransactions.addAll(recurringTransactions);
+
+        // Optional: Sort transactions by date if needed
+        allTransactions.sort((t1, t2) -> t1.getDate().compareTo(t2.getDate()));
+
+        // Set all transactions to be displayed in the table without filtering by status
+        transactionsTable.setItems(allTransactions);
     }
+
+
+
 
     // Method to edit the selected transaction
     private void editTransaction(Transaction transaction) {
@@ -364,9 +406,15 @@ public class AccountDetailView {
         TextField timeField = new TextField(transaction.getTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         timeField.setPromptText("Time (HH:mm)");
 
+        // ComboBox for transaction type (Income/Expense)
+        ComboBox<String> typeComboBox = new ComboBox<>();
+        typeComboBox.getItems().addAll("income", "expense");
+        typeComboBox.setValue(transaction.getType().toLowerCase()); // Set current type as default
+
+        // Recurrence options
         ComboBox<String> recurrenceDropdown = new ComboBox<>();
         recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
-        recurrenceDropdown.setValue(transaction.isRecurring() ? transaction.getRecurrenceInterval() : "None");
+        recurrenceDropdown.setValue("None");
 
         DatePicker endDatePicker = new DatePicker();
         if (transaction.getEndDate() != null) {
@@ -374,7 +422,7 @@ public class AccountDetailView {
         }
 
         ComboBox<Category> categoryDropdown = createCategoryDropdown(account.getUserId());
-        categoryDropdown.setValue(transaction.getCategory());
+        categoryDropdown.setValue(transaction.getCategory()); // Set default value to current category
 
         Button saveButton = new Button("Update Transaction");
         saveButton.setOnAction(e -> {
@@ -394,6 +442,7 @@ public class AccountDetailView {
                 }
 
                 Category category = categoryDropdown.getValue();
+                String type = typeComboBox.getValue(); // Get selected type from the ComboBox
                 String recurrence = recurrenceDropdown.getValue();
                 LocalDate endDate = endDatePicker.getValue();
 
@@ -402,10 +451,11 @@ public class AccountDetailView {
 
                 // Set updated values in the transaction
                 transaction.setDescription(description);
-                transaction.setAmount(amount);
+                transaction.setAmount(type.equals("income") ? amount : -amount); // Adjust amount based on type
                 transaction.setDate(Date.valueOf(date));
                 transaction.setTime(Time.valueOf(time));
                 transaction.setCategory(category);
+                transaction.setType(type); // Update the transaction type
                 transaction.setStatus(status); // Automatically set status based on date and time
 
                 // Update recurrence settings
@@ -434,19 +484,17 @@ public class AccountDetailView {
         formView.getChildren().addAll(
                 descriptionField,
                 amountField,
-                datePicker,
-                new Label("Time:"), timeField,
-                new Label("Category:"),
-                categoryDropdown,
-                new Label("Recurrence:"),
-                recurrenceDropdown,
-                new Label("End Date (Optional):"),
-                endDatePicker,
+                new HBox(10, datePicker, timeField),
+                new HBox(10, new Label("Type:"), typeComboBox), // Add type ComboBox
+                new Label("Category:"), categoryDropdown,
+                new Label("Recurrence:"), recurrenceDropdown,
+                new Label("End Date (Optional):"), endDatePicker,
                 buttonBox
         );
 
         root.setCenter(formView);
     }
+
 
 
     // Method to delete the selected transaction

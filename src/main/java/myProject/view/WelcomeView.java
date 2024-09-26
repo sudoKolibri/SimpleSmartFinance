@@ -91,10 +91,12 @@ public class WelcomeView {
             String loggedInUsername = userController.getLoggedInUser().getUsername();
             String loggedInUserId = userController.getLoggedInUser().getId();
 
-            // Initialize necessary controllers with the appropriate services and repositories
+
             AccountController accountController = new AccountController(new AccountService(new AccountRepository()));
-            TransactionController transactionController = new TransactionController(new TransactionService(new TransactionRepository()));
-            CategoryController categoryController = new CategoryController(new CategoryService(new CategoryRepository()));
+            CategoryService categoryService = new CategoryService(new CategoryRepository());
+            TransactionService transactionService = new TransactionService(new TransactionRepository(), categoryService);
+            TransactionController transactionController = new TransactionController(transactionService);
+            CategoryController categoryController = new CategoryController(categoryService);
 
             // Pass the correct parameters to MainView
             MainView mainView = new MainView(transactionController, accountController, categoryController, loggedInUserId);
