@@ -18,6 +18,13 @@ public class AccountController {
         return accountService.addAccount(userId, name, balance);
     }
 
+    // AccountController.java
+    public boolean doesAccountExist(String userId, String accountName) {
+        List<Account> accounts = getAllAccountsForUser(userId);
+        return accounts.stream().anyMatch(account -> account.getName().equalsIgnoreCase(accountName));
+    }
+
+
     // Update an existing account
     public boolean updateAccount(Account account) {
         System.out.println("AC: Account with ID: " + account.getId() + " is updated.");

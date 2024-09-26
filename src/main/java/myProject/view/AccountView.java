@@ -2,9 +2,7 @@ package myProject.view;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -163,6 +161,13 @@ public class AccountView {
                 String accountName = accountNameField.getText();
                 double initialBalance = Double.parseDouble(balanceField.getText());
 
+                // Check if account with the same name already exists for the user
+                if (accountController.doesAccountExist(currentUserId, accountName)) {
+                    // Show error message if account name is already in use
+                    ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
+                    return; // Exit the method without creating the account
+                }
+
                 // Add account using the controller
                 boolean success = accountController.addAccount(currentUserId, accountName, initialBalance);
                 if (success) {
@@ -174,11 +179,14 @@ public class AccountView {
                     System.err.println("Failed to create account.");
                 }
             } catch (NumberFormatException ex) {
-                System.err.println("Invalid balance. Please enter a valid number.");
+                // Display an alert when the balance input is invalid
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
             }
         });
         return saveButton;
     }
+
+
 
     // Refresh the account list
     private void refreshAccountList(VBox accountsLayout) {

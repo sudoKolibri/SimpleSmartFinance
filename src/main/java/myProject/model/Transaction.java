@@ -2,6 +2,7 @@ package myProject.model;
 
 import javafx.beans.property.*;
 
+import java.sql.Time;
 import java.util.Date;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ public class Transaction {
     private final StringProperty id;
     private final StringProperty description;
     private final ObjectProperty<Date> date;
+    private final ObjectProperty<Time> time; // Correct time handling
     private final DoubleProperty amount;
     private final StringProperty type;
 
@@ -20,18 +22,18 @@ public class Transaction {
 
     // Recurring transactions
     private final BooleanProperty isRecurring;
-    private StringProperty recurrenceInterval; // Initialized later if recurring
-    private ObjectProperty<Date> endDate; // Initialized later if recurring
+    private StringProperty recurrenceInterval; // Initialize if recurring
+    private final ObjectProperty<Date> endDate; // Initialize if recurring
 
-    private StringProperty currency;
-    private StringProperty status;
+    private final StringProperty currency;
+    private final StringProperty status;
 
     // Timestamps
     private final ObjectProperty<Date> createdAt;
     private final ObjectProperty<Date> updatedAt;
 
     // Constructor
-    public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date) {
+    public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date, Time time, String status) {
         this.id = new SimpleStringProperty(UUID.randomUUID().toString());
         this.description = new SimpleStringProperty(description);
         this.amount = new SimpleDoubleProperty(amount);
@@ -40,11 +42,12 @@ public class Transaction {
         this.account = new SimpleObjectProperty<>(account);
         this.category = new SimpleObjectProperty<>(category);
         this.date = new SimpleObjectProperty<>(date);
+        this.time = new SimpleObjectProperty<>(time); // Correctly setting time
         this.isRecurring = new SimpleBooleanProperty(false);
-        this.recurrenceInterval = new SimpleStringProperty(""); // Initialize with an empty string
-        this.endDate = new SimpleObjectProperty<>(null); // Initialize with null
-        this.currency = new SimpleStringProperty("USD"); // Optional default currency
-        this.status = new SimpleStringProperty("completed");
+        this.recurrenceInterval = new SimpleStringProperty("");
+        this.endDate = new SimpleObjectProperty<>(null);
+        this.currency = new SimpleStringProperty("USD");
+        this.status = new SimpleStringProperty(status);
         this.createdAt = new SimpleObjectProperty<>(new Date());
         this.updatedAt = new SimpleObjectProperty<>(new Date());
     }
@@ -62,6 +65,10 @@ public class Transaction {
         return date;
     }
 
+    public ObjectProperty<Time> timeProperty() {
+        return time;
+    }
+
     public DoubleProperty amountProperty() {
         return amount;
     }
@@ -77,6 +84,8 @@ public class Transaction {
     public ObjectProperty<Account> accountProperty() {
         return account;
     }
+
+
 
     public ObjectProperty<Category> categoryProperty() {
         return category;
@@ -133,6 +142,14 @@ public class Transaction {
 
     public void setDate(Date date) {
         this.date.set(date);
+    }
+
+    public Time getTime() {
+        return time.get();
+    }
+
+    public void setTime(Time time) {
+        this.time.set(time);
     }
 
     public double getAmount() {

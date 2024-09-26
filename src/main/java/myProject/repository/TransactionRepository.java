@@ -13,23 +13,25 @@ public class TransactionRepository {
 
     // Save a new transaction
     public void saveTransaction(Transaction transaction) throws SQLException {
-        String sql = "INSERT INTO transactions (id, amount, date, description, category_id, type, account_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO transactions (id, amount, date, time, description, category_id, type, account_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
             pstmt.setDouble(2, transaction.getAmount());
-            pstmt.setDate(3, new java.sql.Date(transaction.getDate().getTime()));
-            pstmt.setString(4, transaction.getDescription());
-            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
-            pstmt.setString(6, transaction.getType());
-            pstmt.setString(7, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.setDate(3, new java.sql.Date(transaction.getDate().getTime())); // Use java.sql.Date directly
+            pstmt.setTime(4, transaction.getTime()); // Use java.sql.Time directly
+            pstmt.setString(5, transaction.getDescription());
+            pstmt.setString(6, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
+            pstmt.setString(7, transaction.getType());
+            pstmt.setString(8, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.setString(9, transaction.getStatus());
             pstmt.executeUpdate();
         }
     }
 
     // Save a new recurring transaction
     public void saveRecurringTransaction(Transaction transaction) throws SQLException {
-        String sql = "INSERT INTO recurring_transactions (id, amount, description, category_id, type, account_id, start_date, recurrence_interval, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO recurring_transactions (id, amount, description, category_id, type, account_id, start_date, recurrence_interval, end_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
@@ -41,29 +43,32 @@ public class TransactionRepository {
             pstmt.setDate(7, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setString(8, transaction.getRecurrenceInterval());
             pstmt.setDate(9, transaction.getEndDate() != null ? new java.sql.Date(transaction.getEndDate().getTime()) : null);
+            pstmt.setString(10, transaction.getStatus());
             pstmt.executeUpdate();
         }
     }
 
     // Update an existing transaction
     public void updateTransaction(Transaction transaction) throws SQLException {
-        String sql = "UPDATE transactions SET amount = ?, date = ?, description = ?, category_id = ?, type = ?, account_id = ? WHERE id = ?";
+        String sql = "UPDATE transactions SET amount = ?, date = ?, time = ?, description = ?, category_id = ?, type = ?, account_id = ?, status = ? WHERE id = ?";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setDouble(1, transaction.getAmount());
             pstmt.setDate(2, new java.sql.Date(transaction.getDate().getTime()));
-            pstmt.setString(3, transaction.getDescription());
-            pstmt.setString(4, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
-            pstmt.setString(5, transaction.getType());
-            pstmt.setString(6, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
-            pstmt.setString(7, transaction.getId());
+            pstmt.setTime(3, transaction.getTime());
+            pstmt.setString(4, transaction.getDescription());
+            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
+            pstmt.setString(6, transaction.getType());
+            pstmt.setString(7, transaction.getAccount() != null ? transaction.getAccount().getId() : null);
+            pstmt.setString(8, transaction.getStatus());
+            pstmt.setString(9, transaction.getId());
             pstmt.executeUpdate();
         }
     }
 
     // Update an existing recurring transaction
     public void updateRecurringTransaction(Transaction transaction) throws SQLException {
-        String sql = "UPDATE recurring_transactions SET amount = ?, description = ?, category_id = ?, type = ?, account_id = ?, start_date = ?, recurrence_interval = ?, end_date = ? WHERE id = ?";
+        String sql = "UPDATE recurring_transactions SET amount = ?, description = ?, category_id = ?, type = ?, account_id = ?, start_date = ?, recurrence_interval = ?, end_date = ?, status = ? WHERE id = ?";
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setDouble(1, transaction.getAmount());
@@ -74,7 +79,8 @@ public class TransactionRepository {
             pstmt.setDate(6, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setString(7, transaction.getRecurrenceInterval());
             pstmt.setDate(8, transaction.getEndDate() != null ? new java.sql.Date(transaction.getEndDate().getTime()) : null);
-            pstmt.setString(9, transaction.getId());
+            pstmt.setString(9, transaction.getStatus());
+            pstmt.setString(10, transaction.getId());
             pstmt.executeUpdate();
         }
     }
@@ -132,11 +138,21 @@ public class TransactionRepository {
                 while (rs.next()) {
                     Transaction transaction = mapResultSetToTransaction(rs);
                     transactions.add(transaction);
+                    // Log each transaction fetched
+                    System.out.println("Fetched Transaction: " + transaction.getDescription() +
+                            ", Amount: " + transaction.getAmount() +
+                            ", Type: " + transaction.getType() +
+                            ", Account ID: " + transaction.getAccount().getId() +
+                            ", Category ID: " + transaction.getCategory().getId());
                 }
             }
+        } catch (SQLException e) {
+            System.err.println("Error fetching transactions for category ID " + categoryId + ": " + e.getMessage());
+            throw e;
         }
         return transactions;
     }
+
 
     // Fetch all account names
     public List<String> getAllAccountNames() throws SQLException {
@@ -210,6 +226,9 @@ public class TransactionRepository {
     private Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
         Category category = findCategoryById(rs.getString("category_id"));
         Account account = findAccountById(rs.getString("account_id"));
+        Date date = new java.sql.Date(rs.getDate("date").getTime()); // Use java.sql.Date directly
+        Time time = rs.getTime("time");
+
         Transaction transaction = new Transaction(
                 rs.getString("description"),
                 rs.getDouble("amount"),
@@ -217,7 +236,9 @@ public class TransactionRepository {
                 null,
                 account,
                 category,
-                rs.getDate("date")
+                date,
+                time,
+                rs.getString("status")
         );
         transaction.setId(rs.getString("id"));
         return transaction;

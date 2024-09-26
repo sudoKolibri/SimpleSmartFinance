@@ -2,6 +2,7 @@ package myProject.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.chart.PieChart;
 import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
@@ -9,7 +10,10 @@ import myProject.service.TransactionService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TransactionController {
 
@@ -28,9 +32,6 @@ public class TransactionController {
                 transactionService.addTransaction(transaction);
             }
             System.out.println("Transaction created successfully.");
-        } catch (SQLException e) {
-
-            e.printStackTrace(); // Log full stack trace for debugging
         } catch (Exception e) {
 
             e.printStackTrace(); // Log full stack trace for debugging
@@ -38,7 +39,7 @@ public class TransactionController {
     }
 
 
-    // Handle request to update an existing transaction
+    // TransactionController.java
     public void updateTransaction(Transaction transaction) {
         try {
             if (transaction.isRecurring()) {
@@ -52,6 +53,7 @@ public class TransactionController {
             e.printStackTrace();
         }
     }
+
 
     // Handle request to delete a transaction
     public void deleteTransaction(Transaction transaction) {
@@ -98,6 +100,57 @@ public class TransactionController {
             return new ArrayList<>();
         }
     }
+
+    // Method to get spending by category for a specific account with default empty data
+    public ObservableList<PieChart.Data> getSpendingByCategoryForAccount(Account account) {
+        try {
+            // Fetch all categories for the user associated with the account
+            List<Category> categories = transactionService.getAllCategoriesForUser(account.getUserId());
+            Map<String, Double> categorySpendingMap = new HashMap<>();
+
+            for (Category category : categories) {
+                List<Transaction> transactions = getTransactionsForCategory(category);
+                // Calculate total spent and convert to positive values for chart display
+                double totalSpent = transactions.stream()
+                        .filter(t -> t.getAccount() != null && t.getAccount().getId().equals(account.getId()) &&
+                                t.getType().equalsIgnoreCase("expense"))
+                        .mapToDouble(t -> Math.abs(t.getAmount())) // Use Math.abs() to ensure positive values for expenses
+                        .sum();
+
+                // Log each category's spending
+                System.out.println("Category: " + category.getName() + ", Total Spent: " + totalSpent);
+
+                // Add to map regardless of whether the amount is zero or non-zero
+                categorySpendingMap.put(category.getName(), totalSpent);
+            }
+
+            // Check if the spending map is empty
+            if (categorySpendingMap.isEmpty() || categorySpendingMap.values().stream().allMatch(v -> v == 0)) {
+                System.out.println("No significant spending data found. Displaying empty categories.");
+                // Display empty categories with zero values for the user to see
+                return FXCollections.observableArrayList(
+                        categories.stream()
+                                .map(cat -> new PieChart.Data(cat.getName(), 0))
+                                .collect(Collectors.toList())
+                );
+            }
+
+            System.out.println("Category Spending Map: " + categorySpendingMap);
+            return FXCollections.observableArrayList(
+                    categorySpendingMap.entrySet().stream()
+                            .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))
+                            .collect(Collectors.toList())
+            );
+        } catch (SQLException e) {
+            System.err.println("Error fetching spending by category: " + e.getMessage());
+            e.printStackTrace();
+            return FXCollections.observableArrayList();
+        }
+    }
+
+
+
+
 
     // Method to get total spent amount for a specific category
     public double getSpentAmountForCategory(Category category) {

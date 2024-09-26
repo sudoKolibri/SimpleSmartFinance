@@ -34,11 +34,12 @@ public class TransactionService {
         transactionRepository.updateTransaction(transaction);
     }
 
-    // Update an existing recurring transaction
+    // TransactionService.java
     public void updateRecurringTransaction(Transaction transaction) throws SQLException {
-        transactionRepository.updateTransaction(transaction);
-        transactionRepository.updateRecurringTransaction(transaction);
+        transactionRepository.updateTransaction(transaction); // Update main transaction details
+        transactionRepository.updateRecurringTransaction(transaction); // Update recurrence details
     }
+
 
     // Delete a transaction
     public void deleteTransaction(Transaction transaction) throws SQLException {

@@ -11,8 +11,10 @@ import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
 
+import java.sql.Time;
 import java.time.LocalDate;
 import java.sql.Date;
+import java.time.LocalTime;
 
 public class GlobalTransactionsView {
 
@@ -165,9 +167,20 @@ public class GlobalTransactionsView {
         System.out.println("Creating transaction with category: " + (category != null ? category.getName() : "null"));
         System.out.println("Creating transaction with account: " + (account != null ? account.getName() : "null"));
 
-        // Convert LocalDate to java.sql.Date before saving
-        Transaction newTransaction = new Transaction(description, amount, "expense", null, account, category, Date.valueOf(date));
+        // Convert LocalDate to java.sql.Date and LocalTime to java.sql.Time before saving
+        Transaction newTransaction = new Transaction(
+                description,
+                amount,
+                "expense",
+                null, // Assuming user is set elsewhere
+                account,
+                category,
+                Date.valueOf(date),
+                Time.valueOf(LocalTime.now()), // Set the current time or use a specific time input if available
+                "completed" // Set the desired status as a string, adjust accordingly
+        );
         transactionController.createTransaction(newTransaction);
+
 
         refreshTransactionsTable();  // Refresh the table after adding a new transaction
         clearForm();  // Reset the form after saving

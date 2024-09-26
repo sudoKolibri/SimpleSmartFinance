@@ -28,10 +28,6 @@ public class CategoryDetailView {
 
     // Show detailed view of a specific category
     public void showCategoryDetailView(Category category) {
-        if (root == null) {
-            System.err.println("Error: root layout is null. Cannot display category details.");
-            return;
-        }
 
         VBox detailView = new VBox(20);
         detailView.getStyleClass().add("detail-view");
@@ -92,17 +88,20 @@ public class CategoryDetailView {
         budgetField.setStyle("-fx-font-size: 20px; -fx-text-fill: #ffb86c;");
         editView.getChildren().add(budgetField);
 
-        double spent = transactionController.getSpentAmountForCategory(category);
-        Label spentLabel = new Label("Already Spent: $" + spent);
-        spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
-        editView.getChildren().add(spentLabel);
 
-        // Handle potential null budget when calculating the progress bar
-        double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero
-        ProgressBar progressBar = new ProgressBar(spent / budgetValue);
-        progressBar.setPrefWidth(600);
-        progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
-        editView.getChildren().add(progressBar);
+        if (category.getBudget() != null && category.getBudget() > 0) {
+            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));
+            Label spentLabel = new Label(String.format("Already Spent: $%.2f", spent));
+            spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
+            editView.getChildren().add(spentLabel);
+
+            // Handle potential null budget when calculating the progress bar
+            double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero
+            ProgressBar progressBar = new ProgressBar(spent / budgetValue);
+            progressBar.setPrefWidth(600);
+            progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
+            editView.getChildren().add(progressBar);
+        }
 
         // Save and Cancel buttons
         Button saveButton = new Button("Save");

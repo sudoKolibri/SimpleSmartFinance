@@ -89,4 +89,16 @@
     -fx-text-fill: #282a36;
 }
 
+.custom-alert {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #44475a; /* Dark background color */
+    -fx-text-fill: #f8f8f2; /* Light text color */
+}
+
+.dialog-pane > .content.label {
+    -fx-text-fill: #f8f8f2; /* Ensures alert text matches theme */
+}
+
+
 

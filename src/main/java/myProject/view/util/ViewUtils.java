@@ -1,19 +1,19 @@
 package myProject.view.util;
 
+import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class ViewUtils {
 
     // Determine the progress bar color based on the spend/budget ratio
     public static String getProgressBarColor(double spent, double budget) {
-        // Prevent division by zero or invalid ratios
         if (budget <= 0 || Double.isNaN(spent) || Double.isNaN(budget) || Double.isInfinite(spent) || Double.isInfinite(budget)) {
             return "#50fa7b";  // Default color for invalid cases
         }
 
         double ratio = spent / budget;
-
-        // Clamp the ratio between 0 and 1 if necessary
         ratio = Math.max(0, Math.min(1, ratio));
 
         if (ratio < 0.5) {
@@ -29,12 +29,12 @@ public class ViewUtils {
 
     // Helper for optional budget (category)
     public static Double getCategoryBudget(TextField budgetField) {
-        Double categoryBudget = null; // Default value is null (no budget)
+        Double categoryBudget = null;
         if (!budgetField.getText().isEmpty()) {
             try {
                 categoryBudget = Double.parseDouble(budgetField.getText());
             } catch (NumberFormatException ex) {
-                categoryBudget = null;  // If invalid input, treat as no budget
+                categoryBudget = null;
             }
         }
         return categoryBudget;
@@ -53,5 +53,22 @@ public class ViewUtils {
     // Format a double value as a currency string
     public static String formatCurrency(double amount) {
         return String.format("$%.2f", amount);
+    }
+
+    // Method to show a custom-styled alert
+    public static void showAlert(Alert.AlertType alertType, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setContentText(message);
+        alert.setHeaderText(null);
+        alert.initStyle(StageStyle.UTILITY);
+
+        // Apply custom styles
+        alert.getDialogPane().getStylesheets().add(ViewUtils.class.getResource("/styles.css").toExternalForm());
+        alert.getDialogPane().getStyleClass().add("custom-alert");
+
+        // Show the alert
+        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+        stage.getScene().getRoot().setStyle("-fx-background-color: #282a36;");
+        stage.showAndWait();
     }
 }
