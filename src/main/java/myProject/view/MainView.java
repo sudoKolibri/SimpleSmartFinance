@@ -12,7 +12,9 @@ import javafx.stage.Stage;
 import myProject.controller.TransactionController;
 import myProject.controller.AccountController;
 import myProject.controller.CategoryController;
+import myProject.controller.ReportController;
 
+import java.sql.SQLException;
 import java.util.Objects;
 
 public class MainView {
@@ -21,19 +23,21 @@ public class MainView {
     private final TransactionController transactionController;
     private final AccountController accountController;
     private final CategoryController categoryController;
+    private final ReportController reportController;
     private final String loggedInUserId;
 
     // Updated constructor to accept all necessary controllers
-    public MainView(TransactionController transactionController, AccountController accountController, CategoryController categoryController, String loggedInUserId) {
+    public MainView(TransactionController transactionController, AccountController accountController, CategoryController categoryController,ReportController reportController, String loggedInUserId) {
         this.transactionController = transactionController;
         this.accountController = accountController;
         this.categoryController = categoryController;
+        this.reportController = reportController;
         this.loggedInUserId = loggedInUserId;
         this.root = new BorderPane();  // Initialize root layout here
     }
 
     // Adjusted start method to accept both loggedInUserId and loggedInUsername
-    public void start(Stage primaryStage, String loggedInUserId, String loggedInUsername) {
+    public void start(Stage primaryStage, String loggedInUserId, String loggedInUsername) throws SQLException {
         // Root layout as BorderPane (Left: Navbar, Center: Content Area)
         setupNavigationBar();
 
@@ -57,51 +61,60 @@ public class MainView {
 
         // Create navigation buttons
         Button accountButton = new Button("Accounts");
-        Button transactionButton = new Button("Transactions");
         Button budgetButton = new Button("Budgets");
         Button categoryButton = new Button("Categories");
         Button reportButton = new Button("Reports");
         Button profileButton = new Button("Profile");
 
         // Add buttons to the navbar
-        navBar.getChildren().addAll(accountButton, transactionButton, budgetButton, categoryButton, reportButton, profileButton);
+        navBar.getChildren().addAll(accountButton,budgetButton, categoryButton, reportButton, profileButton);
 
         // Add navbar to root
         root.setLeft(navBar);
 
         // ==================== Button Actions for Dynamic Content ====================
-        accountButton.setOnAction(e -> showAccountsView());  // Show accounts view
-        transactionButton.setOnAction(e -> showTransactionsView());  // Show transactions view
-        budgetButton.setOnAction(e -> showPlaceholderView("Budgets"));  // Placeholder for budgets
-        categoryButton.setOnAction(e -> showCategoryView());  // Show category view
-        reportButton.setOnAction(e -> showPlaceholderView("Reports"));  // Placeholder for reports
+        accountButton.setOnAction(e -> {
+            try {
+                showAccountsView();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });  // Show accounts view
+        budgetButton.setOnAction(e -> showPlaceholderView());  // Placeholder for budgets
+        categoryButton.setOnAction(e -> {
+            try {
+                showCategoryView();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });  // Show category view
+        reportButton.setOnAction(e -> showReportView());  // Show the reports view
         profileButton.setOnAction(e -> showProfileView(loggedInUserId));  // Show profile view
     }
 
     // Method to show the Accounts view
-    private void showAccountsView() {
+    private void showAccountsView() throws SQLException {
         AccountView accountView = new AccountView(loggedInUserId, accountController, transactionController);
         accountView.loadIntoPane(root);
     }
 
 
-    // Method to show the Transactions view
-    private void showTransactionsView() {
-        // Pass TransactionController explicitly to the GlobalTransactionsView
-        GlobalTransactionsView transactionsView = new GlobalTransactionsView(transactionController, loggedInUserId);
-        transactionsView.loadIntoPane(root);
-    }
-
     // Method to show the Category view
-    private void showCategoryView() {
+    private void showCategoryView() throws SQLException {
         // Pass CategoryController explicitly to the CategoryView
         CategoryView categoryView = new CategoryView(loggedInUserId, categoryController,transactionController, accountController);
         categoryView.loadIntoPane(root);
     }
 
+    // Add the showReportView() method to MainView
+    private void showReportView() {
+        ReportView reportView = new ReportView(reportController);
+        reportView.loadIntoPane(root);  // Load the ReportView layout into the center of MainView
+    }
+
     // Placeholder views for sections that are not implemented yet
-    private void showPlaceholderView(String viewName) {
-        Label placeholder = new Label("This is the " + viewName + " view.");
+    private void showPlaceholderView() {
+        Label placeholder = new Label("This is the " + "Budgets" + " view.");
         placeholder.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
 
         VBox contentArea = new VBox();

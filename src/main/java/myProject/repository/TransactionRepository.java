@@ -3,6 +3,10 @@ package myProject.repository;
 import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
+
+import myProject.repository.AccountRepository;
+import myProject.repository.CategoryRepository;
+
 import myProject.db.DatabaseManager;
 
 import java.sql.*;
@@ -10,13 +14,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionRepository {
+    private final AccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
 
-    // Save a new transaction
+    public TransactionRepository(AccountRepository accountRepository, CategoryRepository categoryRepository) {
+        this.accountRepository = accountRepository;
+        this.categoryRepository = categoryRepository;
+    }
+
+    // Methode zum Speichern einer neuen Transaktion in der Datenbank.
     public void saveTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionRepository.saveTransaction: Saving transaction - " + transaction);
         String sql = "INSERT INTO transactions (id, amount, date, time, description, category_id, type, account_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
             pstmt.setDouble(2, transaction.getAmount());
             pstmt.setDate(3, new java.sql.Date(transaction.getDate().getTime()));
@@ -34,12 +44,11 @@ public class TransactionRepository {
         }
     }
 
-    // Save a new recurring transaction
+    // Methode zum Speichern einer neuen wiederkehrenden Transaktion in der Datenbank.
     public void saveRecurringTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionRepository.saveRecurringTransaction: Saving recurring transaction - " + transaction);
         String sql = "INSERT INTO recurring_transactions (id, amount, description, category_id, type, account_id, start_date, time, recurrence_interval, end_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
             pstmt.setDouble(2, transaction.getAmount());
             pstmt.setString(3, transaction.getDescription());
@@ -59,12 +68,11 @@ public class TransactionRepository {
         }
     }
 
-    // Update an existing transaction
+    // Methode zum Aktualisieren einer bestehenden Transaktion in der Datenbank.
     public void updateTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionRepository.updateTransaction: Updating transaction - " + transaction);
         String sql = "UPDATE transactions SET amount = ?, date = ?, time = ?, description = ?, category_id = ?, type = ?, account_id = ?, status = ? WHERE id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setDouble(1, transaction.getAmount());
             pstmt.setDate(2, new java.sql.Date(transaction.getDate().getTime()));
             pstmt.setTime(3, transaction.getTime());
@@ -82,12 +90,11 @@ public class TransactionRepository {
         }
     }
 
-    // Update an existing recurring transaction
+    // Methode zum Aktualisieren einer bestehenden wiederkehrenden Transaktion in der Datenbank.
     public void updateRecurringTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionRepository.updateRecurringTransaction: Updating recurring transaction - " + transaction);
         String sql = "UPDATE recurring_transactions SET amount = ?, description = ?, category_id = ?, type = ?, account_id = ?, start_date = ?, recurrence_interval = ?, end_date = ?, status = ? WHERE id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setDouble(1, transaction.getAmount());
             pstmt.setString(2, transaction.getDescription());
             pstmt.setString(3, transaction.getCategory() != null ? transaction.getCategory().getId() : null);
@@ -106,12 +113,11 @@ public class TransactionRepository {
         }
     }
 
-    // Delete a transaction
+    // Methode zum Löschen einer Transaktion aus der Datenbank.
     public void deleteTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionRepository.deleteTransaction: Deleting transaction - " + transaction);
         String sql = "DELETE FROM transactions WHERE id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getId());
             pstmt.executeUpdate();
             System.out.println("TransactionRepository.deleteTransaction: Transaction deleted successfully.");
@@ -121,14 +127,42 @@ public class TransactionRepository {
         }
     }
 
-    // Fetch all transactions
+
+    // Methode zum Löschen einer wiederkehrenden Transaktion aus der Datenbank.
+    public void deleteRecurringTransaction(Transaction transaction) throws SQLException {
+        System.out.println("TransactionRepository.deleteRecurringTransaction: Deleting recurring transaction - " + transaction);
+        String sql = "DELETE FROM recurring_transactions WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, transaction.getId());
+            pstmt.executeUpdate();
+            System.out.println("TransactionRepository.deleteRecurringTransaction: Recurring transaction deleted successfully.");
+        } catch (SQLException e) {
+            System.err.println("TransactionRepository.deleteRecurringTransaction: Error deleting recurring transaction - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    // Methode zum Löschen aller anstehenden Transaktionen, die mit einer bestimmten wiederkehrenden Transaktion verknüpft sind.
+    public void deletePendingTransactionsByRecurringId(String recurringTransactionId) throws SQLException {
+        System.out.println("TransactionRepository.deletePendingTransactionsByRecurringId: Deleting pending transactions for recurring ID - " + recurringTransactionId);
+        String sql = "DELETE FROM transactions WHERE id = ? AND status = 'pending'";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, recurringTransactionId);
+            pstmt.executeUpdate();
+            System.out.println("TransactionRepository.deletePendingTransactionsByRecurringId: Pending transactions deleted successfully.");
+        } catch (SQLException e) {
+            System.err.println("TransactionRepository.deletePendingTransactionsByRecurringId: Error deleting pending transactions - " + e.getMessage());
+            throw e;
+        }
+    }
+
+
+    // Methode zum Abrufen aller Transaktionen aus der Datenbank.
     public List<Transaction> getAllTransactions() throws SQLException {
         System.out.println("TransactionRepository.getAllTransactions: Fetching all transactions.");
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions";
-        try (Connection connection = DatabaseManager.getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 Transaction transaction = mapResultSetToTransaction(rs, false);
                 transactions.add(transaction);
@@ -141,13 +175,12 @@ public class TransactionRepository {
         return transactions;
     }
 
-    // Fetch transactions filtered by account
+    // Methode zum Abrufen aller Transaktionen für ein bestimmtes Konto.
     public List<Transaction> getTransactionsByAccount(String accountName) throws SQLException {
         System.out.println("TransactionRepository.getTransactionsByAccount: Fetching transactions for account - " + accountName);
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE account_id = (SELECT id FROM accounts WHERE name = ?)";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, accountName);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -164,13 +197,12 @@ public class TransactionRepository {
         return transactions;
     }
 
-    // Fetch all recurring transactions for a specific account
+    // Methode zum Abrufen aller wiederkehrenden Transaktionen für ein bestimmtes Konto.
     public List<Transaction> getRecurringTransactionsByAccount(String accountId) throws SQLException {
         System.out.println("TransactionRepository.getRecurringTransactionsByAccount: Fetching recurring transactions for account ID - " + accountId);
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM recurring_transactions WHERE account_id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, accountId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -188,15 +220,13 @@ public class TransactionRepository {
     }
 
 
-
-    // Fetch transactions by category
+    // Methode zum Abrufen aller Transaktionen, die einer bestimmten Kategorie zugeordnet sind.
     public List<Transaction> getTransactionsByCategory(String categoryId) throws SQLException {
         System.out.println("TransactionRepository.getTransactionsByCategory: Fetching transactions for category ID - " + categoryId);
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE category_id = ?";
 
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, categoryId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -210,20 +240,19 @@ public class TransactionRepository {
             throw e;
         }
 
-        // Fetch recurring transactions as well
+
         transactions.addAll(getRecurringTransactionsByCategory(categoryId));
         System.out.println("TransactionRepository.getTransactionsByCategory: Fetched transactions - " + transactions);
         return transactions;
     }
 
 
-    // Fetch recurring transactions by category
+    // Methode zum Abrufen aller wiederkehrenden Transaktionen, die einer bestimmten Kategorie zugeordnet sind.
     public List<Transaction> getRecurringTransactionsByCategory(String categoryId) throws SQLException {
         System.out.println("TransactionRepository.getRecurringTransactionsByCategory: Fetching recurring transactions for category ID - " + categoryId);
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM recurring_transactions WHERE category_id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, categoryId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -241,85 +270,23 @@ public class TransactionRepository {
     }
 
 
-    // Fetch all account names
-    public List<String> getAllAccountNames() throws SQLException {
-        List<String> accountNames = new ArrayList<>();
-        String sql = "SELECT name FROM accounts";
-        try (Connection connection = DatabaseManager.getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                accountNames.add(rs.getString("name"));
-            }
-        }
-        return accountNames;
-    }
 
-    // Fetch custom categories for a specific user
-    public List<Category> getCustomCategoriesForUser(String userId) throws SQLException {
-        List<Category> categories = new ArrayList<>();
-        String sql = "SELECT * FROM categories WHERE user_id = ? AND is_custom = true";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    categories.add(mapResultSetToCategory(rs));
-                }
-            }
-        }
-        return categories;
-    }
 
-    // Fetch all standard categories
-    public List<Category> getStandardCategories() throws SQLException {
-        List<Category> categories = new ArrayList<>();
-        String sql = "SELECT * FROM categories WHERE is_standard = true";
-        try (Connection connection = DatabaseManager.getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                categories.add(mapResultSetToCategory(rs));
-            }
-        }
-        return categories;
-    }
 
-    // Fetch all accounts for a specific user
-    public List<Account> getAllAccountsForUser(String userId) throws SQLException {
-        List<Account> accounts = new ArrayList<>();
-        String sql = "SELECT * FROM accounts WHERE user_id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    accounts.add(mapResultSetToAccount(rs));
-                }
-            }
-        }
-        return accounts;
-    }
 
-    // Map ResultSet to Transaction object
+
+
+
+
+    // Hilfsmethode zum Mapping eines ResultSet auf ein Transaction-Objekt, mit Berücksichtigung von wiederkehrenden Transaktionen.
     private Transaction mapResultSetToTransaction(ResultSet rs, boolean isRecurring) throws SQLException {
-        Category category = findCategoryById(rs.getString("category_id"));
-        Account account = findAccountById(rs.getString("account_id"));
+        Category category = categoryRepository.findCategoryById(rs.getString("category_id"));
+        Account account = accountRepository.findAccountById(rs.getString("account_id"));
         Date date = rs.getDate(columnExists(rs, "start_date") ? "start_date" : "date");
         Time time = rs.getTime("time");
 
         // Initialize the Transaction object
-        Transaction transaction = new Transaction(
-                rs.getString("description"),
-                rs.getDouble("amount"),
-                rs.getString("type"),
-                null,
-                account,
-                category,
-                date,
-                time,
-                rs.getString("status")
-        );
+        Transaction transaction = new Transaction(rs.getString("description"), rs.getDouble("amount"), rs.getString("type"), null, account, category, date, time, rs.getString("status"));
         transaction.setId(rs.getString("id"));
         transaction.setRecurring(isRecurring);
 
@@ -333,9 +300,7 @@ public class TransactionRepository {
     }
 
 
-
-
-    // Helper method to check if a column exists in the ResultSet
+    // Hilfsmethode, um zu prüfen, ob eine bestimmte Spalte in einem ResultSet existiert.
     private boolean columnExists(ResultSet rs, String columnName) {
         try {
             rs.findColumn(columnName);
@@ -345,56 +310,11 @@ public class TransactionRepository {
         }
     }
 
-    // Map ResultSet to Category object
-    private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
-        return new Category(
-                rs.getString("id"),
-                rs.getString("name"),
-                rs.getBoolean("is_standard"),
-                rs.getBoolean("is_custom"),
-                rs.getDouble("budget")
-        );
-    }
 
-    // Map ResultSet to Account object
-    private Account mapResultSetToAccount(ResultSet rs) throws SQLException {
-        return new Account(
-                rs.getString("id"),
-                rs.getString("user_id"),
-                rs.getString("name"),
-                rs.getDouble("balance")
-        );
-    }
 
-    // Helper method to fetch Category by ID
-    private Category findCategoryById(String categoryId) throws SQLException {
-        if (categoryId == null) return null;
-        String sql = "SELECT * FROM categories WHERE id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, categoryId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToCategory(rs);
-                }
-            }
-        }
-        return null;
-    }
 
-    // Helper method to fetch Account by ID
-    private Account findAccountById(String accountId) throws SQLException {
-        if (accountId == null) return null;
-        String sql = "SELECT * FROM accounts WHERE id = ?";
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, accountId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToAccount(rs);
-                }
-            }
-        }
-        return null;
-    }
+
+
+
+
 }

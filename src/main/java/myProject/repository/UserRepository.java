@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public class UserRepository {
 
-    // Add a new user to the database
+    // Methode zum Hinzufügen eines neuen Benutzers in die Datenbank.
     public boolean addUser(User user) {
         String sql = "INSERT INTO users (id, username, password) VALUES (?, ?, ?)";
 
@@ -31,7 +31,7 @@ public class UserRepository {
         }
     }
 
-    // Find a user by username
+    // Methode zum Suchen eines Benutzers in der Datenbank anhand des Benutzernamens. Gibt optional den Benutzer zurück, wenn gefunden.
     public Optional<User> findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
 

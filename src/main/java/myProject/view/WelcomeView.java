@@ -10,13 +10,17 @@ import myProject.controller.TransactionController;
 import myProject.controller.UserController;
 import myProject.controller.AccountController;
 import myProject.controller.CategoryController;
+import myProject.controller.ReportController;  // Import ReportController
 import myProject.repository.TransactionRepository;
 import myProject.service.TransactionService;
 import myProject.repository.AccountRepository;
 import myProject.service.AccountService;
 import myProject.repository.CategoryRepository;
 import myProject.service.CategoryService;
+import myProject.repository.BudgetRepository;  // Import BudgetRepository
+import myProject.service.BudgetService;       // Import BudgetService
 
+import java.sql.SQLException;
 import java.util.Objects;
 
 public class WelcomeView {
@@ -77,12 +81,45 @@ public class WelcomeView {
     // Method to create the Login button and handle its action
     private Button createLoginButton(Stage primaryStage, TextField usernameField, PasswordField passwordField) {
         Button loginButton = new Button("Login");
-        loginButton.setOnAction(event -> handleLogin(primaryStage, usernameField, passwordField));
+        loginButton.setOnAction(event -> {
+            try {
+                handleLogin(primaryStage, usernameField, passwordField);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return loginButton;
     }
 
-    // Handle the login action
-    private void handleLogin(Stage primaryStage, TextField usernameField, PasswordField passwordField) {
+    // New method to initialize MainView
+    private MainView createMainView(String loggedInUserId, String loggedInUsername) {
+        // Initialize repositories
+        AccountRepository accountRepository = new AccountRepository();
+        CategoryRepository categoryRepository = new CategoryRepository();
+        TransactionRepository transactionRepository = new TransactionRepository(accountRepository, categoryRepository);
+        BudgetRepository budgetRepository = new BudgetRepository();
+
+        // Initialize services
+        // Pass the transactionService to accountService
+        CategoryService categoryService = new CategoryService(categoryRepository);
+        TransactionService transactionService = new TransactionService(transactionRepository, categoryService, accountRepository);
+        AccountService accountService = new AccountService(accountRepository, transactionService);
+        BudgetService budgetService = new BudgetService(budgetRepository);
+
+        // Initialize necessary controllers
+        AccountController accountController = new AccountController(accountService);
+        TransactionController transactionController = new TransactionController(transactionService);
+        CategoryController categoryController = new CategoryController(categoryService);
+        ReportController reportController = new ReportController(transactionService, accountService, categoryService, budgetService);
+
+        // Return MainView initialized with the required controllers
+        return new MainView(transactionController, accountController, categoryController, reportController, loggedInUserId);
+    }
+
+
+
+    // Updated handleLogin method using the extracted method
+    private void handleLogin(Stage primaryStage, TextField usernameField, PasswordField passwordField) throws SQLException {
         String username = usernameField.getText();
         String password = passwordField.getText();
         boolean loginSuccessful = userController.login(username, password);
@@ -91,21 +128,15 @@ public class WelcomeView {
             String loggedInUsername = userController.getLoggedInUser().getUsername();
             String loggedInUserId = userController.getLoggedInUser().getId();
 
-
-            AccountController accountController = new AccountController(new AccountService(new AccountRepository()));
-            CategoryService categoryService = new CategoryService(new CategoryRepository());
-            TransactionService transactionService = new TransactionService(new TransactionRepository(), categoryService);
-            TransactionController transactionController = new TransactionController(transactionService);
-            CategoryController categoryController = new CategoryController(categoryService);
-
-            // Pass the correct parameters to MainView
-            MainView mainView = new MainView(transactionController, accountController, categoryController, loggedInUserId);
-            mainView.start(primaryStage, loggedInUserId, loggedInUsername);  // Pass the user ID and username to MainView
-
+            // Initialize MainView with the necessary details and start the main application
+            MainView mainView = createMainView(loggedInUserId, loggedInUsername);
+            mainView.start(primaryStage, loggedInUserId, loggedInUsername); // Start MainView using primaryStage and loggedInUsername
         } else {
             showAlert("Login Failed", "Incorrect username or password.");
         }
     }
+
+
 
     // Method to create the Register button and handle its action
     private Button createRegisterButton(TextField usernameField, PasswordField passwordField) {

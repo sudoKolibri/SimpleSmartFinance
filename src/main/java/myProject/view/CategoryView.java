@@ -2,7 +2,10 @@ package myProject.view;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -14,6 +17,7 @@ import myProject.model.Category;
 import myProject.view.detail.CategoryDetailView;
 import myProject.view.util.ViewUtils;
 
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 
@@ -23,10 +27,12 @@ public class CategoryView {
 
     private final CategoryController categoryController;
     private final TransactionController transactionController;
-    private final AccountController accountController; // Add AccountController
+    private final AccountController accountController; // AccountController to handle account data
     private final String currentUserId;
     private VBox mainLayout;  // Main layout for displaying content
     private BorderPane root;
+    private Label overallBalanceLabel; // Label to show overall balance
+    private Button createCategoryButton;  // Declare the button at the class level
 
     // Constructor to initialize the view with necessary dependencies
     public CategoryView(String currentUserId, CategoryController categoryController, TransactionController transactionController, AccountController accountController) {
@@ -36,10 +42,8 @@ public class CategoryView {
         this.accountController = accountController; // Initialize AccountController
     }
 
-    private Button createCategoryButton;  // Declare the button at the class level
-
     // Load the main content into the provided root pane
-    public void loadIntoPane(BorderPane root) {
+    public void loadIntoPane(BorderPane root) throws SQLException {
         if (root == null) {
             System.err.println("Error: root layout is null. Cannot load the CategoryView.");
             return;
@@ -49,6 +53,10 @@ public class CategoryView {
         mainLayout = new VBox(10);
         mainLayout.setPadding(new Insets(20));
         mainLayout.setAlignment(Pos.CENTER);
+
+        // Display the summary section at the top
+        VBox summaryLayout = createSummaryLayout();
+        mainLayout.getChildren().add(summaryLayout);
 
         showCategories();
 
@@ -65,13 +73,36 @@ public class CategoryView {
         this.root.setCenter(mainLayout);
     }
 
+    // Create a summary layout to show the overall and individual account balances
+    private VBox createSummaryLayout() throws SQLException {
+        VBox summaryLayout = new VBox(10);
+        summaryLayout.setAlignment(Pos.CENTER);
+
+        // Show overall balance
+        overallBalanceLabel = new Label();
+        overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
+        updateOverallBalance();
+        summaryLayout.getChildren().add(overallBalanceLabel);
+
+        // Show balances for each account
+        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
+        for (Account account : accounts) {
+            Label accountBalanceLabel = new Label(account.getName() + ": $" + String.format("%.2f", account.getBalance()));
+            accountBalanceLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #dd7a42;");
+            summaryLayout.getChildren().add(accountBalanceLabel);
+        }
+
+        return summaryLayout;
+    }
+
+    // Update the overall balance label
+    private void updateOverallBalance() throws SQLException {
+        double totalBalance = accountController.getOverallBalanceForUser(currentUserId);
+        overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
+    }
+
     // Show all categories (standard and custom) as cards within the main layout
     private void showCategories() {
-        mainLayout.getChildren().clear(); // Clear any previous content
-
-        // Show the balances of each account and the total balance
-        showAccountBalances();
-
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(20));
         gridPane.setHgap(20);
@@ -95,32 +126,6 @@ public class CategoryView {
             }
         }
         mainLayout.getChildren().add(gridPane);
-    }
-
-    // Show balances of each account and the total balance
-    private void showAccountBalances() {
-        VBox balanceLayout = new VBox(10);
-        balanceLayout.setPadding(new Insets(10));
-        balanceLayout.setAlignment(Pos.CENTER_LEFT);
-
-        // Fetch all accounts and their balances using AccountController
-        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
-
-        // Display each account's balance
-        for (Account account : accounts) {
-            Label accountLabel = new Label(account.getName() + ": $" + account.getBalance());
-            accountLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #f8f8f2;");
-            balanceLayout.getChildren().add(accountLabel);
-        }
-
-        // Calculate and display the total balance of all accounts
-        double totalBalance = accountController.getOverallBalanceForUser(currentUserId);
-        Label totalBalanceLabel = new Label("Total Balance: $" + totalBalance);
-        totalBalanceLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #50fa7b; -fx-font-weight: bold;");
-        balanceLayout.getChildren().add(totalBalanceLabel);
-
-        // Add the balance layout to the main layout at the top
-        mainLayout.getChildren().add(balanceLayout);
     }
 
     // Create a card for each category with progress bar and details
@@ -181,9 +186,6 @@ public class CategoryView {
         categoryDetailView.showCategoryDetailView(category);
     }
 
-
-
-
     // Show the category creation form within the main layout
     private void showCreateCategoryForm(BorderPane root) {
         VBox formCard = new VBox(10);
@@ -217,8 +219,6 @@ public class CategoryView {
     // Create submit button for the form
     private Button createSubmitButton(TextField nameField, TextField budgetField, BorderPane root) {
         Button submitButton = new Button("Create");
-        submitButton.setStyle("-fx-background-color: #50fa7b; -fx-text-fill: #282a36;");
-
         submitButton.setOnAction(e -> {
             String categoryName = nameField.getText();
             Double categoryBudget = getCategoryBudget(budgetField);
@@ -227,9 +227,16 @@ public class CategoryView {
             categoryController.addCategory(newCategory, currentUserId);
 
             mainLayout.getChildren().clear();
-            loadIntoPane(this.root);  // Reload the pane to refresh the categories and reset the state
+            try {
+                loadIntoPane(this.root);  // Reload the pane to refresh the categories and reset the state
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
         });
 
         return submitButton;
     }
+
+
+
 }

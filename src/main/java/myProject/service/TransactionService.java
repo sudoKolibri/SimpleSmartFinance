@@ -3,6 +3,7 @@ package myProject.service;
 import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
+import myProject.repository.AccountRepository;
 import myProject.repository.TransactionRepository;
 
 import java.sql.Date;
@@ -11,16 +12,19 @@ import java.sql.Time;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final CategoryService categoryService;
+    private final AccountRepository accountRepository;
 
     // Constructor with both dependencies
-    public TransactionService(TransactionRepository transactionRepository, CategoryService categoryService) {
+    public TransactionService(TransactionRepository transactionRepository, CategoryService categoryService, AccountRepository accountRepository) {
         this.transactionRepository = transactionRepository;
         this.categoryService = categoryService;
+        this.accountRepository = accountRepository;
         System.out.println("TransactionService initialized with dependencies.");
     }
 
@@ -62,6 +66,19 @@ public class TransactionService {
         System.out.println("TransactionService.deleteTransaction: Transaction deleted successfully.");
     }
 
+    public void deleteRecurringTransaction(Transaction transaction) throws SQLException {
+        System.out.println("TransactionService.deleteRecurringTransaction: Deleting recurring transaction - " + transaction);
+        transactionRepository.deleteRecurringTransaction(transaction);
+        System.out.println("TransactionService.deleteRecurringTransaction: Recurring transaction deleted successfully.");
+    }
+
+    public void deletePendingTransactionsByRecurringId(String recurringTransactionId) throws SQLException {
+        System.out.println("TransactionService.deletePendingTransactionsByRecurringId: Deleting pending transactions for recurring ID - " + recurringTransactionId);
+        transactionRepository.deletePendingTransactionsByRecurringId(recurringTransactionId);
+        System.out.println("TransactionService.deletePendingTransactionsByRecurringId: Pending transactions deleted successfully.");
+    }
+
+
     // Schedule the next occurrence of a recurring transaction
     private void scheduleNextRecurringTransaction(Transaction transaction) {
         System.out.println("TransactionService.scheduleNextRecurringTransaction: Scheduling next occurrence for recurring transaction - " + transaction);
@@ -101,7 +118,7 @@ public class TransactionService {
     // Calculate the next date of a recurring transaction
     private LocalDate calculateNextRecurringDate(Transaction transaction) {
         System.out.println("TransactionService.calculateNextRecurringDate: Calculating next date for transaction - " + transaction);
-        LocalDate startDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
+        LocalDate startDate = ((Date) transaction.getDate()).toLocalDate();
         LocalDate today = LocalDate.now();
         String interval = transaction.getRecurrenceInterval().toLowerCase();
 
@@ -144,6 +161,17 @@ public class TransactionService {
         return transactions;
     }
 
+    public List<Transaction> getCompletedTransactionsByAccount(String accountName) throws SQLException {
+        System.out.println("TransactionService.getCompletedTransactionsByAccount: Fetching completed transactions for account - " + accountName);
+        List<Transaction> transactions = transactionRepository.getTransactionsByAccount(accountName);
+
+        // Filter transactions to return only those with "completed" status
+        return transactions.stream()
+                .filter(t -> t.getStatus().equalsIgnoreCase("completed"))
+                .collect(Collectors.toList());
+    }
+
+
     // Fetch transactions for a specific category
     public List<Transaction> getTransactionsByCategory(Category category) throws SQLException {
         System.out.println("TransactionService.getTransactionsByCategory: Fetching transactions for category - " + category);
@@ -164,7 +192,7 @@ public class TransactionService {
     // Get all account names for filtering
     public List<String> getAllAccountNames() throws SQLException {
         System.out.println("TransactionService.getAllAccountNames: Fetching all account names.");
-        List<String> accountNames = transactionRepository.getAllAccountNames();
+        List<String> accountNames = accountRepository.getAllAccountNames();
         System.out.println("TransactionService.getAllAccountNames: Account names fetched - " + accountNames);
         return accountNames;
     }
@@ -180,7 +208,7 @@ public class TransactionService {
     // Get all accounts for a specific user
     public List<Account> getAccountsForUser(String userId) throws SQLException {
         System.out.println("TransactionService.getAccountsForUser: Fetching accounts for user ID - " + userId);
-        List<Account> accounts = transactionRepository.getAllAccountsForUser(userId);
+        List<Account> accounts = accountRepository.getAllAccountsForUser(userId);
         System.out.println("TransactionService.getAccountsForUser: Accounts fetched - " + accounts);
         return accounts;
     }

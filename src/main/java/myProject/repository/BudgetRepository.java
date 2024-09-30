@@ -12,7 +12,7 @@ import java.util.List;
 
 public class BudgetRepository {
 
-    // Add a new budget and link it to multiple categories
+    // Methode zum Hinzufügen eines neuen Budgets und Verknüpfen mit mehreren Kategorien in der Datenbank.
     public boolean addBudget(Budget budget) {
         String budgetSql = "INSERT INTO budgets (id, user_id, amount, start_date, end_date) VALUES (?, ?, ?, ?, ?)";
         String budgetCategorySql = "INSERT INTO budget_categories (budget_id, category_id) VALUES (?, ?)";
@@ -20,7 +20,7 @@ public class BudgetRepository {
         try (Connection connection = DatabaseManager.getConnection()) {
             connection.setAutoCommit(false);  // Start transaction
 
-            // Insert the budget
+
             try (PreparedStatement pstmt = connection.prepareStatement(budgetSql)) {
                 pstmt.setString(1, budget.getId());
                 pstmt.setString(2, budget.getUserId());
@@ -30,17 +30,17 @@ public class BudgetRepository {
                 pstmt.executeUpdate();
             }
 
-            // Link the budget to multiple categories
+            // Budget mit Kategorie verbinden
             try (PreparedStatement pstmt = connection.prepareStatement(budgetCategorySql)) {
                 for (String categoryId : budget.getCategoryIds()) {
                     pstmt.setString(1, budget.getId());
                     pstmt.setString(2, categoryId);
                     pstmt.addBatch();
                 }
-                pstmt.executeBatch();  // Execute all category links
+                pstmt.executeBatch();
             }
 
-            connection.commit();  // Commit the transaction
+            connection.commit();
             return true;
 
         } catch (SQLException e) {
@@ -49,7 +49,7 @@ public class BudgetRepository {
         }
     }
 
-    // Retrieve all budgets for a user
+    // Methode zum Abrufen aller Budgets eines bestimmten Benutzers aus der Datenbank.
     public List<Budget> getBudgetsByUserId(String userId) {
         String budgetSql = "SELECT * FROM budgets WHERE user_id = ?";
         String categorySql = "SELECT category_id FROM budget_categories WHERE budget_id = ?";
@@ -67,7 +67,7 @@ public class BudgetRepository {
                 java.sql.Date startDate = rs.getDate("start_date");
                 java.sql.Date endDate = rs.getDate("end_date");
 
-                // Fetch linked categories for this budget
+                // verlinkte Kategorien für ein Budget aufrufen
                 List<String> categoryIds = new ArrayList<>();
                 try (PreparedStatement categoryStmt = connection.prepareStatement(categorySql)) {
                     categoryStmt.setString(1, id);
@@ -87,7 +87,7 @@ public class BudgetRepository {
         return budgets;
     }
 
-    // Update an existing budget
+    // Methode zum Aktualisieren eines bestehenden Budgets, inklusive der Aktualisierung der zugeordneten Kategorien.
     public boolean updateBudget(Budget budget) {
         String budgetSql = "UPDATE budgets SET amount = ?, start_date = ?, end_date = ? WHERE id = ?";
         String deleteBudgetCategoriesSql = "DELETE FROM budget_categories WHERE budget_id = ?";
@@ -96,7 +96,7 @@ public class BudgetRepository {
         try (Connection connection = DatabaseManager.getConnection()) {
             connection.setAutoCommit(false);  // Start transaction
 
-            // Update the budget itself
+
             try (PreparedStatement pstmt = connection.prepareStatement(budgetSql)) {
                 pstmt.setDouble(1, budget.getAmount());
                 pstmt.setDate(2, new java.sql.Date(budget.getStartDate().getTime()));
@@ -105,13 +105,13 @@ public class BudgetRepository {
                 pstmt.executeUpdate();
             }
 
-            // Delete all existing category links for the budget
+            // alle Verbindungen mit Kategorien löschen
             try (PreparedStatement pstmt = connection.prepareStatement(deleteBudgetCategoriesSql)) {
                 pstmt.setString(1, budget.getId());
                 pstmt.executeUpdate();
             }
 
-            // Insert new category links for the updated budget
+            // neue Kategorien verbinden
             try (PreparedStatement pstmt = connection.prepareStatement(insertBudgetCategorySql)) {
                 for (String categoryId : budget.getCategoryIds()) {
                     pstmt.setString(1, budget.getId());
@@ -121,7 +121,7 @@ public class BudgetRepository {
                 pstmt.executeBatch();
             }
 
-            connection.commit();  // Commit the transaction
+            connection.commit();
             return true;
 
         } catch (SQLException e) {
@@ -130,7 +130,7 @@ public class BudgetRepository {
         }
     }
 
-    // Delete a budget by its ID
+    // Methode zum Löschen eines Budgets und seiner zugeordneten Kategorien aus der Datenbank.
     public boolean deleteBudget(String budgetId) {
         String deleteBudgetSql = "DELETE FROM budgets WHERE id = ?";
         String deleteBudgetCategoriesSql = "DELETE FROM budget_categories WHERE budget_id = ?";
@@ -138,19 +138,19 @@ public class BudgetRepository {
         try (Connection connection = DatabaseManager.getConnection()) {
             connection.setAutoCommit(false);  // Start transaction
 
-            // Delete budget categories first
+            // Verbindungen zwischen Budget und Kategorien löschen
             try (PreparedStatement pstmt = connection.prepareStatement(deleteBudgetCategoriesSql)) {
                 pstmt.setString(1, budgetId);
                 pstmt.executeUpdate();
             }
 
-            // Now delete the budget itself
+            // Budget löschen
             try (PreparedStatement pstmt = connection.prepareStatement(deleteBudgetSql)) {
                 pstmt.setString(1, budgetId);
                 pstmt.executeUpdate();
             }
 
-            connection.commit();  // Commit the transaction
+            connection.commit();
             return true;
 
         } catch (SQLException e) {

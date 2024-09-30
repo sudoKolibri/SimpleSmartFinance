@@ -66,6 +66,28 @@ public class TransactionController {
         }
     }
 
+    public void deleteRecurringTransaction(Transaction transaction) {
+        try {
+            transactionService.deleteRecurringTransaction(transaction);
+            System.out.println("Recurring transaction deleted successfully. ID: " + transaction.getId());
+        } catch (SQLException e) {
+            System.err.println("Error deleting recurring transaction: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void deletePendingTransactionsByRecurringId(String recurringTransactionId) {
+        try {
+            transactionService.deletePendingTransactionsByRecurringId(recurringTransactionId);
+            System.out.println("Pending transactions deleted successfully for recurring ID: " + recurringTransactionId);
+        } catch (SQLException e) {
+            System.err.println("Error deleting pending transactions: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+
     // Fetch next occurrence of recurring transactions for a specific account
     public ObservableList<Transaction> getNextRecurringTransactionsByAccount(String accountId) {
         try {

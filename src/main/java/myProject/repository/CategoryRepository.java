@@ -3,16 +3,13 @@ package myProject.repository;
 import myProject.model.Category;
 import myProject.db.DatabaseManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CategoryRepository {
 
-    // Add a new category to the database
+    // Methode zum Hinzufügen einer neuen Kategorie in die Datenbank. Benutzerdefinierte Kategorien sind mit einem Benutzer verknüpft.
     public boolean addCategory(Category category, String userId) {
         String sql = "INSERT INTO categories (id, name, is_standard, is_custom, budget, user_id) VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -46,6 +43,7 @@ public class CategoryRepository {
         }
     }
 
+    // Methode zum Aktualisieren einer bestehenden Kategorie in der Datenbank.
     public boolean updateCategory(Category category) {
         String sql = "UPDATE categories SET name = ?, budget = ? WHERE id = ?";
 
@@ -70,9 +68,9 @@ public class CategoryRepository {
         }
     }
 
-    // public boolean deleteCategory(Category category(){}
 
-    // Get all global categories
+
+    // Methode zum Abrufen aller globalen (nicht benutzerdefinierten) Kategorien aus der Datenbank.
     public List<Category> getGlobalCategories() {
         String sql = "SELECT * FROM categories WHERE user_id IS NULL AND is_custom = false";
         List<Category> categories = new ArrayList<>();
@@ -100,7 +98,19 @@ public class CategoryRepository {
         return categories;
     }
 
-    // Get custom categories for a specific user
+    // Methode zum Abrufen aller Standardkategorien aus der Datenbank.
+    public List<Category> getStandardCategories() throws SQLException {
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT * FROM categories WHERE is_standard = true";
+        try (Connection connection = DatabaseManager.getConnection(); Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                categories.add(mapResultSetToCategory(rs));
+            }
+        }
+        return categories;
+    }
+
+    // Methode zum Abrufen benutzerdefinierter Kategorien für einen bestimmten Benutzer.
     public List<Category> getCustomCategoriesForUser(String userId) {
         String sql = "SELECT * FROM categories WHERE user_id = ? AND is_custom = true";
         List<Category> categories = new ArrayList<>();
@@ -129,6 +139,26 @@ public class CategoryRepository {
         }
 
         return categories;
+    }
+
+    // Hilfsmethode zum Abrufen einer Kategorie anhand ihrer ID.
+    Category findCategoryById(String categoryId) throws SQLException {
+        if (categoryId == null) return null;
+        String sql = "SELECT * FROM categories WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, categoryId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCategory(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    // Hilfsmethode zum Mapping eines ResultSet auf ein Category-Objekt.
+    private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
+        return new Category(rs.getString("id"), rs.getString("name"), rs.getBoolean("is_standard"), rs.getBoolean("is_custom"), rs.getDouble("budget"));
     }
 
 }

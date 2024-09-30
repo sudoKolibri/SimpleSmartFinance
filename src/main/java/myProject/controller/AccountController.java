@@ -3,6 +3,7 @@ package myProject.controller;
 import myProject.model.Account;
 import myProject.service.AccountService;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public class AccountController {
@@ -18,26 +19,38 @@ public class AccountController {
         return accountService.addAccount(userId, name, balance);
     }
 
-    // AccountController.java
-    public boolean doesAccountExist(String userId, String accountName) {
+    // Check if an account exists
+    public boolean doesAccountExist(String userId, String accountName) throws SQLException {
         List<Account> accounts = getAllAccountsForUser(userId);
         return accounts.stream().anyMatch(account -> account.getName().equalsIgnoreCase(accountName));
     }
 
-
     // Update an existing account
     public boolean updateAccount(Account account) {
-        System.out.println("AC: Account with ID: " + account.getId() + " is updated.");
         return accountService.updateAccount(account);
     }
 
     // Get the list of all accounts for a specific user
-    public List<Account> getAllAccountsForUser(String userId) {
+    public List<Account> getAllAccountsForUser(String userId) throws SQLException {
         return accountService.getAllAccountsForUser(userId);
     }
 
     // Calculate the overall balance for a specific user
-    public double getOverallBalanceForUser(String userId) {
+    public double getOverallBalanceForUser(String userId) throws SQLException {
         return accountService.calculateOverallBalanceForUser(userId);
     }
+
+    public void updateAccountBalance(Account account) {
+        // Ensure the balance is persisted in the database via the service layer
+        accountService.updateAccount(account);
+    }
+
+    public double calculateUpdatedBalanceForCompletedTransactions(Account account) {
+        return accountService.calculateBalanceForCompletedTransactions(account);
+    }
+
+
+
+
+
 }

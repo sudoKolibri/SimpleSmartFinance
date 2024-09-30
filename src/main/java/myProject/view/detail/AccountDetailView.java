@@ -1,12 +1,10 @@
 package myProject.view.detail;
 
 import javafx.beans.property.SimpleStringProperty;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -22,10 +20,10 @@ import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
-
 
 public class AccountDetailView {
     private final AccountController accountController;
@@ -48,6 +46,16 @@ public class AccountDetailView {
     public void showAccountDetailView(Account account) {
         this.account = account;
 
+        // Initialize balanceLabel before calling updateAccountBalance
+        balanceLabel = new Label("Balance: " + String.format("%.2f", account.getBalance()));
+        balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
+
+        // Update transaction statuses before displaying the account details
+        updateTransactionStatuses();
+
+        // Update the account balance after initializing the label
+        updateAccountBalance();
+
         // Top Section: Account Name and Balance
         HBox topSection = new HBox(10);
         topSection.setPadding(new Insets(10));
@@ -55,10 +63,6 @@ public class AccountDetailView {
 
         Label nameLabel = new Label("Account: " + account.getName());
         nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
-
-        // Format the balance to show two decimal places
-        balanceLabel = new Label("Balance: " + String.format("%.2f", account.getBalance()));
-        balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
         topSection.getChildren().addAll(nameLabel, balanceLabel);
 
@@ -93,6 +97,7 @@ public class AccountDetailView {
         // Set the layout to the root center
         root.setCenter(mainLayout);
     }
+
 
 
     // Helper method to create round buttons with larger icons
@@ -134,8 +139,6 @@ public class AccountDetailView {
 
         return button;
     }
-
-
 
     // Method to show the transaction form for income or expense
     private void showTransactionForm(String type) {
@@ -214,7 +217,6 @@ public class AccountDetailView {
                 return;
             }
 
-
             Category category = categoryDropdown.getValue();
             String recurrence = recurrenceDropdown.getValue();
             LocalDate endDate = endDatePicker.getValue();
@@ -240,7 +242,9 @@ public class AccountDetailView {
 
             // Save the transaction using TransactionController
             transactionController.createTransaction(transaction);
-            updateAccountBalance(type.equals("income") ? amount : -amount);
+
+            // Update the account balance
+            updateAccountBalance();
 
             // Refresh account details view
             showAccountDetailView(account);
@@ -252,14 +256,40 @@ public class AccountDetailView {
         }
     }
 
+    // Method to update the balance of any account
+    private void updateAccountBalance() {
+        // Call the controller to update the balance and reflect it in the UI
+        double newBalance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
 
-    // Method to update the account balance
-    private void updateAccountBalance(double amount) {
-        double newBalance = account.getBalance() + amount;
-        account.setBalance(newBalance);
-        accountController.updateAccount(account); // Ensure that the account update is persisted
-        balanceLabel.setText("Balance: " + ViewUtils.formatCurrency(account.getBalance()));
+        // Update the balance label in the UI
+        if (balanceLabel != null) {
+            balanceLabel.setText("Balance: " + String.format("%.2f", newBalance));
+        }
     }
+
+
+
+
+
+
+
+
+
+
+    // Method to update transaction statuses (e.g., from 'pending' to 'completed')
+    private void updateTransactionStatuses() {
+        ObservableList<Transaction> pendingTransactions = transactionController.getTransactionsByAccount(account.getName())
+                .filtered(t -> !((java.sql.Date) t.getDate()).toLocalDate().isAfter(LocalDate.now())
+                        && t.getStatus().equalsIgnoreCase("pending"));
+
+        for (Transaction transaction : pendingTransactions) {
+            transaction.setStatus("completed");
+            transactionController.updateTransaction(transaction);
+        }
+    }
+
+
+
 
     // Set up the transactions table with a right-click context menu
     private void setupTransactionTable(GridPane detailView) {
@@ -361,13 +391,12 @@ public class AccountDetailView {
         detailView.add(transactionsTable, 0, 3, 3, 1); // Position table in the grid, spanning all columns
     }
 
-
     // Method to refresh the transactions table, including regular and recurring transactions
     private void refreshTransactionTable() {
         // Fetch all regular transactions for the account
         ObservableList<Transaction> regularTransactions = transactionController.getTransactionsByAccount(account.getName());
 
-        // Fetch all recurring transactions for the account
+        // Fetch all next occurrences of recurring transactions for the account
         ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
 
         // Combine both lists to ensure all transactions are displayed
@@ -382,9 +411,6 @@ public class AccountDetailView {
         transactionsTable.setItems(allTransactions);
     }
 
-
-
-
     // Method to edit the selected transaction
     private void editTransaction(Transaction transaction) {
         VBox formView = new VBox(15);
@@ -398,7 +424,7 @@ public class AccountDetailView {
         TextField descriptionField = new TextField(transaction.getDescription());
         descriptionField.setPromptText("Description");
 
-        TextField amountField = new TextField(String.valueOf(transaction.getAmount()));
+        TextField amountField = new TextField(String.valueOf(Math.abs(transaction.getAmount())));
         amountField.setPromptText("Amount");
 
         DatePicker datePicker = new DatePicker(((java.sql.Date) transaction.getDate()).toLocalDate());
@@ -415,7 +441,7 @@ public class AccountDetailView {
         // Recurrence options
         ComboBox<String> recurrenceDropdown = new ComboBox<>();
         recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
-        recurrenceDropdown.setValue("None");
+        recurrenceDropdown.setValue(transaction.isRecurring() ? capitalizeFirstLetter(transaction.getRecurrenceInterval()) : "None");
 
         DatePicker endDatePicker = new DatePicker();
         if (transaction.getEndDate() != null) {
@@ -470,6 +496,10 @@ public class AccountDetailView {
 
                 // Update the transaction using TransactionController
                 transactionController.updateTransaction(transaction);
+
+                // Update the account balance
+                updateAccountBalance();
+
                 showAccountDetailView(account); // Refresh view
 
             } catch (NumberFormatException ex) {
@@ -496,18 +526,47 @@ public class AccountDetailView {
         root.setCenter(formView);
     }
 
-
+    // Helper method to capitalize the first letter
+    private String capitalizeFirstLetter(String text) {
+        if (text == null || text.isEmpty()) return text;
+        return text.substring(0, 1).toUpperCase() + text.substring(1);
+    }
 
     // Method to delete the selected transaction
     private void deleteTransaction(Transaction transaction) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to permanently delete this transaction?", ButtonType.YES, ButtonType.NO);
-        alert.showAndWait();
-
-        if (alert.getResult() == ButtonType.YES) {
-            transactionController.deleteTransaction(transaction); // Delete transaction
-            updateAccountBalance(transaction.getType().equals("income") ? -transaction.getAmount() : transaction.getAmount()); // Adjust balance
-            showAccountDetailView(account); // Refresh view
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Transaction");
+        if (transaction.isRecurring()) {
+            alert.setHeaderText("This is a recurring transaction.");
+            alert.setContentText("Do you want to delete this occurrence or all future occurrences?");
+            ButtonType deleteOne = new ButtonType("This Occurrence");
+            ButtonType deleteAll = new ButtonType("All Occurrences");
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            alert.getButtonTypes().setAll(deleteOne, deleteAll, cancel);
+            alert.showAndWait().ifPresent(response -> {
+                if (response == deleteOne) {
+                    // Delete only this occurrence
+                    transactionController.deleteTransaction(transaction);
+                } else if (response == deleteAll) {
+                    // Delete the recurring transaction definition
+                    transactionController.deleteRecurringTransaction(transaction);
+                    // Also delete any pending occurrences of this transaction
+                    transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
+                }
+            });
+        } else {
+            alert.setHeaderText("Confirm Deletion");
+            alert.setContentText("Do you want to permanently delete this transaction?");
+            alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    transactionController.deleteTransaction(transaction);
+                }
+            });
         }
+        // Update the account balance
+        updateAccountBalance();
+        showAccountDetailView(account);
     }
 
     // Create Category Dropdown for the logged-in user
@@ -611,37 +670,38 @@ public class AccountDetailView {
             double amount = Double.parseDouble(amountField.getText());
             Account targetAccount = targetAccountDropdown.getValue();
 
-            // Validation: Check if the account has enough balance
             if (account.getBalance() < amount || amount <= 0) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Insufficient funds or invalid amount.", ButtonType.OK);
-                alert.showAndWait();
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Insufficient funds or invalid amount.");
                 return;
             }
 
-            // Create transactions for the transfer
-            Transaction expense = new Transaction("Transfer to " + targetAccount.getName(), -amount, "expense", null, account, null, new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
-            Transaction income = new Transaction("Transfer from " + account.getName(), amount, "income", null, targetAccount, null, new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
+            // Create the transfer transactions
+            Transaction expense = new Transaction("Transfer to " + targetAccount.getName(), -amount, "expense", null, account, null,
+                    new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
+            Transaction income = new Transaction("Transfer from " + account.getName(), amount, "income", null, targetAccount, null,
+                    new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
 
-            // Save both transactions using TransactionController
+            // Save transactions
             transactionController.createTransaction(expense);
             transactionController.createTransaction(income);
 
-            // Update balances
-            updateAccountBalance(-amount);
-            targetAccount.setBalance(targetAccount.getBalance() + amount);
-            accountController.updateAccount(targetAccount);
+            // Correctly update both account balances
+            accountController.updateAccountBalance(account);         // For the source account
+            accountController.updateAccountBalance(targetAccount);   // For the target account
 
-            // Show updated details
+            // Refresh the view
             showAccountDetailView(account);
 
         } catch (NumberFormatException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid amount. Please enter a valid number.", ButtonType.OK);
-            alert.showAndWait();
+            ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid amount.");
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to execute transfer: " + e.getMessage(), ButtonType.OK);
-            alert.showAndWait();
+            ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to execute transfer: " + e.getMessage());
         }
     }
+
+
+
+
 
     // Create Account Dropdown for the logged-in user
     private ComboBox<Account> createAccountDropdown(String userId) {

@@ -13,6 +13,7 @@ import myProject.model.Account;
 import myProject.view.detail.AccountDetailView;
 import myProject.view.util.ViewUtils;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public class AccountView {
@@ -32,7 +33,7 @@ public class AccountView {
     }
 
     // Load AccountView into the dynamic content area of MainView
-    public void loadIntoPane(BorderPane root) {
+    public void loadIntoPane(BorderPane root) throws SQLException {
         this.root = root;
         VBox mainLayout = new VBox(30);
         mainLayout.setPadding(new Insets(20));
@@ -77,14 +78,22 @@ public class AccountView {
         updateOverallBalance();
     }
 
-    // Update the overall balance label
-    private void updateOverallBalance() {
-        double totalBalance = accountController.getOverallBalanceForUser(currentUserId);
-        overallBalanceLabel.setText("Total Balance: $" + totalBalance);
+    private void updateOverallBalance() throws SQLException {
+        // Get all accounts for the user and sum their balances
+        double totalBalance = accountController.getAllAccountsForUser(currentUserId)
+                .stream()
+                .mapToDouble(Account::getBalance)
+                .sum();
+
+        // Update the overall balance label in the UI
+        overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
     }
 
+
+
+
     // Show all accounts in a grid layout
-    private void showAccounts(VBox accountsLayout) {
+    private void showAccounts(VBox accountsLayout) throws SQLException {
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(20));
         gridPane.setHgap(20);
@@ -184,6 +193,8 @@ public class AccountView {
         } catch (NumberFormatException ex) {
             // Display an alert when the balance input is invalid
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         } finally {
             // Ensure the form container is removed after processing
             accountsLayout.getChildren().remove(formContainer);
@@ -219,6 +230,8 @@ public class AccountView {
             } catch (NumberFormatException ex) {
                 // Display an alert when the balance input is invalid
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
             }
         });
         return saveButton;
@@ -227,7 +240,7 @@ public class AccountView {
 
 
     // Refresh the account list
-    private void refreshAccountList(VBox accountsLayout) {
+    private void refreshAccountList(VBox accountsLayout) throws SQLException {
         accountsLayout.getChildren().clear();
         showAccounts(accountsLayout);
         accountsLayout.getChildren().add(createAccountButton);
