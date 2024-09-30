@@ -54,7 +54,6 @@ public class TransactionService {
     // Update a recurring transaction
     public void updateRecurringTransaction(Transaction transaction) throws SQLException {
         System.out.println("TransactionService.updateRecurringTransaction: Updating recurring transaction - " + transaction);
-        transactionRepository.updateTransaction(transaction);
         transactionRepository.updateRecurringTransaction(transaction);
         System.out.println("TransactionService.updateRecurringTransaction: Recurring transaction updated successfully.");
     }

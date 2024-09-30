@@ -256,4 +256,15 @@ public class TransactionController {
             return FXCollections.observableArrayList();
         }
     }
+
+    // Method to get completed transactions by account
+    public List<Transaction> getCompletedTransactionsByAccount(String accountName) {
+        try {
+            System.out.println("TransactionController.getCompletedTransactionsByAccount: Fetching completed transactions for account - " + accountName);
+            return transactionService.getCompletedTransactionsByAccount(accountName);
+        } catch (SQLException e) {
+            System.err.println("TransactionController.getCompletedTransactionsByAccount: Error fetching completed transactions - " + e.getMessage());
+            return new ArrayList<>(); // Return empty list in case of error
+        }
+    }
 }

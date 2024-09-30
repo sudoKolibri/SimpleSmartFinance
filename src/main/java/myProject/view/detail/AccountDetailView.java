@@ -23,6 +23,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Objects;
 
 public class AccountDetailView {
@@ -54,7 +55,7 @@ public class AccountDetailView {
         updateTransactionStatuses();
 
         // Update the account balance after initializing the label
-        updateAccountBalance();
+
 
         // Top Section: Account Name and Balance
         HBox topSection = new HBox(10);
@@ -256,16 +257,29 @@ public class AccountDetailView {
         }
     }
 
-    // Method to update the balance of any account
+    // Methode zur Aktualisierung der Kontobilanz
     private void updateAccountBalance() {
-        // Call the controller to update the balance and reflect it in the UI
-        double newBalance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+        // Alle abgeschlossenen Transaktionen neu laden
+        List<Transaction> completedTransactions = transactionController.getCompletedTransactionsByAccount(account.getName());
 
-        // Update the balance label in the UI
+        // Berechne die Bilanz basierend auf abgeschlossenen Transaktionen
+        double transactionSum = completedTransactions.stream()
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+
+        // Setze die neue Bilanz
+        double newBalance = account.getBalance() + transactionSum;
+
+        // Aktualisiere die Bilanzanzeige in der UI
         if (balanceLabel != null) {
             balanceLabel.setText("Balance: " + String.format("%.2f", newBalance));
         }
+
+        // Speichere die neue Bilanz in der Datenbank
+        account.setBalance(newBalance);
+        accountController.updateAccount(account);
     }
+
 
 
 
@@ -498,9 +512,9 @@ public class AccountDetailView {
                 transactionController.updateTransaction(transaction);
 
                 // Update the account balance
-                updateAccountBalance();
 
-                showAccountDetailView(account); // Refresh view
+
+                showAccountDetailView(account);
 
             } catch (NumberFormatException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid amount. Please enter a valid number.", ButtonType.OK);
@@ -553,6 +567,7 @@ public class AccountDetailView {
                     // Also delete any pending occurrences of this transaction
                     transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
                 }
+
             });
         } else {
             alert.setHeaderText("Confirm Deletion");
