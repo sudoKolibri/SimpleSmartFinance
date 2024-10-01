@@ -37,6 +37,7 @@ public class AccountView {
 
     // Load AccountView into the dynamic content area of MainView
     public void loadIntoPane(BorderPane root) throws SQLException {
+        System.out.println("AccountView.loadIntoPane: Loading AccountView...");
         this.root = root;
         VBox mainLayout = new VBox(30);
         mainLayout.setPadding(new Insets(20));
@@ -79,21 +80,33 @@ public class AccountView {
 
         // Update the balance initially
         updateOverallBalance();
+        System.out.println("AccountView.loadIntoPane: AccountView loaded successfully.");
     }
 
     private void updateOverallBalance() throws SQLException {
-        double totalBalance = accountController.getAllAccountsForUser(currentUserId)
-                .stream()
-                .mapToDouble(account -> {
-                    double balance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
-                    System.out.println("Calculated balance for account " + account.getName() + ": " + balance);
-                    return balance;
-                })
-                .sum();
+        try {
+            System.out.println("AccountView.updateOverallBalance: Retrieving all accounts for user " + currentUserId);
 
-        System.out.println("Total calculated balance: " + totalBalance);
-        overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
+            // Gesamtbilanz durch Iteration über alle Konten berechnen
+            double totalBalance = accountController.getAllAccountsForUser(currentUserId)
+                    .stream()
+                    .mapToDouble(account -> {
+                        double balance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+                        System.out.println("AccountView.updateOverallBalance: Calculated balance for account '" + account.getName() + "': " + balance);
+                        return balance;
+                    })
+                    .sum();
+
+            // Gesamtbilanz anzeigen
+            System.out.println("AccountView.updateOverallBalance: Total calculated balance: " + totalBalance);
+            overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
+
+        } catch (SQLException e) {
+            System.err.println("AccountView.updateOverallBalance: Error retrieving accounts or calculating balance - " + e.getMessage());
+            throw e;  // Fehler erneut werfen, um die Methode korrekt zu verlassen
+        }
     }
+
 
 
     // Show all accounts in a grid layout
@@ -228,42 +241,6 @@ public class AccountView {
             createAccountButton.setVisible(true);
         }
     }
-
-
-    private Button getButton(VBox accountsLayout, TextField accountNameField, TextField balanceField) {
-        Button saveButton = new Button("Save");
-        saveButton.setOnAction(e -> {
-            try {
-                String accountName = accountNameField.getText();
-                double initialBalance = Double.parseDouble(balanceField.getText());
-
-                // Check if account with the same name already exists for the user
-                if (accountController.doesAccountExist(currentUserId, accountName)) {
-                    // Show error message if account name is already in use
-                    ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
-                    return; // Exit the method without creating the account
-                }
-
-                // Add account using the controller
-                boolean success = accountController.addAccount(currentUserId, accountName, initialBalance);
-                if (success) {
-                    System.out.println("Account created successfully.");
-                    refreshAccountList(accountsLayout); // Refresh the list to show the new account
-                    updateOverallBalance(); // Ensure the balance is updated immediately
-                    createAccountButton.setVisible(true);
-                } else {
-                    System.err.println("Failed to create account.");
-                }
-            } catch (NumberFormatException ex) {
-                // Display an alert when the balance input is invalid
-                ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        return saveButton;
-    }
-
 
     // Refresh the account list
     private void refreshAccountList(VBox accountsLayout) throws SQLException {
