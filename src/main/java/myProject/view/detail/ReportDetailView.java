@@ -16,7 +16,7 @@ public class ReportDetailView {
 
     private BorderPane root;
     private final ReportController reportController;
-    private String userId;
+    private final String userId;
 
     // Constructor with ReportController injection
     public ReportDetailView(ReportController reportController, String userId) {

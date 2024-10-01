@@ -172,8 +172,35 @@ public class TransactionService {
 
     // Zeitplanung für das nächste Vorkommen einer wiederkehrenden Transaktion
     private void scheduleNextRecurringTransaction(Transaction transaction) {
-        // Logik zur Zeitplanung der nächsten wiederkehrenden Transaktion
+        LocalDate startDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
+        LocalDate today = LocalDate.now();
+
+        // Berechne alle Vorkommnisse zwischen Startdatum und heute
+        while (startDate.isBefore(today) || startDate.isEqual(today)) {
+            // Erstelle die nächste Vorkommnis-Transaktion
+            Transaction nextTransaction = new Transaction(
+                    transaction.getDescription(),
+                    transaction.getAmount(),
+                    transaction.getType(),
+                    null,
+                    transaction.getAccount(),
+                    transaction.getCategory(),
+                    Date.valueOf(startDate),
+                    transaction.getTime(),
+                    "completed"  // Als abgeschlossen markieren, da diese in der Vergangenheit liegt
+            );
+
+            try {
+                transactionRepository.saveTransaction(nextTransaction);
+            } catch (Exception e) {
+                LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Speichern der nächsten Vorkommnisse der wiederkehrenden Transaktion: " + transaction.getId(), e);
+            }
+
+            // Berechne das nächste Vorkommnis
+            startDate = calculateNextRecurringDate(transaction);
+        }
     }
+
 
     /**
      * Ruft die nächsten Vorkommen wiederkehrender Transaktionen für ein Konto ab.
