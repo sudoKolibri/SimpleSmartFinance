@@ -172,12 +172,12 @@ public class TransactionService {
 
     // Zeitplanung für das nächste Vorkommen einer wiederkehrenden Transaktion
     private void scheduleNextRecurringTransaction(Transaction transaction) {
-        LocalDate nextDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
+        LocalDate startDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
         LocalDate today = LocalDate.now();
 
 
         // Berechne alle Vorkommnisse zwischen Startdatum und heute
-        while (nextDate.isBefore(today) || nextDate.isEqual(today)) {
+        while (startDate.isBefore(today) || startDate.isEqual(today)) {
             // Erstelle die nächste Vorkommnis-Transaktion
             Transaction nextTransaction = new Transaction(
                     transaction.getDescription(),
@@ -186,7 +186,7 @@ public class TransactionService {
                     null,
                     transaction.getAccount(),
                     transaction.getCategory(),
-                    Date.valueOf(nextDate),
+                    Date.valueOf(startDate),
                     transaction.getTime(),
                     "completed"  // Als abgeschlossen markieren, da diese in der Vergangenheit liegt
             );
@@ -199,7 +199,7 @@ public class TransactionService {
             }
 
             // Berechne das nächste Vorkommnis
-            nextDate = calculateNextRecurringDate(transaction);
+            startDate = calculateNextRecurringDate(transaction);
         }
     }
 
@@ -240,26 +240,32 @@ public class TransactionService {
      * @param transaction Die wiederkehrende Transaktion.
      * @return Das nächste Vorkommen als LocalDate.
      */
-    public LocalDate calculateNextRecurringDate(Transaction transaction) {
-        LocalDate nextDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
+    public LocalDate  calculateNextRecurringDate(Transaction transaction) {
+        LocalDate startDate = new java.sql.Date(transaction.getDate().getTime()).toLocalDate();
+        LocalDate today = LocalDate.now();
         String interval = transaction.getRecurrenceInterval().toLowerCase();
 
         switch (interval) {
             case "daily":
-                nextDate = nextDate.plusDays(1);
+                while (!startDate.isAfter(today)) {
+                    startDate = startDate.plusDays(1);
+                }
                 break;
             case "weekly":
-                nextDate = nextDate.plusWeeks(1);
+                while (!startDate.isAfter(today)) {
+                    startDate = startDate.plusWeeks(1);
+                }
                 break;
             case "monthly":
-                nextDate = nextDate.plusMonths(1);
+                while (!startDate.isAfter(today)) {
+                    startDate = startDate.plusMonths(1);
+                }
                 break;
             default:
                 return null; // Rückgabe null, wenn kein gültiges Intervall
         }
-        return nextDate;
+        return startDate;
     }
-
 
     /**
      * Ruft alle Transaktionen ab.
