@@ -67,7 +67,8 @@ public class MainView {
 
         VBox navBar = new VBox(20);  // Vertikales Layout mit Abständen zwischen den Buttons
         navBar.setPadding(new Insets(20, 10, 20, 10));
-        navBar.setStyle("-fx-background-color: #44475a;");
+        navBar.getStyleClass().add("nav-bar");
+
         navBar.setPrefWidth(150);
 
         // Navigations-Buttons erstellen
@@ -141,12 +142,12 @@ public class MainView {
         System.out.println("MainView.showPlaceholderView: Displaying placeholder for " + sectionName);
 
         Label placeholder = new Label("This is the " + sectionName + " view.");
-        placeholder.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        placeholder.getStyleClass().add("placeholder-label");
 
         VBox contentArea = new VBox();
         contentArea.setAlignment(Pos.CENTER);
         contentArea.getChildren().add(placeholder);
-        contentArea.setStyle("-fx-background-color: #282a36;");
+        contentArea.getStyleClass().add("content-area");
         contentArea.setPrefSize(600, 400);  // Größe für den zentralen Bereich anpassen
 
         root.setCenter(contentArea);  // Platzhalter in der Mitte setzen

@@ -111,7 +111,7 @@ public class WelcomeView {
         BudgetService budgetService = new BudgetService(budgetRepository);
 
         // Controller initialisieren
-        AccountController accountController = new AccountController(accountService);
+        AccountController accountController = new AccountController(accountService, transactionService);
         TransactionController transactionController = new TransactionController(transactionService);
         CategoryController categoryController = new CategoryController(categoryService);
         ReportController reportController = new ReportController(transactionService, accountService, categoryService, budgetService);

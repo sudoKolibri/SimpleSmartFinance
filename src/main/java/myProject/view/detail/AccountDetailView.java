@@ -14,10 +14,10 @@ import myProject.controller.TransactionController;
 import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
+import myProject.util.LoggerUtils;
 import myProject.view.util.ViewUtils;
 
 import java.sql.Date;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,6 +28,22 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+/**
+ * Die Klasse AccountDetailView stellt die Benutzeroberfläche für die detaillierte Ansicht
+ * eines Kontos bereit. Sie ermöglicht dem Benutzer das Verwalten von Transaktionen,
+ * das Ausführen von Überweisungen und das Bearbeiten von wiederkehrenden Transaktionen
+ * für ein bestimmtes Konto.
+
+ * Wichtige Funktionen umfassen:
+ * - Anzeigen von Konto- und Bilanzdetails
+ * - Hinzufügen, Bearbeiten und Löschen von Transaktionen
+ * - Überweisungen zwischen Konten
+ * - Verwaltung von wiederkehrenden Transaktionen
+
+ * Diese Klasse nutzt die Controller AccountController und TransactionController zur
+ * Interaktion mit der zugrunde liegenden Logik.
+ */
 
 public class AccountDetailView {
     private final AccountController accountController;
@@ -48,19 +64,19 @@ public class AccountDetailView {
     }
 
     // Methode zum Anzeigen der Kontodetails
+    // Methode zum Anzeigen der Detailansicht eines Kontos
     public void showAccountDetailView(Account account) {
         this.account = account;
 
-        // Initialisiere balanceLabel und rufe dann updateAccountBalance auf
+        // Erstelle Label zur Anzeige der Bilanz
         balanceLabel = new Label("Balance: " + String.format("%.2f", account.getBalance()));
         balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
-        // Transaktionsstatus vor der Anzeige der Kontodetails aktualisieren
+        // Aktualisiere den Status von ausstehenden Transaktionen und die Kontobilanz
         updateTransactionStatuses();
         updateAccountBalance();
 
-
-        // Obere Sektion: Kontoname und Bilanz
+        // Obere Sektion: Anzeige des Kontonamens und der Bilanz
         HBox topSection = new HBox(10);
         topSection.setPadding(new Insets(10));
         topSection.setAlignment(Pos.TOP_LEFT);
@@ -70,19 +86,17 @@ public class AccountDetailView {
 
         topSection.getChildren().addAll(nameLabel, balanceLabel);
 
-        // Hauptsektion: Tabelle für Transaktionen zentriert anzeigen
+        // Hauptsektion: Tabelle zur Anzeige von Transaktionen
         setupTransactionTable(new GridPane());
 
-        // Zentriere die Tabelle
         StackPane tableContainer = new StackPane(transactionsTable);
         tableContainer.setAlignment(Pos.CENTER);
 
-        // Untere Sektion: Icon-basierte Aktionsbuttons
+        // Untere Sektion: Buttons für Aktionen (Einnahme, Ausgabe, Überweisung)
         HBox buttonBox = new HBox(20);
         buttonBox.setPadding(new Insets(10, 0, 10, 0));
         buttonBox.setAlignment(Pos.CENTER);
 
-        // Buttons für Income, Expense und Transfer
         Button incomeButton = createRoundIconButton("/icons/icons8-add-dollar-50.png");
         incomeButton.setOnAction(e -> showTransactionForm("income"));
 
@@ -97,17 +111,15 @@ public class AccountDetailView {
 
         buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton, recurringOverviewButton);
 
-        // Hauptlayout: Stapele die Sektionen vertikal
         VBox mainLayout = new VBox(20);
         mainLayout.getChildren().addAll(topSection, tableContainer, buttonBox);
 
-        // Setze das Layout ins Zentrum des Root-Pane
         root.setCenter(mainLayout);
     }
 
-    // Methode zum Anzeigen einer Übersicht aller aktiven Daueraufträge (Recurring Transactions)
+    // Methode zum Anzeigen der Übersicht über wiederkehrende Transaktionen
     private void showRecurringOverview() {
-        System.out.println("AccountDetailView.showRecurringOverview: Displaying recurring transactions overview.");
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Anzeige der Übersicht über wiederkehrende Transaktionen.");
 
         VBox recurringOverviewLayout = new VBox(15);
         recurringOverviewLayout.setPadding(new Insets(20));
@@ -116,21 +128,23 @@ public class AccountDetailView {
         titleLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         recurringOverviewLayout.getChildren().add(titleLabel);
 
-        // Hole alle wiederkehrenden Transaktionen für das Konto
+        // Button zum Hinzufügen neuer Daueraufträge
+        Button addRecurringButton = new Button("Add Recurring Transaction");
+        addRecurringButton.setOnAction(e -> showTransactionForm("recurring"));
+        recurringOverviewLayout.getChildren().add(addRecurringButton);
+
         ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
 
-        // Erstelle eine Liste, um die Daueraufträge anzuzeigen
         ListView<Transaction> recurringListView = new ListView<>(recurringTransactions);
         recurringListView.setCellFactory(param -> new ListCell<>() {
             @Override
             protected void updateItem(Transaction transaction, boolean empty) {
                 super.updateItem(transaction, empty);
-                if (empty || transaction == null || transaction.getDescription() == null) {
+                if (empty || transaction == null) {
                     setText(null);
                 } else {
-                    // Berechne das nächste Vorkommen der wiederkehrenden Transaktion
                     LocalDate nextDate = transactionController.getNextRecurringDate(transaction);
-                    String nextOccurrence = (nextDate != null) ? "Next: " + nextDate.toString() : "No next occurrence";
+                    String nextOccurrence = (nextDate != null) ? "Next: " + nextDate : "No next occurrence";
                     String endDateInfo = (transaction.getEndDate() != null) ? "End Date: " + transaction.getEndDate().toString() : "No End Date";
                     setText(transaction.getDescription() + " - " + ViewUtils.formatCurrency(transaction.getAmount()) +
                             " (" + transaction.getRecurrenceInterval().toUpperCase() + "), " + nextOccurrence + ", " + endDateInfo);
@@ -138,8 +152,7 @@ public class AccountDetailView {
             }
         });
 
-
-        // Hinzufügen eines Rechtsklick-Kontextmenüs für jede Zeile (für Editieren oder Löschen)
+        // Rechtsklick-Menü für Bearbeiten/Löschen von wiederkehrenden Transaktionen
         recurringListView.setCellFactory(lv -> {
             ListCell<Transaction> cell = new ListCell<>() {
                 @Override
@@ -155,26 +168,10 @@ public class AccountDetailView {
             };
 
             ContextMenu contextMenu = new ContextMenu();
-
-            // Option zum Bearbeiten der Dauerauftrags-Transaktion
             MenuItem editItem = new MenuItem("Edit");
-            editItem.setOnAction(event -> {
-                Transaction selectedTransaction = cell.getItem();
-                if (selectedTransaction != null) {
-                    // Editiere die Transaktion in der Recurring-Übersicht
-                    editRecurringTransaction(selectedTransaction); // Neue Methode zum Bearbeiten eines Dauerauftrags
-                }
-            });
-
-            // Option zum Löschen der Dauerauftrags-Transaktion
+            editItem.setOnAction(event -> editRecurringTransaction(cell.getItem()));
             MenuItem deleteItem = new MenuItem("Delete");
-            deleteItem.setOnAction(event -> {
-                Transaction selectedTransaction = cell.getItem();
-                if (selectedTransaction != null) {
-                    // Lösche die Transaktion in der Recurring-Übersicht
-                    deleteRecurringTransaction(selectedTransaction); // Verwendet die bestehende deleteRecurringTransaction Methode
-                }
-            });
+            deleteItem.setOnAction(event -> deleteRecurringTransaction(cell.getItem()));
 
             contextMenu.getItems().addAll(editItem, deleteItem);
             cell.setContextMenu(contextMenu);
@@ -192,13 +189,13 @@ public class AccountDetailView {
         root.setCenter(recurringOverviewLayout);
     }
 
-    // Methode zum Bearbeiten einer wiederkehrenden Transaktion (aus der Recurring-Übersicht)
+
+    // Methode zum Bearbeiten einer wiederkehrenden Transaktion
     private void editRecurringTransaction(Transaction transaction) {
-        System.out.println("AccountDetailView.editRecurringTransaction: Editing recurring transaction - " + transaction);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Bearbeiten der wiederkehrenden Transaktion: " + transaction.getDescription());
 
         VBox formView = new VBox(15);
         formView.setPadding(new Insets(20));
-        formView.getStyleClass().add("form-view");
 
         Label formLabel = new Label("Edit Recurring Transaction for " + account.getName());
         formLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
@@ -215,11 +212,9 @@ public class AccountDetailView {
 
         DatePicker datePicker = new DatePicker(((java.sql.Date) transaction.getDate()).toLocalDate());
 
-        // Zeit-Eingabefeld mit Validierung
         TextField timeField = new TextField(transaction.getTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         timeField.setPromptText("Time (HH:mm)");
 
-        // ComboBox für Wiederholungsoptionen
         ComboBox<String> recurrenceDropdown = new ComboBox<>();
         recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
         recurrenceDropdown.setValue(transaction.isRecurring() ? capitalizeFirstLetter(transaction.getRecurrenceInterval()) : "None");
@@ -231,20 +226,17 @@ public class AccountDetailView {
 
         Button saveButton = new Button("Update Transaction");
         saveButton.setOnAction(e -> {
-            // Validiere und aktualisiere die Transaktion
             try {
-                // Code für Validierung und Aktualisierung der wiederkehrenden Transaktion
                 transaction.setDescription(descriptionField.getText());
                 transaction.setAmount(Double.parseDouble(amountField.getText()));
                 transaction.setDate(Date.valueOf(datePicker.getValue()));
                 transaction.setTime(Time.valueOf(timeField.getText()));
-                // Update recurrence and other fields...
-
                 transactionController.updateTransaction(transaction);
-                System.out.println("Recurring transaction updated.");
-                showRecurringOverview(); // Zurück zur Übersicht nach dem Update
+                LoggerUtils.logInfo(AccountDetailView.class.getName(), "Wiederkehrende Transaktion erfolgreich aktualisiert.");
+                showRecurringOverview();
             } catch (Exception ex) {
-                System.err.println("Failed to update recurring transaction: " + ex.getMessage());
+                LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Aktualisieren der wiederkehrenden Transaktion.", ex);
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to update transaction: " + ex.getMessage());
             }
         });
 
@@ -260,28 +252,39 @@ public class AccountDetailView {
 
     // Methode zum Löschen einer wiederkehrenden Transaktion mit Bestätigungsdialog
     private void deleteRecurringTransaction(Transaction transaction) {
-        System.out.println("Attempting to delete recurring transaction - " + transaction);
+        // Log-Information über den Löschvorgang der wiederkehrenden Transaktion
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Versuche, wiederkehrende Transaktion zu löschen: " + transaction.getDescription());
 
+        // Erstelle einen Bestätigungsdialog für den Benutzer
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Recurring Transaction");
         alert.setHeaderText("This is a recurring transaction.");
         alert.setContentText("Do you want to delete just this occurrence or all future occurrences? Note: Disabling recurrence will prevent future occurrences from being created.");
 
+        // Definiere die Auswahlmöglichkeiten für den Benutzer
         ButtonType deleteOne = new ButtonType("This Occurrence");
         ButtonType deleteAll = new ButtonType("All Occurrences");
         ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
+        // Füge die Buttons dem Dialog hinzu
         alert.getButtonTypes().setAll(deleteOne, deleteAll, cancel);
+
+        // Reagiere auf die Auswahl des Benutzers
         alert.showAndWait().ifPresent(response -> {
-            if (response == deleteOne) {
-                // Lösche nur dieses einzelne Vorkommnis (falls vorhanden)
-                transactionController.deletePendingTransaction(transaction);
-                System.out.println("Single occurrence of the recurring transaction deleted.");
-            } else if (response == deleteAll) {
-                // Lösche alle Vorkommnisse der wiederkehrenden Transaktion
-                transactionController.deleteRecurringTransaction(transaction);
-                transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
-                System.out.println("All occurrences of the recurring transaction deleted.");
+            try {
+                if (response == deleteOne) {
+                    // Lösche nur dieses einzelne Vorkommnis der wiederkehrenden Transaktion
+                    transactionController.deletePendingTransaction(transaction);
+                    LoggerUtils.logInfo(AccountDetailView.class.getName(), "Einzelnes Vorkommnis der wiederkehrenden Transaktion gelöscht: " + transaction.getDescription());
+                } else if (response == deleteAll) {
+                    // Lösche alle Vorkommnisse der wiederkehrenden Transaktion sowie die Transaktion selbst
+                    transactionController.deleteRecurringTransaction(transaction);
+                    transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
+                    LoggerUtils.logInfo(AccountDetailView.class.getName(), "Alle Vorkommnisse der wiederkehrenden Transaktion gelöscht: " + transaction.getDescription());
+                }
+            } catch (Exception e) {
+                // Logge einen Fehler, falls etwas schiefgeht
+                LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Löschen der wiederkehrenden Transaktion: " + transaction.getDescription(), e);
             }
         });
     }
@@ -289,64 +292,73 @@ public class AccountDetailView {
 
     // Methode zum Anzeigen des Transferformulars
     private void showTransferForm() {
-        System.out.println("AccountDetailView.showTransferForm: Displaying transfer form for account - " + account.getName());
+        // Log-Information über die Anzeige des Transferformulars
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Zeige Transferformular für Konto: " + account.getName());
 
+        // Erstelle ein vertikales Layout für das Formular
         VBox transferForm = new VBox(15);
         transferForm.setPadding(new Insets(20));
 
+        // Anzeige des verfügbaren Kontostands
         Label availableBalanceLabel = new Label("Available Balance: " + ViewUtils.formatCurrency(account.getBalance()));
 
+        // Eingabefeld für den Betrag
         TextField amountField = new TextField();
         amountField.setPromptText("Amount");
 
+        // Dropdown zur Auswahl des Zielkontos
         ComboBox<Account> targetAccountDropdown = createAccountDropdown(account.getUserId());
         targetAccountDropdown.setPromptText("Select Target Account");
 
-        // Slider für den Transferbetrag
-        Slider amountSlider = new Slider(0, account.getBalance(), 0); // Min: 0, Max: aktueller Kontostand, Startwert: 0
+        // Slider für die Auswahl des Transferbetrags (min: 0, max: aktueller Kontostand)
+        Slider amountSlider = new Slider(0, account.getBalance(), 0);
         amountSlider.setShowTickLabels(true);
         amountSlider.setShowTickMarks(true);
-        amountSlider.setMajorTickUnit(account.getBalance() / 4); // Setze die Tick-Marken entsprechend dem Kontostand
+        amountSlider.setMajorTickUnit(account.getBalance() / 4); // Tick-Mark basierend auf dem Kontostand
 
-        // Flag, um rekursive Updates zu vermeiden
+        // Flag, um rekursive Updates zwischen Textfeld und Slider zu vermeiden
         final boolean[] isUpdating = {false};
 
-        // Aktualisiere das Textfeld, wenn der Slider bewegt wird
+        // Listener, um den Wert des Textfelds zu aktualisieren, wenn der Slider bewegt wird
         amountSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (!isUpdating[0]) {
-                isUpdating[0] = true; // Setze das Flag auf true, um ein Update anzuzeigen
+                isUpdating[0] = true; // Verhindere rekursive Updates
                 amountField.setText(String.format("%.2f", newVal.doubleValue()));
                 isUpdating[0] = false; // Setze das Flag nach dem Update zurück
             }
         });
 
-        // Aktualisiere den Slider, wenn sich das Textfeld ändert
+        // Listener, um den Slider anzupassen, wenn das Textfeld geändert wird
         amountField.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!isUpdating[0]) {
                 try {
                     double value = Double.parseDouble(newVal);
                     if (value >= 0 && value <= account.getBalance()) {
-                        isUpdating[0] = true; // Setze das Flag auf true, um ein Update anzuzeigen
+                        isUpdating[0] = true; // Verhindere rekursive Updates
                         amountSlider.setValue(value);
                         isUpdating[0] = false; // Setze das Flag nach dem Update zurück
                     } else {
-                        // Setze den alten Wert zurück, wenn der eingegebene Betrag ungültig ist
+                        // Setze den alten Wert zurück, wenn der Betrag ungültig ist
                         amountField.setText(oldVal);
                     }
                 } catch (NumberFormatException e) {
-                    // Ignoriere ungültige Zahlen und behalte den vorherigen Wert bei
+                    // Logge die Fehlermeldung bei einer ungültigen Eingabe
+                    LoggerUtils.logError(AccountDetailView.class.getName(), "Ungültiger Betrag eingegeben: " + newVal, e);
+                    // Setze den alten Wert zurück, wenn die Eingabe kein gültiger Betrag ist
                     amountField.setText(oldVal);
                 }
             }
         });
 
-        // Button für den Transfer des gesamten Betrags
+        // Button für den Transfer des gesamten verfügbaren Betrags
         Button transferAllButton = new Button("Transfer All");
         transferAllButton.setOnAction(e -> amountSlider.setValue(account.getBalance())); // Setze den Slider auf den maximalen Kontostand
 
+        // Button zum Ausführen des Transfers
         Button transferButton = new Button("Execute Transfer");
         transferButton.setOnAction(e -> executeTransfer(amountField, targetAccountDropdown));
 
+        // Füge alle Elemente dem Transferformular hinzu
         transferForm.getChildren().addAll(
                 new Label("Transfer Funds from " + account.getName()),
                 availableBalanceLabel,
@@ -355,141 +367,167 @@ public class AccountDetailView {
                 transferButton
         );
 
+        // Setze das Transferformular in den zentralen Bereich des Root-Panes
         root.setCenter(transferForm);
     }
 
+
     // Methode zum Erstellen eines Konto-Dropdowns für den eingeloggten Benutzer
     private ComboBox<Account> createAccountDropdown(String userId) {
-        System.out.println("AccountDetailView.createAccountDropdown: Creating account dropdown for user - " + userId);
+        // Log-Information über das Erstellen des Dropdowns für die Konten des Benutzers
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Erstelle Konto-Dropdown für Benutzer: " + userId);
 
+        // Erstelle ein neues ComboBox-Element für die Konten
         ComboBox<Account> accountDropdown = new ComboBox<>();
 
-        // Hole die Konten des Benutzers und filtere das aktuelle Konto heraus
+        // Lade alle Konten des Benutzers, aber filtere das aktuelle Konto heraus
         accountDropdown.setItems(transactionController.getAccountsForUser(userId)
                 .filtered(acc -> !acc.getId().equals(account.getId())));
-        accountDropdown.setPromptText("Choose Account");
+        accountDropdown.setPromptText("Choose Account");  // GUI-Text auf Englisch
 
-        // Setze eine benutzerdefinierte Cell Factory, um die Kontonamen anzuzeigen
+        // Setze eine benutzerdefinierte Cell Factory, um die Kontonamen im Dropdown anzuzeigen
         accountDropdown.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Account item, boolean empty) {
                 super.updateItem(item, empty);
+                // Wenn leer, keinen Text anzeigen, ansonsten den Kontonamen
                 setText(empty ? "" : item.getName());
             }
         });
 
-        // Setze die Schaltflächenzelle, um den ausgewählten Kontonamen anzuzeigen
+        // Setze die Schaltflächenzelle, um den ausgewählten Kontonamen im Dropdown anzuzeigen
         accountDropdown.setButtonCell(new ListCell<>() {
             @Override
             protected void updateItem(Account item, boolean empty) {
                 super.updateItem(item, empty);
+                // Wenn leer, keinen Text anzeigen, ansonsten den Kontonamen
                 setText(empty ? "" : item.getName());
             }
         });
 
+        // Rückgabe des erstellten Dropdowns
         return accountDropdown;
     }
+
 
     // Methode zum Ausführen des Transfers zwischen Konten
     private void executeTransfer(TextField amountField, ComboBox<Account> targetAccountDropdown) {
         try {
+            // Konvertiere den Betrag aus dem Textfeld in eine Zahl
             double amount = Double.parseDouble(amountField.getText());
+            // Hole das ausgewählte Zielkonto aus dem Dropdown
             Account targetAccount = targetAccountDropdown.getValue();
 
+            // Überprüfe, ob genügend Guthaben vorhanden ist oder der Betrag ungültig ist
             if (account.getBalance() < amount || amount <= 0) {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Insufficient funds or invalid amount.");
-                System.err.println("AccountDetailView.executeTransfer: Insufficient funds or invalid amount.");
                 return;
             }
 
-            // Erstelle die Überweisungstransaktionen (eine Ausgabe für das Quellkonto, eine Einnahme für das Zielkonto)
+            // Erstelle zwei Transaktionen: Eine Ausgabe für das Quellkonto und eine Einnahme für das Zielkonto
             Transaction expense = new Transaction("Transfer to " + targetAccount.getName(), -amount, "expense", null, account, null,
                     new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
             Transaction income = new Transaction("Transfer from " + account.getName(), amount, "income", null, targetAccount, null,
                     new java.sql.Date(System.currentTimeMillis()), Time.valueOf(LocalTime.now()), "completed");
 
-            // Speichere die Transaktionen
+            // Speichere beide Transaktionen (Ausgabe und Einnahme)
             transactionController.createTransaction(expense);
             transactionController.createTransaction(income);
 
-            // Aktualisiere die Bilanzen beider Konten
+            // Aktualisiere die Bilanzen für beide Konten
             accountController.updateAccountBalance(account);         // Für das Quellkonto
             accountController.updateAccountBalance(targetAccount);   // Für das Zielkonto
-            System.out.println("AccountDetailView.executeTransfer: Transfer completed successfully from " + account.getName() + " to " + targetAccount.getName());
+            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Transfer erfolgreich: Von " + account.getName() + " zu " + targetAccount.getName());
 
-            // Zeige die aktualisierten Kontodetails an
+            // Zeige die aktualisierten Kontodetails für das Quellkonto an
             showAccountDetailView(account);
 
         } catch (NumberFormatException e) {
+            // Fehler beim Konvertieren des Betrags, ungültige Eingabe
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid amount.");
-            System.err.println("AccountDetailView.executeTransfer: Invalid amount entered.");
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Ungültiger Betrag: " + e.getMessage(), e);
         } catch (Exception e) {
+            // Allgemeiner Fehler beim Ausführen des Transfers
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to execute transfer: " + e.getMessage());
-            System.err.println("AccountDetailView.executeTransfer: Error executing transfer - " + e.getMessage());
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Transfer: " + e.getMessage(), e);
         }
     }
 
+
     // Methode zum Anzeigen des Formulars für Einnahmen oder Ausgaben
     private void showTransactionForm(String type) {
-        System.out.println("AccountDetailView.showTransactionForm: Displaying transaction form for - " + type);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Zeige Transaktionsformular für: " + type);
 
+        // Erstelle das Formularlayout
         VBox formView = new VBox(15);
         formView.setPadding(new Insets(20));
         formView.getStyleClass().add("form-view");
 
+        // Formularüberschrift basierend auf dem Typ (Einnahme oder Ausgabe)
         Label formLabel = new Label("Add " + (type.equals("income") ? "Income" : "Expense") + " to " + account.getName());
         formLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         formView.getChildren().add(formLabel);
 
+        // Textfelder für Beschreibung und Betrag
         TextField descriptionField = new TextField();
         descriptionField.setPromptText("Description");
 
         TextField amountField = new TextField();
         amountField.setPromptText("Amount");
 
+        // Datums- und Zeitauswahl
         DatePicker datePicker = new DatePicker(LocalDate.now());
 
-        // Zeit-Eingabefeld mit Validierung
+        // Zeit-Eingabefeld mit Standardformatierung und Validierung
         TextField timeField = new TextField(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
         timeField.setPromptText("Time (HH:mm)");
 
-        // Dropdown für Kategorien
+        // Dropdown für Kategorienauswahl
         ComboBox<Category> categoryDropdown = createCategoryDropdown(account.getUserId());
 
-        // Dropdown für Wiederholungsoptionen
+        // Dropdown für Wiederholungsoptionen (z.B. None, Daily, Weekly, Monthly)
         ComboBox<String> recurrenceDropdown = new ComboBox<>();
         recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
         recurrenceDropdown.setValue("None");
 
-        // Optionales Enddatum für wiederkehrende Transaktionen
+        // Enddatum für wiederkehrende Transaktionen (optional)
         DatePicker endDatePicker = new DatePicker();
         endDatePicker.setPromptText("End Date (Optional)");
         endDatePicker.setVisible(false); // Anfangs ausgeblendet
 
-        // Zeige das Enddatum an, wenn die Wiederholung nicht auf "None" gesetzt ist
+        // Enddatum nur anzeigen, wenn die Transaktion wiederkehrend ist
         recurrenceDropdown.setOnAction(e -> {
             boolean isRecurring = !recurrenceDropdown.getValue().equals("None");
             endDatePicker.setVisible(isRecurring);
         });
 
+        // Button zum Speichern der Transaktion
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e -> saveTransaction(type, descriptionField, amountField, datePicker, timeField, categoryDropdown, recurrenceDropdown, endDatePicker));
 
+        // Button zum Abbrechen und Zurückkehren zur Detailansicht des Kontos
         Button cancelButton = new Button("Cancel");
         cancelButton.setOnAction(e -> showAccountDetailView(account));
 
+        // Speichern- und Abbrechen-Buttons in einer horizontalen Box
         HBox buttonBox = new HBox(10, saveButton, cancelButton);
 
-        formView.getChildren().addAll(descriptionField, amountField, new HBox(10, datePicker, timeField), new HBox(10, new Label("Recurrence:"), recurrenceDropdown, endDatePicker), new Label("Category:"), categoryDropdown, buttonBox);
+        // Füge alle Elemente zum Formular hinzu
+        formView.getChildren().addAll(descriptionField, amountField, new HBox(10, datePicker, timeField),
+                new HBox(10, new Label("Recurrence:"), recurrenceDropdown, endDatePicker),
+                new Label("Category:"), categoryDropdown, buttonBox);
 
+        // Setze das Formular in die Mitte des Root-Pane
         root.setCenter(formView);
     }
+
 
     // Methode zum Speichern einer Transaktion (Einnahme oder Ausgabe)
     private void saveTransaction(String type, TextField descriptionField, TextField amountField, DatePicker datePicker, TextField timeField, ComboBox<Category> categoryDropdown, ComboBox<String> recurrenceDropdown, DatePicker endDatePicker) {
         try {
-            System.out.println("AccountDetailView.saveTransaction: Saving new transaction - " + type);
+            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Speichere neue Transaktion - Typ: " + type);
 
+            // Erfasse die Beschreibung, den Betrag, das Datum und die Zeit
             String description = descriptionField.getText();
             double amount = Double.parseDouble(amountField.getText());
             LocalDate date = datePicker.getValue();
@@ -503,23 +541,33 @@ public class AccountDetailView {
                 return;
             }
 
+            // Erfasse die Kategorie und Wiederholungseinstellungen
             Category category = categoryDropdown.getValue();
             String recurrence = recurrenceDropdown.getValue();
             LocalDate endDate = endDatePicker.getValue();
-            String status = date.isAfter(LocalDate.now()) ? "pending" : "completed";
+            String status = date.isAfter(LocalDate.now()) ? "pending" : "completed";  // Bestimme den Status basierend auf dem Datum
 
-            // Erstelle ein neues Transaktionsobjekt mit den eingegebenen Daten
-            Transaction transaction = new Transaction(description, type.equals("income") ? amount : -amount,  // Negative Beträge für Ausgaben
-                    type, null, account, category, Date.valueOf(date), Time.valueOf(time), status);
+            // Erstelle eine neue Transaktion mit den eingegebenen Daten
+            Transaction transaction = new Transaction(
+                    description,
+                    type.equals("income") ? amount : -amount,  // Negativer Betrag für Ausgaben
+                    type,
+                    null,
+                    account,
+                    category,
+                    Date.valueOf(date),
+                    Time.valueOf(time),
+                    status
+            );
 
-            // Wenn die Transaktion wiederkehrend ist, setze die entsprechenden Eigenschaften
+            // Setze die Wiederholungseinstellungen, falls vorhanden
             if (!recurrence.equals("None")) {
                 transaction.markAsRecurring(recurrence.toLowerCase(), endDate != null ? Date.valueOf(endDate) : null);
             }
 
             // Speichere die Transaktion über den TransactionController
             transactionController.createTransaction(transaction);
-            System.out.println("AccountDetailView.saveTransaction: Transaction saved successfully - " + transaction);
+            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Transaktion erfolgreich gespeichert - " + transaction);
 
             // Aktualisiere die Kontobilanz
             updateAccountBalance();
@@ -529,25 +577,28 @@ public class AccountDetailView {
 
         } catch (NumberFormatException e) {
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid amount. Please enter a valid number.");
-            System.err.println("AccountDetailView.saveTransaction: Error - Invalid amount entered.");
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler - Ungültiger Betrag eingegeben.", e);
         } catch (Exception e) {
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to save transaction: " + e.getMessage());
-            System.err.println("AccountDetailView.saveTransaction: Error saving transaction - " + e.getMessage());
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Speichern der Transaktion", e);
         }
     }
 
+
     // Methode zum Bearbeiten der ausgewählten Transaktion
     private void editTransaction(Transaction transaction) {
-        System.out.println("AccountDetailView.editTransaction: Editing transaction - " + transaction);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Bearbeite Transaktion - " + transaction);
 
         VBox formView = new VBox(15);
         formView.setPadding(new Insets(20));
         formView.getStyleClass().add("form-view");
 
+        // Anzeige des Formulars zum Bearbeiten der Transaktion
         Label formLabel = new Label("Edit Transaction for " + account.getName());
         formLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         formView.getChildren().add(formLabel);
 
+        // Eingabefelder für die Transaktionsdetails
         TextField descriptionField = new TextField(transaction.getDescription());
         descriptionField.setPromptText("Description");
 
@@ -560,16 +611,17 @@ public class AccountDetailView {
         TextField timeField = new TextField(transaction.getTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         timeField.setPromptText("Time (HH:mm)");
 
-        // ComboBox für Transaktionstyp (Einnahme/Ausgabe)
+        // ComboBox für den Transaktionstyp (Einnahme/Ausgabe)
         ComboBox<String> typeComboBox = new ComboBox<>();
         typeComboBox.getItems().addAll("income", "expense");
         typeComboBox.setValue(transaction.getType().toLowerCase());
 
-        // Dropdown für Wiederholung
+        // Dropdown für Wiederholungsoptionen
         ComboBox<String> recurrenceDropdown = new ComboBox<>();
         recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
         recurrenceDropdown.setValue(transaction.isRecurring() ? capitalizeFirstLetter(transaction.getRecurrenceInterval()) : "None");
 
+        // Enddatum für wiederkehrende Transaktionen
         DatePicker endDatePicker = new DatePicker();
         if (transaction.getEndDate() != null) {
             endDatePicker.setValue(((java.sql.Date) transaction.getEndDate()).toLocalDate());
@@ -578,10 +630,11 @@ public class AccountDetailView {
         ComboBox<Category> categoryDropdown = createCategoryDropdown(account.getUserId());
         categoryDropdown.setValue(transaction.getCategory());
 
+        // Speichern der bearbeiteten Transaktion
         Button saveButton = new Button("Update Transaction");
         saveButton.setOnAction(e -> {
             try {
-                // Validierung der Eingaben und Aktualisierung der Transaktion
+                // Validierung und Speichern der Transaktion
                 String description = descriptionField.getText();
                 double amount = Double.parseDouble(amountField.getText());
                 LocalDate date = datePicker.getValue();
@@ -590,8 +643,7 @@ public class AccountDetailView {
                 try {
                     time = LocalTime.parse(timeField.getText(), DateTimeFormatter.ofPattern("HH:mm"));
                 } catch (DateTimeParseException ex) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid time format. Please enter time as HH:mm.", ButtonType.OK);
-                    alert.showAndWait();
+                    ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid time format. Please enter time as HH:mm.");
                     return;
                 }
 
@@ -603,7 +655,7 @@ public class AccountDetailView {
                 // Bestimme den Status basierend auf Datum und Zeit
                 String status = date.isAfter(LocalDate.now()) || (date.isEqual(LocalDate.now()) && time.isAfter(LocalTime.now())) ? "pending" : "completed";
 
-                // Setze aktualisierte Werte in die Transaktion
+                // Aktualisiere die Transaktionsdetails
                 transaction.setDescription(description);
                 transaction.setAmount(type.equals("income") ? amount : -amount);
                 transaction.setDate(Date.valueOf(date));
@@ -612,7 +664,7 @@ public class AccountDetailView {
                 transaction.setType(type);
                 transaction.setStatus(status);
 
-                // Aktualisiere Wiederholungseinstellungen
+                // Setze die Wiederholungseinstellungen, falls vorhanden
                 if (!recurrence.equals("None")) {
                     transaction.markAsRecurring(recurrence.toLowerCase(), endDate != null ? Date.valueOf(endDate) : null);
                 } else {
@@ -621,72 +673,84 @@ public class AccountDetailView {
                     transaction.setEndDate(null);
                 }
 
-                // Aktualisiere die Transaktion über den TransactionController
+                // Speichere die Transaktion
                 transactionController.updateTransaction(transaction);
-                System.out.println("AccountDetailView.editTransaction: Transaction updated successfully - " + transaction);
+                LoggerUtils.logInfo(AccountDetailView.class.getName(), "Transaktion erfolgreich aktualisiert - " + transaction);
 
-                // Bilanz aktualisieren
+                // Aktualisiere die Kontobilanz
                 updateAccountBalance();
 
-                // Zeige die aktualisierten Kontodetails
+                // Zeige die aktualisierten Kontodetails an
                 showAccountDetailView(account);
 
             } catch (NumberFormatException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid amount. Please enter a valid number.", ButtonType.OK);
-                alert.showAndWait();
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid amount. Please enter a valid number.");
+                LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler - Ungültiger Betrag eingegeben.", ex);
             }
         });
 
+        // Abbrechen der Bearbeitung
         Button cancelButton = new Button("Cancel");
         cancelButton.setOnAction(e -> showAccountDetailView(account));
 
+        // Layout für die Schaltflächen
         HBox buttonBox = new HBox(10, saveButton, cancelButton);
         formView.getChildren().addAll(descriptionField, amountField, new HBox(10, datePicker, timeField), new HBox(10, new Label("Type:"), typeComboBox), new Label("Category:"), categoryDropdown, new Label("Recurrence:"), recurrenceDropdown, new Label("End Date (Optional):"), endDatePicker, buttonBox);
 
         root.setCenter(formView);
     }
 
+
     // Methode zum Kapitalisieren des ersten Buchstabens eines Strings
     private String capitalizeFirstLetter(String text) {
+        // Überprüfe, ob der String null oder leer ist
         if (text == null || text.isEmpty()) return text;
+        // Kapitalisiere den ersten Buchstaben und gebe den neuen String zurück
         return text.substring(0, 1).toUpperCase() + text.substring(1);
     }
 
     // Methode zum Erstellen eines Kategorie-Dropdowns für den eingeloggten Benutzer
     private ComboBox<Category> createCategoryDropdown(String userId) {
-        System.out.println("AccountDetailView.createCategoryDropdown: Creating category dropdown for user - " + userId);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Erstelle Kategorie-Dropdown für Benutzer - " + userId);
 
         ComboBox<Category> categoryDropdown = new ComboBox<>();
 
-        // Hole die Kategorien des Benutzers und füge sie dem Dropdown hinzu
-        categoryDropdown.setItems(transactionController.getAllCategoriesForUser(userId));
-        categoryDropdown.setPromptText("Choose Category");
+        try {
+            // Hole die Kategorien des Benutzers und füge sie dem Dropdown hinzu
+            categoryDropdown.setItems(transactionController.getAllCategoriesForUser(userId));
+            categoryDropdown.setPromptText("Choose Category");
 
-        // Setze eine benutzerdefinierte Cell Factory, um die Kategorie-Namen anzuzeigen
-        categoryDropdown.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Category item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
-            }
-        });
+            // Setze eine benutzerdefinierte Cell Factory, um die Kategorie-Namen anzuzeigen
+            categoryDropdown.setCellFactory(lv -> new ListCell<>() {
+                @Override
+                protected void updateItem(Category item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? "" : item.getName());
+                }
+            });
 
-        // Setze die Schaltflächenzelle, um den ausgewählten Kategorienamen anzuzeigen
-        categoryDropdown.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(Category item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? "" : item.getName());
-            }
-        });
+            // Setze die Schaltflächenzelle, um den ausgewählten Kategorienamen anzuzeigen
+            categoryDropdown.setButtonCell(new ListCell<>() {
+                @Override
+                protected void updateItem(Category item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? "" : item.getName());
+                }
+            });
+
+        } catch (Exception e) {
+            // Logge Fehler, falls das Erstellen des Dropdowns fehlschlägt
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Erstellen des Kategorie-Dropdowns für Benutzer: " + userId, e);
+        }
 
         return categoryDropdown;
     }
 
     // Methode zum Löschen der ausgewählten Transaktion
     private void deleteTransaction(Transaction transaction) {
-        System.out.println("AccountDetailView.deleteTransaction: Deleting transaction - " + transaction);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Lösche Transaktion - " + transaction);
 
+        // Bestätigungsdialog für das Löschen der Transaktion
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Transaction");
 
@@ -699,29 +763,30 @@ public class AccountDetailView {
             alert.getButtonTypes().setAll(deleteOne, deleteAll, cancel);
             alert.showAndWait().ifPresent(response -> {
                 if (response == deleteOne) {
-                    // Lösche nur diese Instanz
+                    // Lösche nur diese einzelnen Vorkomnissse
                     transactionController.deleteTransaction(transaction);
-                    System.out.println("AccountDetailView.deleteTransaction: Single occurrence deleted.");
+                    LoggerUtils.logInfo(AccountDetailView.class.getName(), "Einzelnes Vorkommnis der wiederkehrenden Transaktion gelöscht.");
                 } else if (response == deleteAll) {
-                    // Warnung vor dem Löschen des Dauerauftrags und aller zukünftigen Instanzen
+                    // Bestätigung vor dem Löschen des Dauerauftrags und aller zukünftigen Instanzen
                     Alert deleteRecurringAlert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete the recurring transaction and all future occurrences?");
                     deleteRecurringAlert.showAndWait().ifPresent(confirm -> {
                         if (confirm == ButtonType.OK) {
                             transactionController.deleteRecurringTransaction(transaction);
                             transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
-                            System.out.println("AccountDetailView.deleteTransaction: Recurring transaction and all occurrences deleted.");
+                            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Wiederkehrende Transaktion und alle Vorkommnisse gelöscht.");
                         }
                     });
                 }
             });
         } else {
+            // Bestätigung für das Löschen einer einmaligen Transaktion
             alert.setHeaderText("Confirm Deletion");
             alert.setContentText("Do you want to permanently delete this transaction?");
             alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.YES) {
                     transactionController.deleteTransaction(transaction);
-                    System.out.println("AccountDetailView.deleteTransaction: Transaction deleted.");
+                    LoggerUtils.logInfo(AccountDetailView.class.getName(), "Einmalige Transaktion gelöscht.");
                 }
             });
         }
@@ -737,10 +802,11 @@ public class AccountDetailView {
         iconView.setFitHeight(30); // Größere Icons für bessere Sichtbarkeit
         iconView.setFitWidth(30);
 
-        Button button = new Button("", iconView); // Leeren Text für nur Icon
+        // Erstelle einen Button nur mit Icon
+        Button button = new Button("", iconView);
         button.setStyle("-fx-background-color: #50fa7b; " + "-fx-padding: 15px; " + "-fx-border-radius: 50%; " + "-fx-min-width: 50px; " + "-fx-min-height: 50px; " + "-fx-max-width: 50px; " + "-fx-max-height: 50px;");
 
-        // Ändere Button-Hintergrundfarbe beim Mouse-Over
+        // Ändere die Hintergrundfarbe des Buttons beim Hovern
         button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #ff79c6; " + "-fx-padding: 15px; " + "-fx-border-radius: 50%; " + "-fx-min-width: 50px; " + "-fx-min-height: 50px; " + "-fx-max-width: 50px; " + "-fx-max-height: 50px;"));
 
         button.setOnMouseExited(e -> button.setStyle("-fx-background-color: #50fa7b; " + "-fx-padding: 15px; " + "-fx-border-radius: 50%; " + "-fx-min-width: 50px; " + "-fx-min-height: 50px; " + "-fx-max-width: 50px; " + "-fx-max-height: 50px;"));
@@ -750,7 +816,7 @@ public class AccountDetailView {
 
     // Methode zur Aktualisierung der Kontobilanz
     private void updateAccountBalance() {
-        System.out.println("AccountDetailView.updateAccountBalance: Updating balance for account - " + account.getName());
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Aktualisiere Kontobilanz für Konto - " + account.getName());
 
         // Rufe alle abgeschlossenen Transaktionen für das Konto ab
         List<Transaction> completedTransactions = transactionController.getCompletedTransactionsByAccount(account.getName());
@@ -760,30 +826,29 @@ public class AccountDetailView {
                 .mapToDouble(Transaction::getAmount)
                 .sum();
 
-        // Setze die neue Bilanz - ACHTUNG: Überprüfe, ob du die Bilanz nicht auf den bestehenden Kontostand addierst
+        // Setze die neue Bilanz
         account.setBalance(newBalance);
         accountController.updateAccount(account);
 
-        System.out.println("AccountDetailView.updateAccountBalance: New balance calculated: " + newBalance);
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Neue Bilanz berechnet: " + newBalance);
 
         // Aktualisiere die Bilanzanzeige in der UI
         if (balanceLabel != null) {
             balanceLabel.setText("Balance: " + String.format("%.2f", newBalance));
         }
-
     }
-
 
     // Methode zum Aktualisieren des Transaktionsstatus (z.B. von 'pending' zu 'completed')
     private void updateTransactionStatuses() {
-        System.out.println("AccountDetailView.updateTransactionStatuses: Checking pending transactions for account - " + account.getName());
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Überprüfe ausstehende Transaktionen für Konto - " + account.getName());
 
+        // Filtere ausstehende Transaktionen und markiere sie als abgeschlossen, wenn das Datum vergangen ist
         ObservableList<Transaction> pendingTransactions = transactionController.getTransactionsByAccount(account.getName()).filtered(t -> !((java.sql.Date) t.getDate()).toLocalDate().isAfter(LocalDate.now()) && t.getStatus().equalsIgnoreCase("pending"));
 
         for (Transaction transaction : pendingTransactions) {
             transaction.setStatus("completed");
             transactionController.updateTransaction(transaction);
-            System.out.println("AccountDetailView.updateTransactionStatuses: Transaction marked as completed - " + transaction);
+            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Transaktion als abgeschlossen markiert: " + transaction);
         }
     }
 
@@ -792,9 +857,7 @@ public class AccountDetailView {
         transactionsTable = new TableView<>();
 
         List<TableColumn<Transaction, String>> columns = getTableColumns();
-
         transactionsTable.getColumns().addAll(columns);
-
 
         // Füge ein Kontextmenü für jede Zeile in der Tabelle hinzu
         transactionsTable.setRowFactory(tv -> {
@@ -805,7 +868,7 @@ public class AccountDetailView {
             editItem.setOnAction(event -> {
                 Transaction selectedTransaction = row.getItem();
                 if (selectedTransaction != null) {
-                    editTransaction(selectedTransaction); // Rufe die Bearbeitungsmethode für die ausgewählte Transaktion auf
+                    editTransaction(selectedTransaction); // Bearbeiten der ausgewählten Transaktion
                 }
             });
 
@@ -813,7 +876,7 @@ public class AccountDetailView {
             deleteItem.setOnAction(event -> {
                 Transaction selectedTransaction = row.getItem();
                 if (selectedTransaction != null) {
-                    deleteTransaction(selectedTransaction); // Rufe die Löschmethode für die ausgewählte Transaktion auf
+                    deleteTransaction(selectedTransaction); // Löschen der ausgewählten Transaktion
                 }
             });
 
@@ -829,7 +892,7 @@ public class AccountDetailView {
         detailView.add(transactionsTable, 0, 3, 3, 1); // Positioniere die Tabelle im Grid, über alle Spalten hinweg
     }
 
-    // Erstellung der Tabellenspalten für Methode SetupTransactionTable
+    // Erstellung der Tabellenspalten für die Transaktionstabelle
     private static List<TableColumn<Transaction, String>> getTableColumns() {
         TableColumn<Transaction, String> descriptionColumn = new TableColumn<>("Description");
         descriptionColumn.setCellValueFactory(data -> data.getValue().descriptionProperty());
@@ -882,6 +945,8 @@ public class AccountDetailView {
 
     // Methode zur Aktualisierung der Transaktionstabelle, einschließlich regulärer und wiederkehrender Transaktionen
     private void refreshTransactionTable() {
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Aktualisiere Transaktionstabelle für Konto - " + account.getName());
+
         // Hole alle regulären und wiederkehrenden Transaktionen für das Konto
         ObservableList<Transaction> regularTransactions = transactionController.getTransactionsByAccount(account.getName());
         ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
@@ -891,20 +956,14 @@ public class AccountDetailView {
         allTransactions.addAll(regularTransactions);
         allTransactions.addAll(recurringTransactions);
 
-        // Filtere die Initial-Balance-Transaktion heraus
-        // Sortiere nach Datum
+        // Filtere die Initial-Balance-Transaktion heraus und sortiere nach Datum und Status
         List<Transaction> filteredTransactions = allTransactions.stream()
                 .filter(t -> !t.getDescription().equals("Initial Balance"))
                 .sorted(Comparator.comparing(Transaction::getDate)).sorted(Comparator.comparing(Transaction::getStatus).thenComparing(Transaction::getDate)).collect(Collectors.toList());
 
-        // Sortiere nach Status (erst abgeschlossene, dann ausstehende Transaktionen)
-
         // Setze die gefilterten Transaktionen in der Tabelle
         transactionsTable.setItems(FXCollections.observableArrayList(filteredTransactions));
 
-        System.out.println("Transaction table refreshed and sorted for account: " + account.getName());
+        LoggerUtils.logInfo(AccountDetailView.class.getName(), "Transaktionstabelle aktualisiert und sortiert für Konto: " + account.getName());
     }
-
-
 }
-

@@ -13,12 +13,17 @@ import myProject.model.Account;
 import myProject.model.Transaction;
 import myProject.view.detail.AccountDetailView;
 import myProject.view.util.ViewUtils;
+import myProject.util.LoggerUtils;
 
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.List;
 
+/**
+ * Diese Klasse ist verantwortlich für die Anzeige und Verwaltung der Kontoübersicht und
+ * ermöglicht dem Benutzer, neue Konten zu erstellen und vorhandene anzuzeigen.
+ */
 public class AccountView {
 
     private final AccountController accountController;
@@ -28,120 +33,147 @@ public class AccountView {
     private Label overallBalanceLabel;
     private BorderPane root;
 
-    // Constructor with necessary controllers
+    /**
+     * Konstruktor, um die notwendigen Controller zu initialisieren.
+     *
+     * @param currentUserId       Die ID des aktuellen Benutzers.
+     * @param accountController   Der Controller zur Verwaltung von Konten.
+     * @param transactionController Der Controller zur Verwaltung von Transaktionen.
+     */
     public AccountView(String currentUserId, AccountController accountController, TransactionController transactionController) {
         this.currentUserId = currentUserId;
         this.accountController = accountController;
         this.transactionController = transactionController;
     }
 
-    // Load AccountView into the dynamic content area of MainView
+    /**
+     * Lädt die AccountView in den zentralen Bereich der MainView.
+     *
+     * @param root Das Root-Layout, in das die Ansicht geladen werden soll.
+     * @throws SQLException bei einem Fehler beim Laden der Konten.
+     */
     public void loadIntoPane(BorderPane root) throws SQLException {
-        System.out.println("AccountView.loadIntoPane: Loading AccountView...");
-        this.root = root;
-        VBox mainLayout = new VBox(30);
-        mainLayout.setPadding(new Insets(20));
-        mainLayout.setAlignment(Pos.CENTER);
-        mainLayout.setSpacing(40);
+        try {
+            System.out.println("AccountView.loadIntoPane: Loading AccountView...");
+            this.root = root;
+            VBox mainLayout = new VBox(30);
+            mainLayout.setPadding(new Insets(20));
+            mainLayout.setAlignment(Pos.CENTER);
+            mainLayout.setSpacing(40);
 
-        // Top Section: Summary Panel
-        VBox summaryLayout = new VBox(20);
-        summaryLayout.setPadding(new Insets(20));
-        summaryLayout.setAlignment(Pos.CENTER);
+            // Zusammenfassung oben
+            VBox summaryLayout = new VBox(20);
+            summaryLayout.setPadding(new Insets(20));
+            summaryLayout.setAlignment(Pos.CENTER);
 
-        // Prominent Overall Balance
-        overallBalanceLabel = new Label();
-        overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
-        summaryLayout.getChildren().add(overallBalanceLabel);
+            // Gesamtbilanz prominent anzeigen
+            overallBalanceLabel = new Label();
+            overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
+            summaryLayout.getChildren().add(overallBalanceLabel);
 
-        // Bottom Section: Account List
-        VBox accountsLayout = new VBox(20);
-        accountsLayout.setPadding(new Insets(20));
-        accountsLayout.setAlignment(Pos.CENTER);
-        accountsLayout.setMaxWidth(Double.MAX_VALUE);
+            // Kontoliste unten
+            VBox accountsLayout = new VBox(20);
+            accountsLayout.setPadding(new Insets(20));
+            accountsLayout.setAlignment(Pos.CENTER);
+            accountsLayout.setMaxWidth(Double.MAX_VALUE);
 
-        // Show accounts in a grid format
-        showAccounts(accountsLayout);
+            // Zeige Konten im Grid-Format
+            showAccounts(accountsLayout);
 
-        // Create the button at the class level
-        createAccountButton = new Button("+ Add Account");
-        createAccountButton.setPrefWidth(150);
-        createAccountButton.setMaxWidth(200);
-        createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));
+            // Button zum Hinzufügen von Konten
+            createAccountButton = new Button("+ Add Account");
+            createAccountButton.setPrefWidth(150);
+            createAccountButton.setMaxWidth(200);
+            createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));
 
-        // Add components to the bottom layout
-        accountsLayout.getChildren().add(createAccountButton);
+            // Füge den Button zur Kontoliste hinzu
+            accountsLayout.getChildren().add(createAccountButton);
 
-        // Add Summary and Account List
-        mainLayout.getChildren().addAll(summaryLayout, accountsLayout);
+            // Füge zusammenfassende Ansicht und Kontenliste hinzu
+            mainLayout.getChildren().addAll(summaryLayout, accountsLayout);
 
-        // Set the center content of MainView to AccountView
-        root.setCenter(mainLayout);
+            // Setze das Layout in die Mitte des Root-Panes
+            root.setCenter(mainLayout);
 
-        // Update the balance initially
-        updateOverallBalance();
-        System.out.println("AccountView.loadIntoPane: AccountView loaded successfully.");
+            // Aktualisiere die Bilanz initial
+            updateOverallBalance();
+            System.out.println("AccountView.loadIntoPane: AccountView loaded successfully.");
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountView.class.getName(), "Error while loading AccountView", e);
+            throw e;
+        }
     }
 
+    /**
+     * Aktualisiert die Gesamtbilanz des Benutzers basierend auf abgeschlossenen Transaktionen.
+     *
+     * @throws SQLException bei einem Fehler beim Berechnen der Bilanz.
+     */
     private void updateOverallBalance() throws SQLException {
         try {
-            System.out.println("AccountView.updateOverallBalance: Retrieving all accounts for user " + currentUserId);
-
-            // Gesamtbilanz durch Iteration über alle Konten berechnen
             double totalBalance = accountController.getAllAccountsForUser(currentUserId)
                     .stream()
                     .mapToDouble(account -> {
-                        double balance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
-                        System.out.println("AccountView.updateOverallBalance: Calculated balance for account '" + account.getName() + "': " + balance);
-                        return balance;
+                        try {
+                            return accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+                        } catch (SQLException e) {
+                            LoggerUtils.logError(AccountView.class.getName(), "Error while calculating balance for account: " + account.getName(), e);
+                            throw new RuntimeException(e);
+                        }
                     })
                     .sum();
 
-            // Gesamtbilanz anzeigen
-            System.out.println("AccountView.updateOverallBalance: Total calculated balance: " + totalBalance);
             overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
-
         } catch (SQLException e) {
-            System.err.println("AccountView.updateOverallBalance: Error retrieving accounts or calculating balance - " + e.getMessage());
-            throw e;  // Fehler erneut werfen, um die Methode korrekt zu verlassen
+            LoggerUtils.logError(AccountView.class.getName(), "Error while updating overall balance for user: " + currentUserId, e);
+            throw e;
         }
     }
 
-
-
-    // Show all accounts in a grid layout
+    /**
+     * Zeigt alle Konten des Benutzers in einem Grid-Layout an.
+     *
+     * @param accountsLayout Das Layout, in dem die Konten angezeigt werden sollen.
+     * @throws SQLException bei einem Fehler beim Abrufen der Konten.
+     */
     private void showAccounts(VBox accountsLayout) throws SQLException {
-        GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(20));
-        gridPane.setHgap(20);
-        gridPane.setVgap(20);
-        gridPane.setAlignment(Pos.CENTER);
+        try {
+            GridPane gridPane = new GridPane();
+            gridPane.setPadding(new Insets(20));
+            gridPane.setHgap(20);
+            gridPane.setVgap(20);
+            gridPane.setAlignment(Pos.CENTER);
 
-        List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
+            List<Account> accounts = accountController.getAllAccountsForUser(currentUserId);
 
-        int row = 0, col = 0;
-        for (Account account : accounts) {
-            HBox accountCard = createAccountCard(account); // Correctly call without passing an unnecessary parameter
-            gridPane.add(accountCard, col, row);
+            int row = 0, col = 0;
+            for (Account account : accounts) {
+                HBox accountCard = createAccountCard(account);
+                gridPane.add(accountCard, col, row);
 
-            col++;
-            if (col == 3) {  // Adjust column count to fit your desired layout
-                col = 0;
-                row++;
+                col++;
+                if (col == 3) {  // Layoutanpassung
+                    col = 0;
+                    row++;
+                }
             }
-        }
 
-        // Add the grid pane to the accounts layout
-        accountsLayout.getChildren().add(gridPane);
+            // Füge das GridPane zum Layout hinzu
+            accountsLayout.getChildren().add(gridPane);
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountView.class.getName(), "Error while displaying accounts for user: " + currentUserId, e);
+            throw e;
+        }
     }
 
-    // Show the account creation form below the account grid
+    /**
+     * Zeigt das Formular zum Erstellen eines neuen Kontos an.
+     *
+     * @param accountsLayout Das Layout, in dem das Formular angezeigt werden soll.
+     */
     private void showCreateAccountForm(VBox accountsLayout) {
-
-        // Hide the "Add Account" button when showing the form
         createAccountButton.setVisible(false);
 
-        // Create the container for the form
         VBox formContainer = new VBox(10);
         formContainer.setAlignment(Pos.CENTER);
         formContainer.setPadding(new Insets(10));
@@ -149,81 +181,80 @@ public class AccountView {
         VBox formLayout = new VBox(10);
         formLayout.setPadding(new Insets(20));
         formLayout.setAlignment(Pos.CENTER);
-        formLayout.setMaxWidth(200); // Set the width to match the account cards
+        formLayout.setMaxWidth(200);
 
         Label formTitle = new Label("Create New Account");
         formTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        // Input fields
+        // Eingabefelder
         TextField accountNameField = new TextField();
         accountNameField.setPromptText("Account Name");
-        accountNameField.setMaxWidth(Double.MAX_VALUE);
 
         TextField balanceField = new TextField();
         balanceField.setPromptText("Initial Balance");
-        balanceField.setMaxWidth(Double.MAX_VALUE);
 
-        // Save button with improved error handling
+        // Buttons
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e -> handleSaveButtonClick(accountsLayout, accountNameField, balanceField, formContainer));
 
-        // Cancel button that restores visibility of the "Add Account" button
         Button cancelButton = new Button("Cancel");
         cancelButton.setOnAction(e -> {
             accountsLayout.getChildren().remove(formContainer);
             createAccountButton.setVisible(true);
         });
 
-        // Button box layout
         HBox buttonBox = new HBox(10, saveButton, cancelButton);
         buttonBox.setAlignment(Pos.CENTER);
 
-        // Add components to form layout
         formLayout.getChildren().addAll(formTitle, accountNameField, balanceField, buttonBox);
         formContainer.getChildren().add(formLayout);
 
-        // Add the form container below the account grid
         accountsLayout.getChildren().add(formContainer);
     }
 
-    // Methode zum Verarbeiten des Klicks auf den Speichern-Button beim Erstellen eines neuen Kontos
+    /**
+     * Verarbeitet das Klicken auf den Speichern-Button beim Erstellen eines neuen Kontos.
+     *
+     * @param accountsLayout Das Layout, in dem die Konten angezeigt werden.
+     * @param accountNameField Textfeld für den Namen des neuen Kontos.
+     * @param balanceField Textfeld für den Startbetrag des neuen Kontos.
+     * @param formContainer Das Formularcontainer, das entfernt werden soll, wenn das Konto erstellt wurde.
+     */
     private void handleSaveButtonClick(VBox accountsLayout, TextField accountNameField, TextField balanceField, VBox formContainer) {
         try {
             String accountName = accountNameField.getText();
             double initialBalance = Double.parseDouble(balanceField.getText());
 
-            // Überprüfen, ob ein Konto mit dem gleichen Namen bereits existiert
+            // Überprüfen, ob ein Konto mit demselben Namen bereits existiert
             if (accountController.doesAccountExist(currentUserId, accountName)) {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
                 return;
             }
 
             // Versuch, ein neues Konto hinzuzufügen
-            boolean success = accountController.addAccount(currentUserId, accountName, 0.0);  // Balance auf 0 setzen, da sie durch die Transaktion verwaltet wird
+            boolean success = accountController.addAccount(currentUserId, accountName, 0.0);  // Startbalance auf 0, da durch Transaktion verwaltet
             if (success) {
-                // Lade das neue Konto anhand des Namens
+                // Lade das neu erstellte Konto
                 Account createdAccount = accountController.findAccountByName(currentUserId, accountName);
 
                 // Erstelle eine Transaktion für den Startbetrag
                 Transaction initialTransaction = new Transaction(
-                        "Initial Balance",  // Beschreibung der Transaktion
-                        initialBalance,     // Betrag (kann positiv oder negativ sein)
-                        initialBalance >= 0 ? "income" : "expense",  // Einnahme oder Ausgabe basierend auf dem Betrag
-                        null,               // Keine Kategorie notwendig
-                        createdAccount,     // Verknüpft mit dem neuen Konto
-                        null,               // Keine spezifische Kategorie
-                        new Date(System.currentTimeMillis()),  // Aktuelles Datum
-                        new Time(System.currentTimeMillis()),  // Aktuelle Uhrzeit
-                        "completed"         // Status der Transaktion
+                        "Initial Balance", // Beschreibung der Transaktion
+                        initialBalance,    // Betrag (positiv oder negativ)
+                        initialBalance >= 0 ? "income" : "expense", // Einnahme oder Ausgabe basierend auf Betrag
+                        null,              // Keine Kategorie nötig
+                        createdAccount,    // Verknüpft mit neuem Konto
+                        null,              // Keine spezifische Kategorie
+                        new Date(System.currentTimeMillis()), // Aktuelles Datum
+                        new Time(System.currentTimeMillis()), // Aktuelle Uhrzeit
+                        "completed"        // Status der Transaktion
                 );
 
-                // Transaktion speichern
+                // Speichern der Transaktion
                 transactionController.createTransaction(initialTransaction);
                 System.out.println("AccountView.handleSaveButtonClick: Initial balance transaction created for account - " + accountName + " " + initialTransaction);
 
-
-
-                // Aktualisiere die Kontoübersicht und Gesamtbilanz
+                // Aktualisiere die Kontenübersicht und Gesamtbilanz
                 refreshAccountList(accountsLayout);
                 updateOverallBalance();
                 createAccountButton.setVisible(true);
@@ -231,57 +262,80 @@ public class AccountView {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to create account. Please try again.");
             }
         } catch (NumberFormatException ex) {
-            // Zeige eine Warnung bei ungültigem Eingabewert für den Saldo
+            // Logge Fehler bei ungültigem Betrag
+            LoggerUtils.logError(AccountView.class.getName(), "Invalid balance format: " + balanceField.getText(), ex);
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            // Logge Fehler beim Speichern des Kontos
+            LoggerUtils.logError(AccountView.class.getName(), "Error while saving new account for user: " + currentUserId, e);
+            ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to save account. Please try again.");
         } finally {
-            // Entferne das Formular nach dem Verarbeiten
+            // Entferne das Formular nach der Verarbeitung
             accountsLayout.getChildren().remove(formContainer);
             createAccountButton.setVisible(true);
         }
     }
 
-    // Refresh the account list
+    /**
+     * Aktualisiert die Kontenliste und fügt den "Add Account"-Button erneut hinzu.
+     *
+     * @param accountsLayout Das Layout, in dem die Konten angezeigt werden.
+     * @throws SQLException bei einem Fehler beim Abrufen der Konten.
+     */
     private void refreshAccountList(VBox accountsLayout) throws SQLException {
-        accountsLayout.getChildren().clear();
-        showAccounts(accountsLayout);
-        accountsLayout.getChildren().add(createAccountButton);
-        updateOverallBalance();
+        try {
+            accountsLayout.getChildren().clear();
+            showAccounts(accountsLayout);
+            accountsLayout.getChildren().add(createAccountButton);
+            updateOverallBalance();
+        } catch (SQLException e) {
+            // Logge Fehler beim Aktualisieren der Kontenliste
+            LoggerUtils.logError(AccountView.class.getName(), "Error while refreshing account list for user: " + currentUserId, e);
+            throw e;
+        }
     }
 
-    // Create an account card
-    private HBox createAccountCard(Account account) {
-        HBox card = new HBox();
-        card.getStyleClass().add("account-card");
+    /**
+     * Erstellt eine visuelle Darstellung (Card) für ein Konto.
+     *
+     * @param account Das Konto, das angezeigt werden soll.
+     * @return Eine HBox, die das Konto darstellt.
+     * @throws SQLException bei einem Fehler beim Berechnen der Kontobilanz.
+     */
+    private HBox createAccountCard(Account account) throws SQLException {
+        try {
+            HBox card = new HBox();
+            card.getStyleClass().add("account-card");
+            card.setPadding(new Insets(20));
+            card.setAlignment(Pos.CENTER);
 
-        card.setPadding(new Insets(20));
-        card.setAlignment(Pos.CENTER);
+            Label nameLabel = new Label(account.getName());
+            nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
 
-        Label nameLabel = new Label(account.getName());
-        nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
+            // Berechne die aktualisierte Bilanz basierend auf abgeschlossenen Transaktionen
+            double updatedBalance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
 
-        // Berechne die aktualisierte Bilanz basierend auf abgeschlossenen Transaktionen
-        double updatedBalance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+            // Zeige die aktualisierte Bilanz in der AccountCard an
+            Label balanceLabel = new Label(String.format("%.2f", updatedBalance));
+            balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
-        // Zeige die aktualisierte Bilanz in der AccountCard an
-        Label balanceLabel = new Label(String.format("%.2f", updatedBalance));
-        balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
+            VBox cardContent = new VBox(10);
+            cardContent.setAlignment(Pos.CENTER);
+            cardContent.getChildren().addAll(nameLabel, balanceLabel);
 
-        VBox cardContent = new VBox(10);
-        cardContent.setAlignment(Pos.CENTER);
-        cardContent.getChildren().addAll(nameLabel, balanceLabel);
+            card.getChildren().add(cardContent);
 
-        card.getChildren().add(cardContent);
+            // Öffne die Detailansicht des Kontos, wenn darauf geklickt wird
+            card.setOnMouseClicked(e -> {
+                AccountDetailView accountDetailView = new AccountDetailView(accountController, transactionController, root);
+                accountDetailView.showAccountDetailView(account);
+            });
 
-        // Öffne die Detailansicht des Kontos, wenn darauf geklickt wird
-        card.setOnMouseClicked(e -> {
-            AccountDetailView accountDetailView = new AccountDetailView(accountController, transactionController, root);
-            accountDetailView.showAccountDetailView(account);
-        });
-
-        return card;
+            return card;
+        } catch (SQLException e) {
+            // Logge Fehler beim Erstellen der Kontoübersicht
+            LoggerUtils.logError(AccountView.class.getName(), "Error while creating account card for account: " + account.getName(), e);
+            throw e;
+        }
     }
-
-
 }

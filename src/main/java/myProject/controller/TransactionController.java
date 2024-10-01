@@ -7,6 +7,7 @@ import myProject.model.Account;
 import myProject.model.Category;
 import myProject.model.Transaction;
 import myProject.service.TransactionService;
+import myProject.util.LoggerUtils;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -16,179 +17,199 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Der TransactionController verwaltet die Interaktionen zwischen der Benutzeroberfläche
+ * und dem TransactionService. Er stellt Funktionen zum Erstellen, Aktualisieren, Löschen
+ * und Abrufen von Transaktionen bereit.
+ */
 public class TransactionController {
 
     private final TransactionService transactionService;
 
+    // Konstruktor zum Initialisieren des TransactionService
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
 
-    // Handle request to create a new regular or recurring transaction
+    /**
+     * Methode zur Erstellung einer neuen regulären oder wiederkehrenden Transaktion.
+     * @param transaction Die zu erstellende Transaktion.
+     */
     public void createTransaction(Transaction transaction) {
         try {
             if (transaction.isRecurring()) {
                 transactionService.addRecurringTransaction(transaction);
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Wiederkehrende Transaktion erfolgreich erstellt: " + transaction.getId());
             } else {
                 transactionService.addTransaction(transaction);
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Reguläre Transaktion erfolgreich erstellt: " + transaction.getId());
             }
-            System.out.println("Transaction created successfully.");
         } catch (Exception e) {
-
-            e.printStackTrace(); // Log full stack trace for debugging
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Erstellen der Transaktion: " + e.getMessage(), e);
         }
     }
 
-
-    // TransactionController.java
+    /**
+     * Methode zur Aktualisierung einer Transaktion (regulär oder wiederkehrend).
+     * @param transaction Die zu aktualisierende Transaktion.
+     */
     public void updateTransaction(Transaction transaction) {
         try {
             if (transaction.isRecurring()) {
                 transactionService.updateRecurringTransaction(transaction);
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Wiederkehrende Transaktion erfolgreich aktualisiert: " + transaction.getId());
             } else {
                 transactionService.updateTransaction(transaction);
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Reguläre Transaktion erfolgreich aktualisiert: " + transaction.getId());
             }
-            System.out.println("Transaction updated successfully.");
         } catch (SQLException e) {
-            System.err.println("Error updating transaction: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Aktualisieren der Transaktion: " + e.getMessage(), e);
         }
     }
 
-
-    // Handle request to delete a transaction
+    /**
+     * Methode zum Löschen einer Transaktion.
+     * @param transaction Die zu löschende Transaktion.
+     */
     public void deleteTransaction(Transaction transaction) {
         try {
             transactionService.deleteTransaction(transaction);
-            System.out.println("Transaction deleted successfully. ID: " + transaction.getId());
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktion erfolgreich gelöscht: " + transaction.getId());
         } catch (SQLException e) {
-            System.err.println("Error deleting transaction: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Löschen der Transaktion: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Methode zum Löschen einer wiederkehrenden Transaktion und deren Umwandlung in eine einmalige Transaktion.
+     * @param transaction Die zu löschende wiederkehrende Transaktion.
+     */
     public void deleteRecurringTransaction(Transaction transaction) {
         try {
-            // Lösche die Originaltransaktion und konvertiere sie in eine einmalige Transaktion
             transactionService.deleteRecurringTransaction(transaction);
-            System.out.println("Recurring transaction deleted and converted to single transaction. ID: " + transaction.getId());
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Wiederkehrende Transaktion erfolgreich gelöscht: " + transaction.getId());
         } catch (SQLException e) {
-            System.err.println("Error deleting recurring transaction: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Löschen der wiederkehrenden Transaktion: " + e.getMessage(), e);
         }
     }
 
-
-
+    /**
+     * Methode zum Löschen von ausstehenden Transaktionen basierend auf der wiederkehrenden Transaktion ID.
+     * @param recurringTransactionId Die ID der wiederkehrenden Transaktion.
+     */
     public void deletePendingTransactionsByRecurringId(String recurringTransactionId) {
         try {
             transactionService.deletePendingTransactionsByRecurringId(recurringTransactionId);
-            System.out.println("Pending transactions deleted successfully for recurring ID: " + recurringTransactionId);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Ausstehende Transaktionen erfolgreich gelöscht für ID: " + recurringTransactionId);
         } catch (SQLException e) {
-            System.err.println("Error deleting pending transactions: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Löschen ausstehender Transaktionen: " + e.getMessage(), e);
         }
     }
 
-    // Methode zum Löschen einer ausstehenden (pending) Transaktion
+    /**
+     * Methode zum Löschen einer ausstehenden Transaktion.
+     * @param transaction Die zu löschende ausstehende Transaktion.
+     */
     public void deletePendingTransaction(Transaction transaction) {
         try {
             if ("pending".equalsIgnoreCase(transaction.getStatus())) {
                 transactionService.deletePendingTransaction(transaction);
-                System.out.println("Pending transaction deleted successfully. ID: " + transaction.getId());
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Ausstehende Transaktion erfolgreich gelöscht: " + transaction.getId());
             } else {
-                System.out.println("Transaction is not pending. Cannot delete.");
+                LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktion ist nicht ausstehend: " + transaction.getId());
             }
         } catch (SQLException e) {
-            System.err.println("Error deleting pending transaction: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Löschen der ausstehenden Transaktion: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Methode zur Berechnung des nächsten Fälligkeitstermins einer wiederkehrenden Transaktion.
+     * @param transaction Die wiederkehrende Transaktion.
+     * @return Der nächste Fälligkeitstermin.
+     */
     public LocalDate getNextRecurringDate(Transaction transaction) {
         return transactionService.calculateNextRecurringDate(transaction);
     }
 
-
-
-
-
-
-    // Fetch next occurrence of recurring transactions for a specific account
+    /**
+     * Methode zum Abrufen der nächsten Vorkommnisse von wiederkehrenden Transaktionen für ein Konto.
+     * @param accountId Die ID des Kontos.
+     * @return ObservableList der nächsten wiederkehrenden Transaktionen.
+     */
     public ObservableList<Transaction> getNextRecurringTransactionsByAccount(String accountId) {
-        try {
-            List<Transaction> recurringTransactions = transactionService.getNextRecurringTransactionsByAccount(accountId);
-            return FXCollections.observableArrayList(recurringTransactions);
-        } catch (SQLException e) {
-            System.err.println("Error fetching next occurrences of recurring transactions: " + e.getMessage());
-            e.printStackTrace();
-            return FXCollections.observableArrayList();
-        }
+        List<Transaction> recurringTransactions = transactionService.getNextRecurringTransactionsByAccount(accountId);
+        LoggerUtils.logInfo(TransactionController.class.getName(), "Nächste wiederkehrende Transaktionen für Konto " + accountId + " abgerufen.");
+        return FXCollections.observableArrayList(recurringTransactions);
     }
 
-
-    // Handle money transfer between accounts
+    /**
+     * Methode zum Überweisen von Geld zwischen zwei Konten.
+     * @param transferOut Die abgehende Transaktion.
+     * @param transferIn Die eingehende Transaktion.
+     */
     public void transferBetweenAccounts(Transaction transferOut, Transaction transferIn) {
         try {
             transactionService.addTransaction(transferOut);
             transactionService.addTransaction(transferIn);
-            System.out.println("Transfer completed successfully.");
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Geldüberweisung zwischen Konten erfolgreich.");
         } catch (SQLException e) {
-            System.err.println("Error during transfer: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler bei der Geldüberweisung: " + e.getMessage(), e);
         }
     }
 
-    // Get all transactions as an ObservableList for TableView
+    /**
+     * Methode zum Abrufen aller Transaktionen als ObservableList.
+     * @return ObservableList aller Transaktionen.
+     */
     public ObservableList<Transaction> getAllTransactions() {
         try {
             List<Transaction> transactions = transactionService.getAllTransactions();
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Alle Transaktionen abgerufen.");
             return FXCollections.observableArrayList(transactions);
-        } catch (SQLException e) {
-            System.err.println("Error fetching transactions: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen: " + e.getMessage(), e);
             return FXCollections.observableArrayList();
         }
     }
 
-    // Get all transactions for a specific category
+    /**
+     * Methode zum Abrufen aller Transaktionen für eine bestimmte Kategorie.
+     * @param category Die Kategorie, für die Transaktionen abgerufen werden sollen.
+     * @return Liste der Transaktionen für die angegebene Kategorie.
+     */
     public List<Transaction> getTransactionsForCategory(Category category) {
         try {
-            return transactionService.getTransactionsByCategory(category);
-        } catch (SQLException e) {
-            System.err.println("Error fetching transactions for category: " + e.getMessage());
-            e.printStackTrace();
+            List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktionen für Kategorie " + category.getName() + " abgerufen.");
+            return transactions;
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen für Kategorie: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }
 
-    // Method to get spending by category for a specific account with default empty data
+    /**
+     * Methode zur Ermittlung der Ausgaben nach Kategorie für ein Konto.
+     * @param account Das Konto, für das die Ausgaben ermittelt werden sollen.
+     * @return ObservableList der Ausgaben nach Kategorie.
+     */
     public ObservableList<PieChart.Data> getSpendingByCategoryForAccount(Account account) {
         try {
-            // Fetch all categories for the user associated with the account
             List<Category> categories = transactionService.getAllCategoriesForUser(account.getUserId());
             Map<String, Double> categorySpendingMap = new HashMap<>();
 
             for (Category category : categories) {
                 List<Transaction> transactions = getTransactionsForCategory(category);
-                // Calculate total spent and convert to positive values for chart display
                 double totalSpent = transactions.stream()
                         .filter(t -> t.getAccount() != null && t.getAccount().getId().equals(account.getId()) &&
                                 t.getType().equalsIgnoreCase("expense"))
-                        .mapToDouble(t -> Math.abs(t.getAmount())) // Use Math.abs() to ensure positive values for expenses
+                        .mapToDouble(t -> Math.abs(t.getAmount()))  // Nur positive Werte für Ausgaben anzeigen
                         .sum();
-
-                // Log each category's spending
-                System.out.println("Category: " + category.getName() + ", Total Spent: " + totalSpent);
-
-                // Add to map regardless of whether the amount is zero or non-zero
                 categorySpendingMap.put(category.getName(), totalSpent);
             }
 
-            // Check if the spending map is empty
             if (categorySpendingMap.isEmpty() || categorySpendingMap.values().stream().allMatch(v -> v == 0)) {
-                System.out.println("No significant spending data found. Displaying empty categories.");
-                // Display empty categories with zero values for the user to see
                 return FXCollections.observableArrayList(
                         categories.stream()
                                 .map(cat -> new PieChart.Data(cat.getName(), 0))
@@ -196,101 +217,113 @@ public class TransactionController {
                 );
             }
 
-            System.out.println("Category Spending Map: " + categorySpendingMap);
             return FXCollections.observableArrayList(
                     categorySpendingMap.entrySet().stream()
                             .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))
                             .collect(Collectors.toList())
             );
-        } catch (SQLException e) {
-            System.err.println("Error fetching spending by category: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Ausgaben nach Kategorie: " + e.getMessage(), e);
             return FXCollections.observableArrayList();
         }
     }
 
-
-
-
-
-    // Method to get total spent amount for a specific category, including recurring transactions
+    /**
+     * Methode zur Ermittlung des ausgegebenen Betrags für eine bestimmte Kategorie (inklusive wiederkehrender Transaktionen).
+     * @param category Die Kategorie, für die der ausgegebene Betrag ermittelt werden soll.
+     * @return Der ausgegebene Betrag.
+     */
     public double getSpentAmountForCategory(Category category) {
         try {
-            // Fetch regular transactions for the category
             List<Transaction> regularTransactions = transactionService.getTransactionsByCategory(category);
-            // Fetch recurring transactions for the category
             List<Transaction> recurringTransactions = transactionService.getRecurringTransactionsByCategory(category);
-
-            // Combine both lists
-            List<Transaction> allTransactions = new ArrayList<>();
-            allTransactions.addAll(regularTransactions);
+            List<Transaction> allTransactions = new ArrayList<>(regularTransactions);
             allTransactions.addAll(recurringTransactions);
-
-            // Calculate the total amount spent
-            return allTransactions.stream().mapToDouble(Transaction::getAmount).sum();
-        } catch (SQLException e) {
-            System.err.println("Error fetching transactions for category: " + e.getMessage());
-            e.printStackTrace();
+            double totalSpent = allTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Ausgegebener Betrag für Kategorie " + category.getName() + ": " + totalSpent);
+            return totalSpent;
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen des ausgegebenen Betrags für Kategorie: " + e.getMessage(), e);
             return 0.0;
         }
     }
 
-
-    // Filter transactions by account and return as ObservableList for TableView
+    /**
+     * Methode zum Filtern von Transaktionen nach Konto und Rückgabe als ObservableList.
+     * @param accountName Der Name des Kontos, für das die Transaktionen gefiltert werden sollen.
+     * @return ObservableList der gefilterten Transaktionen.
+     */
     public ObservableList<Transaction> getTransactionsByAccount(String accountName) {
         try {
             List<Transaction> transactions = transactionService.getTransactionsByAccount(accountName);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktionen für Konto " + accountName + " abgerufen.");
             return FXCollections.observableArrayList(transactions);
-        } catch (SQLException e) {
-            System.err.println("Error fetching transactions by account: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen für Konto: " + e.getMessage(), e);
             return FXCollections.observableArrayList();
         }
     }
 
-    // Get all account names for filtering
+    /**
+     * Methode zum Abrufen aller Kontonamen für Filter.
+     * @return Liste der Kontonamen.
+     */
     public List<String> getAllAccountNames() {
         try {
-            return transactionService.getAllAccountNames();
-        } catch (SQLException e) {
-            System.err.println("Error fetching account names: " + e.getMessage());
-            e.printStackTrace();
+            List<String> accountNames = transactionService.getAllAccountNames();
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Alle Kontonamen abgerufen.");
+            return accountNames;
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Kontonamen: " + e.getMessage(), e);
             return List.of();
         }
     }
 
-    // Get all categories (custom + standard) for a specific user as an ObservableList
+    /**
+     * Methode zum Abrufen aller Kategorien für einen bestimmten Benutzer als ObservableList.
+     * @param userId Die ID des Benutzers.
+     * @return ObservableList der Kategorien für den Benutzer.
+     */
     public ObservableList<Category> getAllCategoriesForUser(String userId) {
         try {
             List<Category> categories = transactionService.getAllCategoriesForUser(userId);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Kategorien für Benutzer " + userId + " abgerufen.");
             return FXCollections.observableArrayList(categories);
-        } catch (SQLException e) {
-            System.err.println("Error fetching categories for user: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Kategorien für Benutzer: " + e.getMessage(), e);
             return FXCollections.observableArrayList();
         }
     }
 
-    // Fetch all accounts for the logged-in user as an ObservableList for ComboBox
+    /**
+     * Methode zum Abrufen aller Konten für den angemeldeten Benutzer als ObservableList.
+     * @param userId Die ID des Benutzers.
+     * @return ObservableList der Konten für den Benutzer.
+     */
     public ObservableList<Account> getAccountsForUser(String userId) {
         try {
             List<Account> accounts = transactionService.getAccountsForUser(userId);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Konten für Benutzer " + userId + " abgerufen.");
             return FXCollections.observableArrayList(accounts);
-        } catch (SQLException e) {
-            System.err.println("Error fetching accounts for user: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Konten für Benutzer: " + e.getMessage(), e);
             return FXCollections.observableArrayList();
         }
     }
 
-    // Method to get completed transactions by account
+    /**
+     * Methode zum Abrufen abgeschlossener Transaktionen für ein bestimmtes Konto.
+     * @param accountName Der Name des Kontos.
+     * @return Liste der abgeschlossenen Transaktionen für das Konto.
+     */
     public List<Transaction> getCompletedTransactionsByAccount(String accountName) {
         try {
-            System.out.println("TransactionController.getCompletedTransactionsByAccount: Fetching completed transactions for account - " + accountName);
-            return transactionService.getCompletedTransactionsByAccount(accountName);
-        } catch (SQLException e) {
-            System.err.println("TransactionController.getCompletedTransactionsByAccount: Error fetching completed transactions - " + e.getMessage());
-            return new ArrayList<>(); // Return empty list in case of error
+            List<Transaction> completedTransactions = transactionService.getCompletedTransactionsByAccount(accountName);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Abgeschlossene Transaktionen für Konto " + accountName + " abgerufen.");
+            return completedTransactions;
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der abgeschlossenen Transaktionen: " + e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 }

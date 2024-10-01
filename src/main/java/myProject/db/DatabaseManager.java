@@ -1,34 +1,53 @@
 package myProject.db;
 
+import myProject.util.LoggerUtils;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * Diese Klasse verwaltet die Datenbankverbindungen und die Initialisierung der Datenbanktabellen.
+ * Sie stellt Methoden bereit, um eine Verbindung zur Datenbank herzustellen und die notwendigen Tabellen zu erstellen.
+ */
 public class DatabaseManager {
 
-    // Database URL and credentials
+    // Datenbank-URL und Anmeldeinformationen
     private static final String DB_URL = "jdbc:h2:./db;DB_CLOSE_DELAY=-1";
     private static final String DB_USER = "sa";
     private static final String DB_PASSWORD = "";
 
-    // Get a connection to the database
+    /**
+     * Stellt eine Verbindung zur Datenbank her und gibt diese zurück.
+     * @return Connection Objekt, das die Verbindung zur Datenbank darstellt.
+     * @throws SQLException Wenn ein Fehler bei der Verbindung auftritt.
+     */
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        try {
+            return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        } catch (SQLException e) {
+            LoggerUtils.logError(DatabaseManager.class.getName(), "Fehler bei der Verbindung zur Datenbank.", e);
+            throw e;
+        }
     }
 
-    // Initialize the database with tables
+    /**
+     * Initialisiert die Datenbank, indem alle erforderlichen Tabellen erstellt werden.
+     * Diese Methode wird beim Start der Anwendung aufgerufen, um sicherzustellen,
+     * dass alle Tabellen vorhanden sind.
+     */
     public static void initializeDatabase() {
         try (Connection connection = getConnection();
              Statement stmt = connection.createStatement()) {
 
-            // Create users table
+            // Erstellen der Tabelle für Benutzer
             stmt.execute("CREATE TABLE IF NOT EXISTS users ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "username VARCHAR(255) NOT NULL UNIQUE, "
                     + "password VARCHAR(255) NOT NULL)");
 
-            // Create categories table
+            // Erstellen der Tabelle für Kategorien
             stmt.execute("CREATE TABLE IF NOT EXISTS categories ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "name VARCHAR(255) NOT NULL, "
@@ -39,7 +58,7 @@ public class DatabaseManager {
                     + "user_id VARCHAR(255), "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Insert standard categories only if they do not already exist
+            // Standardkategorien einfügen, falls nicht bereits vorhanden
             stmt.execute("MERGE INTO categories (id, name, color, is_standard, is_custom, budget, user_id) KEY (id) "
                     + "VALUES ('1', 'Income', '#50fa7b', true, false, NULL, NULL),"
                     + "('2', 'Housing', '#ff5555', true, false, NULL, NULL),"
@@ -47,7 +66,7 @@ public class DatabaseManager {
                     + "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL),"
                     + "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)");
 
-            // Create accounts table
+            // Erstellen der Tabelle für Konten
             stmt.execute("CREATE TABLE IF NOT EXISTS accounts ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "user_id VARCHAR(255), "
@@ -55,7 +74,7 @@ public class DatabaseManager {
                     + "balance DOUBLE NOT NULL, "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Create transactions table with recurring_transaction_id
+            // Erstellen der Tabelle für Transaktionen
             stmt.execute("CREATE TABLE IF NOT EXISTS transactions ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "amount DOUBLE NOT NULL, "
@@ -66,11 +85,11 @@ public class DatabaseManager {
                     + "type VARCHAR(255), "
                     + "status VARCHAR(20) DEFAULT 'pending', "
                     + "account_id VARCHAR(255), "
-                    + "recurring_transaction_id VARCHAR(255), "  // New column for recurring transactions
+                    + "recurring_transaction_id VARCHAR(255), "
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
-            // Create recurring transactions table
+            // Erstellen der Tabelle für wiederkehrende Transaktionen
             stmt.execute("CREATE TABLE IF NOT EXISTS recurring_transactions ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "amount DOUBLE NOT NULL, "
@@ -86,7 +105,7 @@ public class DatabaseManager {
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
-            // Create budgets table
+            // Erstellen der Tabelle für Budgets
             stmt.execute("CREATE TABLE IF NOT EXISTS budgets ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "user_id VARCHAR(255) NOT NULL, "
@@ -95,18 +114,15 @@ public class DatabaseManager {
                     + "end_date DATE NOT NULL, "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Create budget_categories table
+            // Erstellen der Tabelle für Budget-Kategorien
             stmt.execute("CREATE TABLE IF NOT EXISTS budget_categories ("
                     + "budget_id VARCHAR(255), "
                     + "category_id VARCHAR(255), "
                     + "FOREIGN KEY (budget_id) REFERENCES budgets(id), "
                     + "FOREIGN KEY (category_id) REFERENCES categories(id))");
 
-            System.out.println("Database initialized successfully.");
-
         } catch (SQLException e) {
-            System.err.println("Database initialization error: " + e.getMessage());
-            e.printStackTrace();
+            LoggerUtils.logError(DatabaseManager.class.getName(), "Fehler bei der Datenbankinitialisierung.", e);
         }
     }
 }

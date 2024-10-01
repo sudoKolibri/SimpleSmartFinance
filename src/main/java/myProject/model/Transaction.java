@@ -6,34 +6,51 @@ import java.sql.Time;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Die Transaction-Klasse repräsentiert eine finanzielle Transaktion,
+ * die mit einem Benutzer, einem Konto und einer Kategorie verknüpft ist.
+ * Eine Transaktion kann wiederkehrend sein und wird mit einem Datum und einer Uhrzeit erfasst.
+ */
 public class Transaction {
 
-    private final StringProperty id;
-    private final StringProperty description;
-    private final ObjectProperty<Date> date;
-    private final ObjectProperty<Time> time;
-    private final DoubleProperty amount;
-    private final StringProperty type;
+    private final StringProperty id;  // Eindeutige ID der Transaktion
+    private final StringProperty description;  // Beschreibung der Transaktion
+    private final ObjectProperty<Date> date;  // Datum der Transaktion
+    private final ObjectProperty<Time> time;  // Uhrzeit der Transaktion
+    private final DoubleProperty amount;  // Betrag der Transaktion
+    private final StringProperty type;  // Typ der Transaktion (z. B. "Einnahme" oder "Ausgabe")
 
-    // Relationships
-    private final ObjectProperty<User> user;
-    private final ObjectProperty<Account> account;
-    private final ObjectProperty<Category> category;
+    // Verknüpfungen zu anderen Modellen
+    private final ObjectProperty<User> user;  // Benutzer, der die Transaktion erstellt hat
+    private final ObjectProperty<Account> account;  // Konto, dem die Transaktion zugeordnet ist
+    private final ObjectProperty<Category> category;  // Kategorie der Transaktion
 
-    // Recurring transactions
-    private final BooleanProperty isRecurring;
-    private StringProperty recurrenceInterval;
-    private final ObjectProperty<Date> endDate;
-    private final StringProperty recurringTransactionId; // NEW FIELD
+    // Wiederkehrende Transaktionen
+    private final BooleanProperty isRecurring;  // Gibt an, ob die Transaktion wiederkehrend ist
+    private StringProperty recurrenceInterval;  // Wiederholungsintervall (z. B. "monatlich")
+    private final ObjectProperty<Date> endDate;  // Enddatum der wiederkehrenden Transaktion
+    private final StringProperty recurringTransactionId;  // ID der ursprünglichen wiederkehrenden Transaktion
 
-    private final StringProperty currency;
-    private final StringProperty status;
+    private final StringProperty currency;  // Währung der Transaktion
+    private final StringProperty status;  // Status der Transaktion (z. B. "abgeschlossen" oder "ausstehend")
 
-    // Timestamps
-    private final ObjectProperty<Date> createdAt;
-    private final ObjectProperty<Date> updatedAt;
+    // Zeitstempel
+    private final ObjectProperty<Date> createdAt;  // Zeitpunkt der Erstellung der Transaktion
+    private final ObjectProperty<Date> updatedAt;  // Zeitpunkt der letzten Aktualisierung der Transaktion
 
-    // Constructor
+    /**
+     * Konstruktor für die Erstellung einer neuen Transaktion.
+     *
+     * @param description Beschreibung der Transaktion.
+     * @param amount Betrag der Transaktion.
+     * @param type Typ der Transaktion (z. B. "Einnahme" oder "Ausgabe").
+     * @param user Benutzer, der die Transaktion erstellt hat.
+     * @param account Konto, dem die Transaktion zugeordnet ist.
+     * @param category Kategorie der Transaktion.
+     * @param date Datum der Transaktion.
+     * @param time Uhrzeit der Transaktion.
+     * @param status Status der Transaktion (z. B. "abgeschlossen" oder "ausstehend").
+     */
     public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date, Time time, String status) {
         this.id = new SimpleStringProperty(UUID.randomUUID().toString());
         this.description = new SimpleStringProperty(description);
@@ -47,80 +64,15 @@ public class Transaction {
         this.isRecurring = new SimpleBooleanProperty(false);
         this.recurrenceInterval = new SimpleStringProperty("");
         this.endDate = new SimpleObjectProperty<>(null);
-        this.recurringTransactionId = new SimpleStringProperty(null); // Initialize as null
+        this.recurringTransactionId = new SimpleStringProperty(null);
         this.currency = new SimpleStringProperty("USD");
         this.status = new SimpleStringProperty(status);
         this.createdAt = new SimpleObjectProperty<>(new Date());
         this.updatedAt = new SimpleObjectProperty<>(new Date());
     }
 
-    // Properties (Getters for JavaFX binding)
-    public StringProperty idProperty() {
-        return id;
-    }
+    // Getter- und Setter-Methoden für die Eigenschaften
 
-    public StringProperty descriptionProperty() {
-        return description;
-    }
-
-    public ObjectProperty<Date> dateProperty() {
-        return date;
-    }
-
-    public ObjectProperty<Time> timeProperty() {
-        return time;
-    }
-
-    public DoubleProperty amountProperty() {
-        return amount;
-    }
-
-    public StringProperty typeProperty() {
-        return type;
-    }
-
-    public ObjectProperty<User> userProperty() {
-        return user;
-    }
-
-    public ObjectProperty<Account> accountProperty() {
-        return account;
-    }
-
-
-    public ObjectProperty<Category> categoryProperty() {
-        return category;
-    }
-
-    public BooleanProperty isRecurringProperty() {
-        return isRecurring;
-    }
-
-    public StringProperty recurrenceIntervalProperty() {
-        return recurrenceInterval;
-    }
-
-    public ObjectProperty<Date> endDateProperty() {
-        return endDate;
-    }
-
-    public StringProperty currencyProperty() {
-        return currency;
-    }
-
-    public StringProperty statusProperty() {
-        return status;
-    }
-
-    public ObjectProperty<Date> createdAtProperty() {
-        return createdAt;
-    }
-
-    public ObjectProperty<Date> updatedAtProperty() {
-        return updatedAt;
-    }
-
-    // Standard Getters and Setters for regular use
     public String getId() {
         return id.get();
     }
@@ -257,12 +209,34 @@ public class Transaction {
         this.recurringTransactionId.set(recurringTransactionId);
     }
 
-    // Method to mark the transaction as recurring
+    public StringProperty descriptionProperty() {
+        return description;
+    }
+
+    public DoubleProperty amountProperty() {
+        return amount;
+    }
+
+    public ObjectProperty<Date> dateProperty() {
+        return date;
+    }
+
+    public StringProperty statusProperty() {
+        return status;
+    }
+
+    public StringProperty typeProperty() {
+        return type;
+    }
+
+    /**
+     * Markiert eine Transaktion als wiederkehrend und legt das Wiederholungsintervall und das Enddatum fest.
+     *
+     * @param interval Wiederholungsintervall (z. B. "monatlich").
+     * @param endDate Enddatum der wiederkehrenden Transaktion.
+     */
     public void markAsRecurring(String interval, Date endDate) {
         this.isRecurring.set(true);
-        if (this.recurrenceInterval == null) {
-            this.recurrenceInterval = new SimpleStringProperty("");
-        }
         this.recurrenceInterval.set(interval);
         this.endDate.set(endDate);
     }

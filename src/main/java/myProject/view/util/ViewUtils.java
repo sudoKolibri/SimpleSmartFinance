@@ -4,69 +4,109 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import myProject.util.LoggerUtils;
 
+import java.util.Objects;
+
+/**
+ * Die Klasse ViewUtils stellt verschiedene Hilfsfunktionen für die Benutzeroberfläche zur Verfügung,
+ * wie z.B. das Festlegen von ProgressBar-Farben, die Überprüfung von Eingaben und das Anzeigen von Alerts.
+ */
 public class ViewUtils {
 
-    // Determine the progress bar color based on the spend/budget ratio
+    /**
+     * Bestimmt die Farbe einer ProgressBar basierend auf dem Verhältnis von Ausgaben zum Budget.
+     *
+     * @param spent  Der ausgegebene Betrag.
+     * @param budget Das festgelegte Budget.
+     * @return Die Farbe als String, abhängig vom Verhältnis der Ausgaben zum Budget.
+     */
     public static String getProgressBarColor(double spent, double budget) {
         if (budget <= 0 || Double.isNaN(spent) || Double.isNaN(budget) || Double.isInfinite(spent) || Double.isInfinite(budget)) {
-            return "#50fa7b";  // Default color for invalid cases
+            LoggerUtils.logInfo(ViewUtils.class.getName(), "Ungültiges Budget oder Ausgaben für ProgressBarColor. Verwende Standardfarbe.");
+            return "#50fa7b";  // Standardfarbe für ungültige Fälle
         }
 
         double ratio = spent / budget;
-        ratio = Math.max(0, Math.min(1, ratio));
+        ratio = Math.max(0, Math.min(1, ratio));  // Sicherstellen, dass das Verhältnis zwischen 0 und 1 liegt
 
         if (ratio < 0.5) {
-            return "#50fa7b";  // Green for healthy budget (under 50%)
+            return "#50fa7b";  // Grün für unter 50 % Auslastung des Budgets
         } else if (ratio < 0.75) {
-            return "#f1fa8c";  // Yellow for caution (50% to 75%)
+            return "#f1fa8c";  // Gelb für 50 % bis 75 % Auslastung
         } else if (ratio < 0.9) {
-            return "#ffb86c";  // Orange for warning (75% to 90%)
+            return "#ffb86c";  // Orange für 75 % bis 90 % Auslastung
         } else {
-            return "#ff5555";  // Red for danger (90% to 100%)
+            return "#ff5555";  // Rot für über 90 % Auslastung (kritisch)
         }
     }
 
-    // Helper for optional budget (category)
+    /**
+     * Hilfsmethode, um das optionale Budget einer Kategorie aus einem Textfeld zu ermitteln.
+     *
+     * @param budgetField Das Textfeld, in dem das Budget eingegeben wurde.
+     * @return Das Budget als Double-Wert oder null, wenn die Eingabe ungültig ist.
+     */
     public static Double getCategoryBudget(TextField budgetField) {
         Double categoryBudget = null;
         if (!budgetField.getText().isEmpty()) {
             try {
                 categoryBudget = Double.parseDouble(budgetField.getText());
+                LoggerUtils.logInfo(ViewUtils.class.getName(), "Kategorie-Budget erfolgreich geparst: " + categoryBudget);
             } catch (NumberFormatException ex) {
+                LoggerUtils.logError(ViewUtils.class.getName(), "Ungültiges Budgetformat eingegeben.", ex);
                 categoryBudget = null;
             }
         }
         return categoryBudget;
     }
 
-    // Validate if a TextField has a numeric value
+    /**
+     * Überprüft, ob das in einem Textfeld eingegebene Zeichen eine gültige Zahl ist.
+     *
+     * @param textField Das Textfeld, das überprüft werden soll.
+     * @return true, wenn die Eingabe numerisch ist, andernfalls false.
+     */
     public static boolean isNumeric(TextField textField) {
         try {
             Double.parseDouble(textField.getText());
+            LoggerUtils.logInfo(ViewUtils.class.getName(), "Eingabe im Textfeld ist numerisch: " + textField.getText());
             return true;
         } catch (NumberFormatException e) {
+            LoggerUtils.logError(ViewUtils.class.getName(), "Ungültige numerische Eingabe im Textfeld: " + textField.getText(), e);
             return false;
         }
     }
 
-    // Format a double value as a currency string
+    /**
+     * Formatiert einen Double-Wert als Währungsstring.
+     *
+     * @param amount Der zu formatierende Betrag.
+     * @return Der formatierte String im Währungsformat.
+     */
     public static String formatCurrency(double amount) {
+        LoggerUtils.logInfo(ViewUtils.class.getName(), "Formatiere Betrag als Währung: " + amount);
         return String.format("$%.2f", amount);
     }
 
-    // Method to show a custom-styled alert
+    /**
+     * Zeigt einen benutzerdefinierten Alert an.
+     *
+     * @param alertType Der Typ des Alerts (z.B. ERROR, INFORMATION).
+     * @param message   Die anzuzeigende Nachricht.
+     */
     public static void showAlert(Alert.AlertType alertType, String message) {
+        LoggerUtils.logInfo(ViewUtils.class.getName(), "Zeige Alert: " + alertType + " - " + message);
         Alert alert = new Alert(alertType);
         alert.setContentText(message);
         alert.setHeaderText(null);
         alert.initStyle(StageStyle.UTILITY);
 
-        // Apply custom styles
-        alert.getDialogPane().getStylesheets().add(ViewUtils.class.getResource("/styles.css").toExternalForm());
+        // Anwenden benutzerdefinierter Styles
+        alert.getDialogPane().getStylesheets().add(Objects.requireNonNull(ViewUtils.class.getResource("/styles.css")).toExternalForm());
         alert.getDialogPane().getStyleClass().add("custom-alert");
 
-        // Show the alert
+        // Hintergrundstil setzen
         Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
         stage.getScene().getRoot().setStyle("-fx-background-color: #282a36;");
         stage.showAndWait();

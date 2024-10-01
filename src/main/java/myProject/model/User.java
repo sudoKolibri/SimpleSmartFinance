@@ -2,26 +2,42 @@ package myProject.model;
 
 import java.util.UUID;
 
+/**
+ * Die User-Klasse repräsentiert einen Benutzer im System.
+ * Jeder Benutzer hat eine eindeutige ID, einen Benutzernamen und ein Passwort.
+ */
 public class User {
-    private String id;
-    private String username;
-    private String password;
+    private String id;  // Eindeutige ID des Benutzers
+    private String username;  // Benutzername des Benutzers
+    private String password;  // Passwort des Benutzers
 
-    // Constructor for creating a new user (with auto-generated ID)
+    /**
+     * Konstruktor für die Erstellung eines neuen Benutzers mit einer automatisch generierten ID.
+     *
+     * @param username Der Benutzername des neuen Benutzers.
+     * @param password Das Passwort des neuen Benutzers.
+     */
     public User(String username, String password) {
-        this.id = UUID.randomUUID().toString();  // Auto-generate a unique ID
+        this.id = UUID.randomUUID().toString();  // Automatisch generierte eindeutige ID
         this.username = username;
         this.password = password;
     }
 
-    // Constructor for loading an existing user (with provided ID)
+    /**
+     * Konstruktor für das Laden eines bestehenden Benutzers mit einer vorgegebenen ID.
+     *
+     * @param id Die eindeutige ID des Benutzers.
+     * @param username Der Benutzername des Benutzers.
+     * @param password Das Passwort des Benutzers.
+     */
     public User(String id, String username, String password) {
         this.id = id;
         this.username = username;
         this.password = password;
     }
 
-    // Getters and setters
+    // Getter- und Setter-Methoden für die Eigenschaften
+
     public String getId() {
         return id;
     }

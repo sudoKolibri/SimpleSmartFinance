@@ -9,25 +9,45 @@ import myProject.model.Category;
 import myProject.model.Transaction;
 import myProject.controller.TransactionController;
 import myProject.controller.CategoryController;
+import myProject.util.LoggerUtils;
 import myProject.view.util.ViewUtils;
 
+/**
+ * Die Klasse CategoryDetailView ist verantwortlich für die Anzeige, Bearbeitung und Verwaltung
+ * der Details einer Kategorie sowie deren Transaktionen. Sie ermöglicht die Anzeige und
+ * Bearbeitung von Budgets und das Handling der
+ * Benutzerinteraktionen mit Kategorien.
+ */
 public class CategoryDetailView {
     private final CategoryController categoryController;
     private final TransactionController transactionController;
     private final BorderPane root;
 
-    // Constructor to initialize controllers and layout
+    /**
+     * Konstruktor zur Initialisierung der benötigten Controller und des Layouts.
+     *
+     * @param categoryController Der Controller für Kategorien.
+     * @param transactionController Der Controller für Transaktionen.
+     * @param root Das Root-Layout, in das die Ansicht eingefügt wird.
+     */
     public CategoryDetailView(CategoryController categoryController, TransactionController transactionController, BorderPane root) {
         this.categoryController = categoryController;
         this.transactionController = transactionController;
         if (root == null) {
-            throw new IllegalArgumentException("Root layout cannot be null.");
+            LoggerUtils.logError(CategoryDetailView.class.getName(), "Root-Layout darf nicht null sein.", null);
+            throw new IllegalArgumentException("Root-Layout darf nicht null sein.");
         }
         this.root = root;
     }
 
-    // Show detailed view of a specific category
+    /**
+     * Zeigt die Detailansicht einer bestimmten Kategorie an, inklusive Budget-Informationen
+     * und zugehörigen Transaktionen.
+     *
+     * @param category Die Kategorie, deren Details angezeigt werden sollen.
+     */
     public void showCategoryDetailView(Category category) {
+        LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Zeige Detailansicht für Kategorie: " + category.getName());
 
         VBox detailView = new VBox(20);
         detailView.getStyleClass().add("detail-view");
@@ -41,15 +61,14 @@ public class CategoryDetailView {
             budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
             detailView.getChildren().add(budgetLabel);
 
-            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));  // Use absolute value
-            Label spentLabel = new Label("Already Spent: $" + spent);  // Display spent without negative sign
+            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));
+            Label spentLabel = new Label("Already Spent: $" + spent);
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             detailView.getChildren().add(spentLabel);
 
             double budgetValue = category.getBudget() != null ? category.getBudget() : 1;
-            ProgressBar progressBar = new ProgressBar(Math.abs(spent) / budgetValue);  // Use absolute value for progress calculation
-
-            progressBar.setPrefWidth(600);  // Adjust width as necessary
+            ProgressBar progressBar = new ProgressBar(Math.abs(spent) / budgetValue);
+            progressBar.setPrefWidth(600);
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             detailView.getChildren().add(progressBar);
         } else {
@@ -73,17 +92,21 @@ public class CategoryDetailView {
         root.setCenter(detailView);
     }
 
-    // Show the edit form for a category
+    /**
+     * Zeigt das Formular zum Bearbeiten einer Kategorie an, sodass Name und Budget geändert werden können.
+     *
+     * @param category Die zu bearbeitende Kategorie.
+     */
     private void showEditCategoryForm(Category category) {
+        LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Zeige Bearbeitungsformular für Kategorie: " + category.getName());
+
         VBox editView = new VBox(20);
         editView.getStyleClass().add("detail-view");
 
-        // Convert the name and budget labels to TextFields when editing
         TextField nameField = new TextField(category.getName());
         nameField.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         editView.getChildren().add(nameField);
 
-        // Format the budget value to ensure it displays with two decimal places
         String formattedBudget = (category.getBudget() != null) ?
                 String.format("%.2f", category.getBudget()) : "";
 
@@ -92,22 +115,19 @@ public class CategoryDetailView {
         budgetField.setStyle("-fx-font-size: 20px; -fx-text-fill: #ffb86c;");
         editView.getChildren().add(budgetField);
 
-
         if (category.getBudget() != null && category.getBudget() > 0) {
             double spent = Math.abs(transactionController.getSpentAmountForCategory(category));
             Label spentLabel = new Label(String.format("Already Spent: $%.2f", spent));
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             editView.getChildren().add(spentLabel);
 
-            // Handle potential null budget when calculating the progress bar
-            double budgetValue = category.getBudget() != null ? category.getBudget() : 1; // Prevent division by zero
+            double budgetValue = category.getBudget() != null ? category.getBudget() : 1;
             ProgressBar progressBar = new ProgressBar(spent / budgetValue);
             progressBar.setPrefWidth(600);
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             editView.getChildren().add(progressBar);
         }
 
-        // Save and Cancel buttons
         Button saveButton = new Button("Save");
         saveButton.getStyleClass().add("button");
         saveButton.setOnAction(e -> saveCategoryChanges(category, nameField, budgetField));
@@ -116,7 +136,6 @@ public class CategoryDetailView {
         cancelButton.getStyleClass().add("button");
         cancelButton.setOnAction(e -> showCategoryDetailView(category));
 
-        // VBox to hold Save and Cancel buttons
         VBox buttonBox = new VBox(10);
         buttonBox.getChildren().addAll(saveButton, cancelButton);
         editView.getChildren().add(buttonBox);
@@ -124,51 +143,58 @@ public class CategoryDetailView {
         root.setCenter(editView);
     }
 
-    // Save the changes made to the category
+    /**
+     * Speichert die Änderungen an der Kategorie, inklusive Name und Budget.
+     *
+     * @param category Die zu aktualisierende Kategorie.
+     * @param nameField Das Textfeld für den neuen Namen der Kategorie.
+     * @param budgetField Das Textfeld für das neue Budget der Kategorie.
+     */
     private void saveCategoryChanges(Category category, TextField nameField, TextField budgetField) {
         try {
             String newName = nameField.getText();
-
-            // Attempt to parse the budget field value correctly
             Double newBudget = null;
+
             if (!budgetField.getText().isEmpty()) {
                 try {
                     newBudget = Double.parseDouble(budgetField.getText());
                 } catch (NumberFormatException e) {
-                    // Show an error alert if the input is not a valid number
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid budget amount. Please enter a valid number.", ButtonType.OK);
                     alert.showAndWait();
+                    LoggerUtils.logError(CategoryDetailView.class.getName(), "Ungültiger Budgetbetrag: " + budgetField.getText(), e);
                     return;
                 }
             }
 
-            // Check for duplicate category names
             if (categoryController.isCategoryNameDuplicate(newName, category.getId())) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Category name already exists.", ButtonType.OK);
                 alert.showAndWait();
+                LoggerUtils.logError(CategoryDetailView.class.getName(), "Kategorie-Name bereits vorhanden: " + newName, null);
                 return;
             }
 
-            // Update the category with the new values
             category.setName(newName);
             category.setBudget(newBudget);
 
-            // Update category in the controller
             categoryController.updateCategory(category);
-            System.out.println("Category updated successfully: " + category.getName());
+            LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Kategorie erfolgreich aktualisiert: " + category.getName());
 
-            // Reload the detailed view with updated information
             showCategoryDetailView(category);
 
         } catch (Exception ex) {
-            System.err.println("Failed to update category: " + ex.getMessage());
-            ex.printStackTrace();
+            LoggerUtils.logError(CategoryDetailView.class.getName(), "Fehler beim Aktualisieren der Kategorie: " + category.getName(), ex);
         }
     }
 
-
-    // Create a transactions table for the given category
+    /**
+     * Erstellt eine Transaktionstabelle für die gegebene Kategorie.
+     *
+     * @param category Die Kategorie, deren Transaktionen angezeigt werden sollen.
+     * @return Eine TableView mit den Transaktionen der Kategorie.
+     */
     private TableView<Transaction> createTransactionsTable(Category category) {
+        LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Erstelle Transaktionstabelle für Kategorie: " + category.getName());
+
         TableView<Transaction> transactionsTable = new TableView<>();
 
         TableColumn<Transaction, String> descriptionColumn = new TableColumn<>("Description");

@@ -1,7 +1,13 @@
+/* ============ Allgemeines Layout und Hintergrundfarben ============ */
 .root {
     -fx-background-color: #282a36;
 }
 
+.label {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* ============ Welcome Screen ============ */
 .welcome-label {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
@@ -17,6 +23,22 @@
     -fx-padding: 10px;
 }
 
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: #282a36;
+}
+
+.vbox {
+    -fx-background-color: #282a36;
+    -fx-padding: 20px;
+    -fx-spacing: 20px;
+    -fx-alignment: center;
+}
+
+/* ============ Buttons ============ */
 .button {
     -fx-background-color: #50fa7b;
     -fx-text-fill: #282a36;
@@ -30,10 +52,40 @@
     -fx-background-color: #ff79c6;
 }
 
-.label {
+/* ============ Navigationsleiste ============ */
+.nav-bar {
+    -fx-background-color: #44475a;
+    -fx-padding: 20px 10px;
+    -fx-spacing: 20px;
+    -fx-pref-width: 150px;
+}
+
+.nav-button {
+    -fx-background-color: #6272a4;
+    -fx-text-fill: #f8f8f2;
+    -fx-padding: 10px 15px;
+    -fx-border-radius: 5px;
+    -fx-font-size: 16px;
+}
+
+.nav-button:hover {
+    -fx-background-color: #7082b8;
+    -fx-cursor: hand;
+}
+
+/* ============ Content View Placeholder ============ */
+.content-area {
+    -fx-background-color: #282a36;
+    -fx-alignment: center;
+    -fx-pref-size: 600px 400px;
+}
+
+.placeholder-label {
+    -fx-font-size: 18px;
     -fx-text-fill: #f8f8f2;
 }
 
+/* ============ Account Cards ============ */
 .account-card {
     -fx-background-color: #6272a4;
     -fx-border-color: #ff79c6;
@@ -52,6 +104,7 @@
     -fx-cursor: hand;
 }
 
+/* ============ Detail View ============ */
 .detail-view {
     -fx-background-color: #282a36;
     -fx-padding: 40px;
@@ -64,6 +117,7 @@
     -fx-text-fill: #f8f8f2;
 }
 
+/* ============ Budgets und Transaktionen ============ */
 .budget-label {
     -fx-font-size: 20px;
     -fx-text-fill: #8be9fd;
@@ -84,21 +138,41 @@
     -fx-text-fill: #f8f8f2;
 }
 
+/* ============ Edit Button ============ */
 .edit-button {
     -fx-background-color: #50fa7b;
     -fx-text-fill: #282a36;
 }
 
+/* ============ Custom Alerts ============ */
 .custom-alert {
     -fx-font-family: "Segoe UI", sans-serif;
     -fx-font-size: 14px;
-    -fx-background-color: #44475a; /* Dark background color */
-    -fx-text-fill: #f8f8f2; /* Light text color */
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
 }
 
 .dialog-pane > .content.label {
-    -fx-text-fill: #f8f8f2; /* Ensures alert text matches theme */
+    -fx-text-fill: #f8f8f2;
 }
 
+/* ============ ScrollPane und Scrollbars ============ */
+.scroll-pane {
+    -fx-background-color: #282a36;
+    -fx-border-color: transparent;
+}
 
+.scroll-pane .viewport {
+    -fx-background-color: #282a36;
+}
 
+.scroll-bar .thumb {
+    -fx-background-color: #44475a;
+    -fx-background-insets: 0;
+    -fx-background-radius: 5px;
+}
+
+.scroll-bar {
+    -fx-background-color: #282a36;
+    -fx-border-color: transparent;
+}

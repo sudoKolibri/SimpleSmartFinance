@@ -46,7 +46,7 @@ public class ReportController {
 
                 spendingData.put(category.getName(), totalSpent);
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("Error fetching category spending data: " + e.getMessage());
         }
         return spendingData;
@@ -73,7 +73,7 @@ public class ReportController {
                 // Store the difference between actual spending and budget
                 budgetAnalysisData.put(category.getName(), actualSpending - budget);
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("Error fetching budget analysis data: " + e.getMessage());
         }
         return budgetAnalysisData;
@@ -94,7 +94,7 @@ public class ReportController {
 
             incomeExpenseData.put("Income", totalIncome);
             incomeExpenseData.put("Expense", totalExpense);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("Error fetching income vs expense data: " + e.getMessage());
         }
         return incomeExpenseData;
@@ -139,7 +139,7 @@ public class ReportController {
             if (categoryObj != null) {
                 return transactionService.getTransactionsByCategory(categoryObj);
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("Error fetching detailed report data: " + e.getMessage());
         }
         return Collections.emptyList();
