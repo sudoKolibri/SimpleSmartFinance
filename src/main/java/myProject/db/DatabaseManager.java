@@ -39,9 +39,9 @@ public class DatabaseManager {
                     + "user_id VARCHAR(255), "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Insert standard categories if not already present
-            stmt.execute("INSERT INTO categories (id, name, color, is_standard, is_custom, budget, user_id) VALUES "
-                    + "('1', 'Income', '#50fa7b', true, false, NULL, NULL),"
+            // Insert standard categories only if they do not already exist
+            stmt.execute("MERGE INTO categories (id, name, color, is_standard, is_custom, budget, user_id) KEY (id) "
+                    + "VALUES ('1', 'Income', '#50fa7b', true, false, NULL, NULL),"
                     + "('2', 'Housing', '#ff5555', true, false, NULL, NULL),"
                     + "('3', 'Food', '#f1fa8c', true, false, NULL, NULL),"
                     + "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL),"
