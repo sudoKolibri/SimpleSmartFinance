@@ -62,7 +62,7 @@ public class TransactionService {
         }
 
         try {
-            transactionRepository.saveTransaction(transaction);
+
             transactionRepository.saveRecurringTransaction(transaction);
             scheduleNextRecurringTransaction(transaction);
         } catch (Exception e) {
@@ -172,11 +172,12 @@ public class TransactionService {
 
     // Zeitplanung für das nächste Vorkommen einer wiederkehrenden Transaktion
     private void scheduleNextRecurringTransaction(Transaction transaction) {
-        LocalDate startDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
+        LocalDate nextDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
         LocalDate today = LocalDate.now();
 
+
         // Berechne alle Vorkommnisse zwischen Startdatum und heute
-        while (startDate.isBefore(today) || startDate.isEqual(today)) {
+        while (nextDate.isBefore(today) || nextDate.isEqual(today)) {
             // Erstelle die nächste Vorkommnis-Transaktion
             Transaction nextTransaction = new Transaction(
                     transaction.getDescription(),
@@ -185,19 +186,20 @@ public class TransactionService {
                     null,
                     transaction.getAccount(),
                     transaction.getCategory(),
-                    Date.valueOf(startDate),
+                    Date.valueOf(nextDate),
                     transaction.getTime(),
                     "completed"  // Als abgeschlossen markieren, da diese in der Vergangenheit liegt
             );
 
             try {
                 transactionRepository.saveTransaction(nextTransaction);
+
             } catch (Exception e) {
                 LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Speichern der nächsten Vorkommnisse der wiederkehrenden Transaktion: " + transaction.getId(), e);
             }
 
             // Berechne das nächste Vorkommnis
-            startDate = calculateNextRecurringDate(transaction);
+            nextDate = calculateNextRecurringDate(transaction);
         }
     }
 
@@ -239,31 +241,25 @@ public class TransactionService {
      * @return Das nächste Vorkommen als LocalDate.
      */
     public LocalDate calculateNextRecurringDate(Transaction transaction) {
-        LocalDate startDate = new java.sql.Date(transaction.getDate().getTime()).toLocalDate();
-        LocalDate today = LocalDate.now();
+        LocalDate nextDate = ((java.sql.Date) transaction.getDate()).toLocalDate();
         String interval = transaction.getRecurrenceInterval().toLowerCase();
 
         switch (interval) {
             case "daily":
-                while (!startDate.isAfter(today)) {
-                    startDate = startDate.plusDays(1);
-                }
+                nextDate = nextDate.plusDays(1);
                 break;
             case "weekly":
-                while (!startDate.isAfter(today)) {
-                    startDate = startDate.plusWeeks(1);
-                }
+                nextDate = nextDate.plusWeeks(1);
                 break;
             case "monthly":
-                while (!startDate.isAfter(today)) {
-                    startDate = startDate.plusMonths(1);
-                }
+                nextDate = nextDate.plusMonths(1);
                 break;
             default:
                 return null; // Rückgabe null, wenn kein gültiges Intervall
         }
-        return startDate;
+        return nextDate;
     }
+
 
     /**
      * Ruft alle Transaktionen ab.
