@@ -30,31 +30,37 @@ public class AccountService {
 
     public double calculateBalanceForCompletedTransactions(Account account) {
         try {
-            // Get only completed transactions from TransactionService
+            // Hole nur abgeschlossene Transaktionen vom TransactionService
             List<Transaction> completedTransactions = transactionService.getCompletedTransactionsByAccount(account.getName());
 
-            // Sum the completed transactions to calculate the balance
+            // Summiere die abgeschlossenen Transaktionen, um die Bilanz zu berechnen
             double transactionSum = completedTransactions.stream().mapToDouble(Transaction::getAmount).sum();
 
-            // Calculate the new balance based on the account's initial balance and completed transactions
-            double newBalance = account.getBalance() + transactionSum;
+            // Setze die Bilanz nur basierend auf den abgeschlossenen Transaktionen
+            account.setBalance(transactionSum);
 
-            // Persist the updated balance in the database
-            account.setBalance(newBalance);
-            updateAccount(account); // Persist the updated account balance
+            // Speichere die neue Bilanz in der Datenbank
+            updateAccount(account);
 
-            return newBalance;
+            return transactionSum; // Gib die neue Bilanz zurück
         } catch (SQLException e) {
             System.err.println("Error calculating account balance: " + e.getMessage());
-            return account.getBalance(); // Return current balance if an error occurs
+            return account.getBalance(); // Gib den aktuellen Kontostand zurück, wenn ein Fehler auftritt
         }
     }
+
 
 
     // Get all accounts for a specific user
     public List<Account> getAllAccountsForUser(String userId) throws SQLException {
         return accountRepository.getAllAccountsForUser(userId);
     }
+
+    // Methode zum Abrufen eines Kontos anhand seines Namens
+    public Account findAccountByName(String userId, String accountName) throws SQLException {
+        return accountRepository.findAccountByName(userId, accountName);
+    }
+
 
     // Calculate overall balance for a specific user
     public double calculateOverallBalanceForUser(String userId) throws SQLException {

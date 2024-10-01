@@ -73,6 +73,22 @@ public class AccountRepository {
         return accountNames;
     }
 
+    // Methode zum Abrufen eines Kontos anhand seines Namens für einen bestimmten Benutzer
+    public Account findAccountByName(String userId, String accountName) throws SQLException {
+        String sql = "SELECT * FROM accounts WHERE user_id = ? AND name = ?";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, accountName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToAccount(rs);
+                }
+            }
+        }
+        return null; // Rückgabe null, falls kein Konto gefunden wird
+    }
+
+
 
     // Methode zum Abrufen aller Konten eines bestimmten Benutzers.
     public List<Account> getAllAccountsForUser(String userId) throws SQLException {

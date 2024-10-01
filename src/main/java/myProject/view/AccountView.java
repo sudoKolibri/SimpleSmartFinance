@@ -10,10 +10,13 @@ import javafx.scene.layout.VBox;
 import myProject.controller.AccountController;
 import myProject.controller.TransactionController;
 import myProject.model.Account;
+import myProject.model.Transaction;
 import myProject.view.detail.AccountDetailView;
 import myProject.view.util.ViewUtils;
 
+import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.List;
 
 public class AccountView {
@@ -79,17 +82,18 @@ public class AccountView {
     }
 
     private void updateOverallBalance() throws SQLException {
-        // Get all accounts for the user and sum their balances
         double totalBalance = accountController.getAllAccountsForUser(currentUserId)
                 .stream()
-                .mapToDouble(Account::getBalance)
+                .mapToDouble(account -> {
+                    double balance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+                    System.out.println("Calculated balance for account " + account.getName() + ": " + balance);
+                    return balance;
+                })
                 .sum();
 
-        // Update the overall balance label in the UI
+        System.out.println("Total calculated balance: " + totalBalance);
         overallBalanceLabel.setText("Total Balance: $" + String.format("%.2f", totalBalance));
     }
-
-
 
 
     // Show all accounts in a grid layout
@@ -169,21 +173,44 @@ public class AccountView {
         accountsLayout.getChildren().add(formContainer);
     }
 
-    // Method to handle the save button click with improved error handling
+    // Methode zum Verarbeiten des Klicks auf den Speichern-Button beim Erstellen eines neuen Kontos
     private void handleSaveButtonClick(VBox accountsLayout, TextField accountNameField, TextField balanceField, VBox formContainer) {
         try {
             String accountName = accountNameField.getText();
             double initialBalance = Double.parseDouble(balanceField.getText());
 
-            // Check if account with the same name already exists for the user
+            // Überprüfen, ob ein Konto mit dem gleichen Namen bereits existiert
             if (accountController.doesAccountExist(currentUserId, accountName)) {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
                 return;
             }
 
-            // Attempt to add the new account
-            boolean success = accountController.addAccount(currentUserId, accountName, initialBalance);
+            // Versuch, ein neues Konto hinzuzufügen
+            boolean success = accountController.addAccount(currentUserId, accountName, 0.0);  // Balance auf 0 setzen, da sie durch die Transaktion verwaltet wird
             if (success) {
+                // Lade das neue Konto anhand des Namens
+                Account createdAccount = accountController.findAccountByName(currentUserId, accountName);
+
+                // Erstelle eine Transaktion für den Startbetrag
+                Transaction initialTransaction = new Transaction(
+                        "Initial Balance",  // Beschreibung der Transaktion
+                        initialBalance,     // Betrag (kann positiv oder negativ sein)
+                        initialBalance >= 0 ? "income" : "expense",  // Einnahme oder Ausgabe basierend auf dem Betrag
+                        null,               // Keine Kategorie notwendig
+                        createdAccount,     // Verknüpft mit dem neuen Konto
+                        null,               // Keine spezifische Kategorie
+                        new Date(System.currentTimeMillis()),  // Aktuelles Datum
+                        new Time(System.currentTimeMillis()),  // Aktuelle Uhrzeit
+                        "completed"         // Status der Transaktion
+                );
+
+                // Transaktion speichern
+                transactionController.createTransaction(initialTransaction);
+                System.out.println("AccountView.handleSaveButtonClick: Initial balance transaction created for account - " + accountName + " " + initialTransaction);
+
+
+
+                // Aktualisiere die Kontoübersicht und Gesamtbilanz
                 refreshAccountList(accountsLayout);
                 updateOverallBalance();
                 createAccountButton.setVisible(true);
@@ -191,12 +218,12 @@ public class AccountView {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to create account. Please try again.");
             }
         } catch (NumberFormatException ex) {
-            // Display an alert when the balance input is invalid
+            // Zeige eine Warnung bei ungültigem Eingabewert für den Saldo
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            // Ensure the form container is removed after processing
+            // Entferne das Formular nach dem Verarbeiten
             accountsLayout.getChildren().remove(formContainer);
             createAccountButton.setVisible(true);
         }
@@ -238,7 +265,6 @@ public class AccountView {
     }
 
 
-
     // Refresh the account list
     private void refreshAccountList(VBox accountsLayout) throws SQLException {
         accountsLayout.getChildren().clear();
@@ -258,8 +284,11 @@ public class AccountView {
         Label nameLabel = new Label(account.getName());
         nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");
 
-        // Updated the balance display to show two decimal places
-        Label balanceLabel = new Label(String.format("%.2f", account.getBalance()));
+        // Berechne die aktualisierte Bilanz basierend auf abgeschlossenen Transaktionen
+        double updatedBalance = accountController.calculateUpdatedBalanceForCompletedTransactions(account);
+
+        // Zeige die aktualisierte Bilanz in der AccountCard an
+        Label balanceLabel = new Label(String.format("%.2f", updatedBalance));
         balanceLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #8be9fd;");
 
         VBox cardContent = new VBox(10);
@@ -268,7 +297,7 @@ public class AccountView {
 
         card.getChildren().add(cardContent);
 
-        // Open AccountDetailView when clicked
+        // Öffne die Detailansicht des Kontos, wenn darauf geklickt wird
         card.setOnMouseClicked(e -> {
             AccountDetailView accountDetailView = new AccountDetailView(accountController, transactionController, root);
             accountDetailView.showAccountDetailView(account);
@@ -276,5 +305,6 @@ public class AccountView {
 
         return card;
     }
+
 
 }

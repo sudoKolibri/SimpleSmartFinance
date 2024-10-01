@@ -15,6 +15,7 @@ public class Account {
     private final StringProperty name;
     private final DoubleProperty balance;
 
+
     // Constructor without an ID (auto-generate ID)
     public Account(String userId, String name, double balance) {
         this.id = new SimpleStringProperty(UUID.randomUUID().toString());

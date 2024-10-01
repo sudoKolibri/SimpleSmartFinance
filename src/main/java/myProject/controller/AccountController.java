@@ -35,6 +35,12 @@ public class AccountController {
         return accountService.getAllAccountsForUser(userId);
     }
 
+    // Methode zum Abrufen eines Kontos anhand seines Namens
+    public Account findAccountByName(String userId, String accountName) throws SQLException {
+        return accountService.findAccountByName(userId, accountName);
+    }
+
+
     // Calculate the overall balance for a specific user
     public double getOverallBalanceForUser(String userId) throws SQLException {
         return accountService.calculateOverallBalanceForUser(userId);
