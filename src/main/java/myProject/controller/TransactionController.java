@@ -9,6 +9,7 @@ import myProject.model.Transaction;
 import myProject.service.TransactionService;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,13 +69,16 @@ public class TransactionController {
 
     public void deleteRecurringTransaction(Transaction transaction) {
         try {
+            // Lösche die Originaltransaktion und konvertiere sie in eine einmalige Transaktion
             transactionService.deleteRecurringTransaction(transaction);
-            System.out.println("Recurring transaction deleted successfully. ID: " + transaction.getId());
+            System.out.println("Recurring transaction deleted and converted to single transaction. ID: " + transaction.getId());
         } catch (SQLException e) {
             System.err.println("Error deleting recurring transaction: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+
 
     public void deletePendingTransactionsByRecurringId(String recurringTransactionId) {
         try {
@@ -85,6 +89,28 @@ public class TransactionController {
             e.printStackTrace();
         }
     }
+
+    // Methode zum Löschen einer ausstehenden (pending) Transaktion
+    public void deletePendingTransaction(Transaction transaction) {
+        try {
+            if ("pending".equalsIgnoreCase(transaction.getStatus())) {
+                transactionService.deletePendingTransaction(transaction);
+                System.out.println("Pending transaction deleted successfully. ID: " + transaction.getId());
+            } else {
+                System.out.println("Transaction is not pending. Cannot delete.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error deleting pending transaction: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public LocalDate getNextRecurringDate(Transaction transaction) {
+        return transactionService.calculateNextRecurringDate(transaction);
+    }
+
+
+
 
 
 

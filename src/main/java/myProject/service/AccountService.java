@@ -23,31 +23,37 @@ public class AccountService {
         return accountRepository.addAccount(newAccount);
     }
 
-    // Update an existing account
+    // Update an existing account using business logic
     public boolean updateAccount(Account account) {
-        return accountRepository.updateAccount(account);
+        // Hier könnte zusätzliche Logik hinzugefügt werden, z.B. Validierung
+        System.out.println("AccountService.updateAccount: Updating account balance for account - " + account.getName());
+        return accountRepository.updateAccount(account);  // Rufe die Repository-Methode auf
     }
 
     public double calculateBalanceForCompletedTransactions(Account account) {
         try {
-            // Hole nur abgeschlossene Transaktionen vom TransactionService
+            System.out.println("Starting balance calculation for account: " + account.getName());
             List<Transaction> completedTransactions = transactionService.getCompletedTransactionsByAccount(account.getName());
 
             // Summiere die abgeschlossenen Transaktionen, um die Bilanz zu berechnen
             double transactionSum = completedTransactions.stream().mapToDouble(Transaction::getAmount).sum();
 
+            // Log the transaction sum before updating the account balance
+            System.out.println("Calculated transaction sum: " + transactionSum);
+
             // Setze die Bilanz nur basierend auf den abgeschlossenen Transaktionen
             account.setBalance(transactionSum);
-
-            // Speichere die neue Bilanz in der Datenbank
             updateAccount(account);
 
-            return transactionSum; // Gib die neue Bilanz zurück
+            System.out.println("Balance updated for account: " + account.getName() + ", New Balance: " + transactionSum);
+
+            return transactionSum;
         } catch (SQLException e) {
-            System.err.println("Error calculating account balance: " + e.getMessage());
-            return account.getBalance(); // Gib den aktuellen Kontostand zurück, wenn ein Fehler auftritt
+            System.err.println("Error calculating account balance for account: " + account.getName() + " - " + e.getMessage());
+            return account.getBalance();
         }
     }
+
 
 
 

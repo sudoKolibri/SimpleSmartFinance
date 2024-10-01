@@ -11,7 +11,7 @@ public class Transaction {
     private final StringProperty id;
     private final StringProperty description;
     private final ObjectProperty<Date> date;
-    private final ObjectProperty<Time> time; // Correct time handling
+    private final ObjectProperty<Time> time;
     private final DoubleProperty amount;
     private final StringProperty type;
 
@@ -22,8 +22,9 @@ public class Transaction {
 
     // Recurring transactions
     private final BooleanProperty isRecurring;
-    private StringProperty recurrenceInterval; // Initialize if recurring
-    private final ObjectProperty<Date> endDate; // Initialize if recurring
+    private StringProperty recurrenceInterval;
+    private final ObjectProperty<Date> endDate;
+    private final StringProperty recurringTransactionId; // NEW FIELD
 
     private final StringProperty currency;
     private final StringProperty status;
@@ -42,10 +43,11 @@ public class Transaction {
         this.account = new SimpleObjectProperty<>(account);
         this.category = new SimpleObjectProperty<>(category);
         this.date = new SimpleObjectProperty<>(date);
-        this.time = new SimpleObjectProperty<>(time); // Correctly setting time
+        this.time = new SimpleObjectProperty<>(time);
         this.isRecurring = new SimpleBooleanProperty(false);
         this.recurrenceInterval = new SimpleStringProperty("");
         this.endDate = new SimpleObjectProperty<>(null);
+        this.recurringTransactionId = new SimpleStringProperty(null); // Initialize as null
         this.currency = new SimpleStringProperty("USD");
         this.status = new SimpleStringProperty(status);
         this.createdAt = new SimpleObjectProperty<>(new Date());
@@ -84,7 +86,6 @@ public class Transaction {
     public ObjectProperty<Account> accountProperty() {
         return account;
     }
-
 
 
     public ObjectProperty<Category> categoryProperty() {
@@ -248,11 +249,19 @@ public class Transaction {
         this.updatedAt.set(updatedAt);
     }
 
-    // Method to handle recurring transactions
+    public String getRecurringTransactionId() {
+        return recurringTransactionId.get();
+    }
+
+    public void setRecurringTransactionId(String recurringTransactionId) {
+        this.recurringTransactionId.set(recurringTransactionId);
+    }
+
+    // Method to mark the transaction as recurring
     public void markAsRecurring(String interval, Date endDate) {
         this.isRecurring.set(true);
         if (this.recurrenceInterval == null) {
-            this.recurrenceInterval = new SimpleStringProperty(""); // Safeguard initialization
+            this.recurrenceInterval = new SimpleStringProperty("");
         }
         this.recurrenceInterval.set(interval);
         this.endDate.set(endDate);

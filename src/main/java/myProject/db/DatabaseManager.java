@@ -2,7 +2,6 @@ package myProject.db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -41,21 +40,12 @@ public class DatabaseManager {
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
             // Insert standard categories if not already present
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM categories WHERE is_standard = true");
-            rs.next();
-            if (rs.getInt(1) == 0) {
-                String[] defaultCategories = {
-                        "('1', 'Income', '#50fa7b', true, false, NULL, NULL)",
-                        "('2', 'Housing', '#ff5555', true, false, NULL, NULL)",
-                        "('3', 'Food', '#f1fa8c', true, false, NULL, NULL)",
-                        "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL)",
-                        "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)"
-                };
-
-                for (String category : defaultCategories) {
-                    stmt.executeUpdate("INSERT INTO categories (id, name, color, is_standard, is_custom, budget, user_id) VALUES " + category);
-                }
-            }
+            stmt.execute("INSERT INTO categories (id, name, color, is_standard, is_custom, budget, user_id) VALUES "
+                    + "('1', 'Income', '#50fa7b', true, false, NULL, NULL),"
+                    + "('2', 'Housing', '#ff5555', true, false, NULL, NULL),"
+                    + "('3', 'Food', '#f1fa8c', true, false, NULL, NULL),"
+                    + "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL),"
+                    + "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)");
 
             // Create accounts table
             stmt.execute("CREATE TABLE IF NOT EXISTS accounts ("
@@ -65,7 +55,7 @@ public class DatabaseManager {
                     + "balance DOUBLE NOT NULL, "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Create transactions table with new time and status columns
+            // Create transactions table with recurring_transaction_id
             stmt.execute("CREATE TABLE IF NOT EXISTS transactions ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "amount DOUBLE NOT NULL, "
@@ -76,10 +66,11 @@ public class DatabaseManager {
                     + "type VARCHAR(255), "
                     + "status VARCHAR(20) DEFAULT 'pending', "
                     + "account_id VARCHAR(255), "
+                    + "recurring_transaction_id VARCHAR(255), "  // New column for recurring transactions
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
-            // Create recurring transactions table with new time and status columns
+            // Create recurring transactions table
             stmt.execute("CREATE TABLE IF NOT EXISTS recurring_transactions ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "amount DOUBLE NOT NULL, "

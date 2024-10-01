@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class AccountDetailView {
     private final AccountController accountController;
@@ -88,10 +89,13 @@ public class AccountDetailView {
         Button expenseButton = createRoundIconButton("/icons/icons8-delete-dollar-50.png");
         expenseButton.setOnAction(e -> showTransactionForm("expense"));
 
+        Button recurringOverviewButton = createRoundIconButton("/icons/icons8-time-to-pay-50.png");
+        recurringOverviewButton.setOnAction(e -> showRecurringOverview());
+
         Button transferButton = createRoundIconButton("/icons/icons8-exchange-48.png");
         transferButton.setOnAction(e -> showTransferForm());
 
-        buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton);
+        buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton, recurringOverviewButton);
 
         // Hauptlayout: Stapele die Sektionen vertikal
         VBox mainLayout = new VBox(20);
@@ -100,6 +104,188 @@ public class AccountDetailView {
         // Setze das Layout ins Zentrum des Root-Pane
         root.setCenter(mainLayout);
     }
+
+    // Methode zum Anzeigen einer Übersicht aller aktiven Daueraufträge (Recurring Transactions)
+    private void showRecurringOverview() {
+        System.out.println("AccountDetailView.showRecurringOverview: Displaying recurring transactions overview.");
+
+        VBox recurringOverviewLayout = new VBox(15);
+        recurringOverviewLayout.setPadding(new Insets(20));
+
+        Label titleLabel = new Label("Active Recurring Transactions");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        recurringOverviewLayout.getChildren().add(titleLabel);
+
+        // Hole alle wiederkehrenden Transaktionen für das Konto
+        ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
+
+        // Erstelle eine Liste, um die Daueraufträge anzuzeigen
+        ListView<Transaction> recurringListView = new ListView<>(recurringTransactions);
+        recurringListView.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Transaction transaction, boolean empty) {
+                super.updateItem(transaction, empty);
+                if (empty || transaction == null || transaction.getDescription() == null) {
+                    setText(null);
+                } else {
+                    // Berechne das nächste Vorkommen der wiederkehrenden Transaktion
+                    LocalDate nextDate = transactionController.getNextRecurringDate(transaction);
+                    String nextOccurrence = (nextDate != null) ? "Next: " + nextDate.toString() : "No next occurrence";
+                    String endDateInfo = (transaction.getEndDate() != null) ? "End Date: " + transaction.getEndDate().toString() : "No End Date";
+                    setText(transaction.getDescription() + " - " + ViewUtils.formatCurrency(transaction.getAmount()) +
+                            " (" + transaction.getRecurrenceInterval().toUpperCase() + "), " + nextOccurrence + ", " + endDateInfo);
+                }
+            }
+        });
+
+
+        // Hinzufügen eines Rechtsklick-Kontextmenüs für jede Zeile (für Editieren oder Löschen)
+        recurringListView.setCellFactory(lv -> {
+            ListCell<Transaction> cell = new ListCell<>() {
+                @Override
+                protected void updateItem(Transaction transaction, boolean empty) {
+                    super.updateItem(transaction, empty);
+                    if (empty || transaction == null) {
+                        setText(null);
+                    } else {
+                        setText(transaction.getDescription() + " - " + ViewUtils.formatCurrency(transaction.getAmount()) +
+                                " (" + transaction.getRecurrenceInterval().toUpperCase() + ")");
+                    }
+                }
+            };
+
+            ContextMenu contextMenu = new ContextMenu();
+
+            // Option zum Bearbeiten der Dauerauftrags-Transaktion
+            MenuItem editItem = new MenuItem("Edit");
+            editItem.setOnAction(event -> {
+                Transaction selectedTransaction = cell.getItem();
+                if (selectedTransaction != null) {
+                    // Editiere die Transaktion in der Recurring-Übersicht
+                    editRecurringTransaction(selectedTransaction); // Neue Methode zum Bearbeiten eines Dauerauftrags
+                }
+            });
+
+            // Option zum Löschen der Dauerauftrags-Transaktion
+            MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(event -> {
+                Transaction selectedTransaction = cell.getItem();
+                if (selectedTransaction != null) {
+                    // Lösche die Transaktion in der Recurring-Übersicht
+                    deleteRecurringTransaction(selectedTransaction); // Verwendet die bestehende deleteRecurringTransaction Methode
+                }
+            });
+
+            contextMenu.getItems().addAll(editItem, deleteItem);
+            cell.setContextMenu(contextMenu);
+
+            return cell;
+        });
+
+        recurringListView.setPrefHeight(200);
+        recurringOverviewLayout.getChildren().add(recurringListView);
+
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e -> showAccountDetailView(account));
+
+        recurringOverviewLayout.getChildren().add(closeButton);
+        root.setCenter(recurringOverviewLayout);
+    }
+
+    // Methode zum Bearbeiten einer wiederkehrenden Transaktion (aus der Recurring-Übersicht)
+    private void editRecurringTransaction(Transaction transaction) {
+        System.out.println("AccountDetailView.editRecurringTransaction: Editing recurring transaction - " + transaction);
+
+        VBox formView = new VBox(15);
+        formView.setPadding(new Insets(20));
+        formView.getStyleClass().add("form-view");
+
+        Label formLabel = new Label("Edit Recurring Transaction for " + account.getName());
+        formLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
+        formView.getChildren().add(formLabel);
+
+        Label infoLabel = new Label("Disabling the recurrence will stop future occurrences from being created.");
+        infoLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #ff5555;");
+
+        TextField descriptionField = new TextField(transaction.getDescription());
+        descriptionField.setPromptText("Description");
+
+        TextField amountField = new TextField(String.valueOf(Math.abs(transaction.getAmount())));
+        amountField.setPromptText("Amount");
+
+        DatePicker datePicker = new DatePicker(((java.sql.Date) transaction.getDate()).toLocalDate());
+
+        // Zeit-Eingabefeld mit Validierung
+        TextField timeField = new TextField(transaction.getTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+        timeField.setPromptText("Time (HH:mm)");
+
+        // ComboBox für Wiederholungsoptionen
+        ComboBox<String> recurrenceDropdown = new ComboBox<>();
+        recurrenceDropdown.getItems().addAll("None", "Daily", "Weekly", "Monthly");
+        recurrenceDropdown.setValue(transaction.isRecurring() ? capitalizeFirstLetter(transaction.getRecurrenceInterval()) : "None");
+
+        DatePicker endDatePicker = new DatePicker();
+        if (transaction.getEndDate() != null) {
+            endDatePicker.setValue(((java.sql.Date) transaction.getEndDate()).toLocalDate());
+        }
+
+        Button saveButton = new Button("Update Transaction");
+        saveButton.setOnAction(e -> {
+            // Validiere und aktualisiere die Transaktion
+            try {
+                // Code für Validierung und Aktualisierung der wiederkehrenden Transaktion
+                transaction.setDescription(descriptionField.getText());
+                transaction.setAmount(Double.parseDouble(amountField.getText()));
+                transaction.setDate(Date.valueOf(datePicker.getValue()));
+                transaction.setTime(Time.valueOf(timeField.getText()));
+                // Update recurrence and other fields...
+
+                transactionController.updateTransaction(transaction);
+                System.out.println("Recurring transaction updated.");
+                showRecurringOverview(); // Zurück zur Übersicht nach dem Update
+            } catch (Exception ex) {
+                System.err.println("Failed to update recurring transaction: " + ex.getMessage());
+            }
+        });
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(e -> showRecurringOverview());
+
+        HBox buttonBox = new HBox(10, saveButton, cancelButton);
+        formView.getChildren().addAll(descriptionField, amountField, new HBox(10, datePicker, timeField), recurrenceDropdown, endDatePicker, buttonBox, infoLabel);
+
+        root.setCenter(formView);
+    }
+
+
+    // Methode zum Löschen einer wiederkehrenden Transaktion mit Bestätigungsdialog
+    private void deleteRecurringTransaction(Transaction transaction) {
+        System.out.println("Attempting to delete recurring transaction - " + transaction);
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Recurring Transaction");
+        alert.setHeaderText("This is a recurring transaction.");
+        alert.setContentText("Do you want to delete just this occurrence or all future occurrences? Note: Disabling recurrence will prevent future occurrences from being created.");
+
+        ButtonType deleteOne = new ButtonType("This Occurrence");
+        ButtonType deleteAll = new ButtonType("All Occurrences");
+        ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(deleteOne, deleteAll, cancel);
+        alert.showAndWait().ifPresent(response -> {
+            if (response == deleteOne) {
+                // Lösche nur dieses einzelne Vorkommnis (falls vorhanden)
+                transactionController.deletePendingTransaction(transaction);
+                System.out.println("Single occurrence of the recurring transaction deleted.");
+            } else if (response == deleteAll) {
+                // Lösche alle Vorkommnisse der wiederkehrenden Transaktion
+                transactionController.deleteRecurringTransaction(transaction);
+                transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
+                System.out.println("All occurrences of the recurring transaction deleted.");
+            }
+        });
+    }
+
 
     // Methode zum Anzeigen des Transferformulars
     private void showTransferForm() {
@@ -503,6 +689,7 @@ public class AccountDetailView {
 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Transaction");
+
         if (transaction.isRecurring()) {
             alert.setHeaderText("This is a recurring transaction.");
             alert.setContentText("Do you want to delete this occurrence or all future occurrences?");
@@ -512,14 +699,19 @@ public class AccountDetailView {
             alert.getButtonTypes().setAll(deleteOne, deleteAll, cancel);
             alert.showAndWait().ifPresent(response -> {
                 if (response == deleteOne) {
-                    // Lösche nur dieses einzelne Vorkommnis
+                    // Lösche nur diese Instanz
                     transactionController.deleteTransaction(transaction);
                     System.out.println("AccountDetailView.deleteTransaction: Single occurrence deleted.");
                 } else if (response == deleteAll) {
-                    // Lösche die wiederkehrende Transaktion und alle ausstehenden Vorkommnisse
-                    transactionController.deleteRecurringTransaction(transaction);
-                    transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
-                    System.out.println("AccountDetailView.deleteTransaction: Recurring transaction and pending occurrences deleted.");
+                    // Warnung vor dem Löschen des Dauerauftrags und aller zukünftigen Instanzen
+                    Alert deleteRecurringAlert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete the recurring transaction and all future occurrences?");
+                    deleteRecurringAlert.showAndWait().ifPresent(confirm -> {
+                        if (confirm == ButtonType.OK) {
+                            transactionController.deleteRecurringTransaction(transaction);
+                            transactionController.deletePendingTransactionsByRecurringId(transaction.getId());
+                            System.out.println("AccountDetailView.deleteTransaction: Recurring transaction and all occurrences deleted.");
+                        }
+                    });
                 }
             });
         } else {
@@ -534,10 +726,10 @@ public class AccountDetailView {
             });
         }
 
-
-        // Inkludiert neue account balance?
+        // Aktualisiert die Ansicht, um die neue Kontobilanz anzuzeigen
         showAccountDetailView(account);
     }
+
 
     // Methode zur Erstellung runder Buttons mit Icons
     private Button createRoundIconButton(String iconPath) {
@@ -580,9 +772,6 @@ public class AccountDetailView {
         }
 
     }
-
-
-
 
 
     // Methode zum Aktualisieren des Transaktionsstatus (z.B. von 'pending' zu 'completed')
@@ -693,29 +882,28 @@ public class AccountDetailView {
 
     // Methode zur Aktualisierung der Transaktionstabelle, einschließlich regulärer und wiederkehrender Transaktionen
     private void refreshTransactionTable() {
-        // Alle regulären Transaktionen für das Konto abrufen
+        // Hole alle regulären und wiederkehrenden Transaktionen für das Konto
         ObservableList<Transaction> regularTransactions = transactionController.getTransactionsByAccount(account.getName());
-
-        // Nächste Vorkommen der wiederkehrenden Transaktionen abrufen
         ObservableList<Transaction> recurringTransactions = transactionController.getNextRecurringTransactionsByAccount(account.getId());
 
-        // Kombiniere beide Listen, um alle Transaktionen anzuzeigen
-        ObservableList<Transaction> allTransactions = FXCollections.observableArrayList();
+        // Kombiniere beide Listen
+        List<Transaction> allTransactions = new ArrayList<>();
         allTransactions.addAll(regularTransactions);
         allTransactions.addAll(recurringTransactions);
 
-        // Filtere die "Initial Balance"-Transaktion heraus
-        ObservableList<Transaction> filteredTransactions = allTransactions.filtered(t -> !t.getDescription().equals("Initial Balance"));
+        // Filtere die Initial-Balance-Transaktion heraus
+        // Sortiere nach Datum
+        List<Transaction> filteredTransactions = allTransactions.stream()
+                .filter(t -> !t.getDescription().equals("Initial Balance"))
+                .sorted(Comparator.comparing(Transaction::getDate)).sorted(Comparator.comparing(Transaction::getStatus).thenComparing(Transaction::getDate)).collect(Collectors.toList());
 
-        // Sortiere die Transaktionen nach Datum, falls erforderlich
-        filteredTransactions.sort(Comparator.comparing(Transaction::getDate));
+        // Sortiere nach Status (erst abgeschlossene, dann ausstehende Transaktionen)
 
         // Setze die gefilterten Transaktionen in der Tabelle
-        transactionsTable.setItems(filteredTransactions);
+        transactionsTable.setItems(FXCollections.observableArrayList(filteredTransactions));
 
-        System.out.println("AccountDetailView.refreshTransactionTable: Transactions loaded for account - " + account.getName() + ". Filtered initial balance.");
+        System.out.println("Transaction table refreshed and sorted for account: " + account.getName());
     }
-
 
 
 }
