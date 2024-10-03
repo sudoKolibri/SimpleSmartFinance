@@ -26,9 +26,7 @@ public class UserController {
      */
     public boolean login(String username, String password) {
         boolean isAuthenticated = userService.authenticateUser(username, password);
-        if (isAuthenticated) {
-            LoggerUtils.logInfo(UserController.class.getName(), "Benutzer erfolgreich angemeldet: " + username);
-        } else {
+        if (!isAuthenticated) {
             LoggerUtils.logError(UserController.class.getName(), "Fehlerhafte Anmeldung für Benutzer: " + username, null);
         }
         return isAuthenticated;
@@ -41,9 +39,7 @@ public class UserController {
      */
     public User getLoggedInUser() {
         User loggedInUser = userService.getLoggedInUser();
-        if (loggedInUser != null) {
-            LoggerUtils.logInfo(UserController.class.getName(), "Aktuell angemeldeter Benutzer abgerufen: " + loggedInUser.getUsername());
-        } else {
+        if (loggedInUser == null) {
             LoggerUtils.logError(UserController.class.getName(), "Kein Benutzer ist aktuell angemeldet.", null);
         }
         return loggedInUser;
@@ -58,9 +54,7 @@ public class UserController {
      */
     public boolean register(String username, String password) {
         boolean isRegistered = userService.registerUser(username, password);
-        if (isRegistered) {
-            LoggerUtils.logInfo(UserController.class.getName(), "Benutzer erfolgreich registriert: " + username);
-        } else {
+        if (!isRegistered) {
             LoggerUtils.logError(UserController.class.getName(), "Registrierung fehlgeschlagen für Benutzer: " + username, null);
         }
         return isRegistered;

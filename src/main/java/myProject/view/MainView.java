@@ -9,15 +9,19 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
 import myProject.controller.TransactionController;
 import myProject.controller.AccountController;
 import myProject.controller.CategoryController;
 import myProject.controller.ReportController;
+import myProject.util.LoggerUtils;
 
 import java.sql.SQLException;
 import java.util.Objects;
 
+/**
+ * Die MainView-Klasse verwaltet die Hauptansicht der Anwendung, einschließlich Navigation und Anzeige
+ * der Accounts-, Kategorien-, Report- und Help-Ansichten.
+ */
 public class MainView {
 
     private final BorderPane root;
@@ -27,7 +31,15 @@ public class MainView {
     private final ReportController reportController;
     private final String loggedInUserId;
 
-    // Konstruktor, der alle benötigten Controller akzeptiert
+    /**
+     * Konstruktor zur Initialisierung der MainView.
+     *
+     * @param transactionController Controller für Transaktionen.
+     * @param accountController Controller für Konten.
+     * @param categoryController Controller für Kategorien.
+     * @param reportController Controller für Berichte.
+     * @param loggedInUserId ID des eingeloggten Benutzers.
+     */
     public MainView(TransactionController transactionController, AccountController accountController, CategoryController categoryController, ReportController reportController, String loggedInUserId) {
         this.transactionController = transactionController;
         this.accountController = accountController;
@@ -37,22 +49,26 @@ public class MainView {
         this.root = new BorderPane();  // Root-Layout initialisieren
     }
 
-    // Startmethode, die sowohl die UserId als auch den Usernamen akzeptiert
+    /**
+     * Startet die Hauptansicht.
+     * @param primaryStage Die Hauptbühne der Anwendung.
+     * @param loggedInUserId Die ID des eingeloggten Benutzers.
+     * @param loggedInUsername Der Benutzername des eingeloggten Benutzers.
+     * @throws SQLException Wenn ein Fehler bei der Anzeige der Ansichten auftritt.
+     */
     public void start(Stage primaryStage, String loggedInUserId, String loggedInUsername) throws SQLException {
-        System.out.println("MainView.start: Starting MainView for user " + loggedInUsername);
+        LoggerUtils.logInfo(MainView.class.getName(), "Starten der MainView für Benutzer: " + loggedInUsername + " mit UserID: " + loggedInUserId);
 
-        // Root-Layout als BorderPane (Links: Navbar, Mitte: Content-Bereich)
+        // Navigation und Standardansicht einrichten
         setupNavigationBar();
-
-        // Standardansicht auf AccountsView setzen
         showAccountsView();
 
-        // Root BorderPane in eine ScrollPane einbinden
+        // ScrollPane für das Root-Layout hinzufügen
         ScrollPane scrollPane = new ScrollPane(root);
-        scrollPane.setFitToWidth(true);  // Sicherstellen, dass der Inhalt die Breite anpasst
-        scrollPane.setFitToHeight(true); // Sicherstellen, dass der Inhalt die Höhe anpasst
+        scrollPane.setFitToWidth(true);  // Breite anpassen
+        scrollPane.setFitToHeight(true); // Höhe anpassen
 
-        // Szene mit ScrollPane setzen
+        // Szene setzen und anzeigen
         Scene scene = new Scene(scrollPane, 700, 400);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
 
@@ -61,9 +77,11 @@ public class MainView {
         primaryStage.show();
     }
 
-    // Setzt die Navigationsleiste mit Buttons für verschiedene Bereiche
+    /**
+     * Richtet die Navigationsleiste ein und fügt die entsprechenden Buttons hinzu.
+     */
     private void setupNavigationBar() {
-        System.out.println("MainView.setupNavigationBar: Setting up navigation bar.");
+        LoggerUtils.logInfo(MainView.class.getName(), "Navigationsleiste wird eingerichtet.");
 
         VBox navBar = new VBox(20);  // Vertikales Layout mit Abständen zwischen den Buttons
         navBar.setPadding(new Insets(20, 10, 20, 10));
@@ -73,99 +91,83 @@ public class MainView {
 
         // Navigations-Buttons erstellen
         Button accountButton = new Button("Accounts");
-        Button budgetButton = new Button("Budgets");
         Button categoryButton = new Button("Categories");
         Button reportButton = new Button("Reports");
-        Button profileButton = new Button("Profile");
+        Button helpButton = new Button("Help");
 
-        // Buttons zur Navbar hinzufügen
-        navBar.getChildren().addAll(accountButton, budgetButton, categoryButton, reportButton, profileButton);
+        // Buttons zur Navigationsleiste hinzufügen
+        navBar.getChildren().addAll(accountButton, categoryButton, reportButton, helpButton);
 
         // Navbar zum Root-Layout hinzufügen
         root.setLeft(navBar);
 
-        // ==================== Button-Aktionen für dynamische Inhalte ====================
+        // ==================== Aktionen für die Buttons ====================
         accountButton.setOnAction(e -> {
             try {
-                System.out.println("MainView.setupNavigationBar: Accounts button clicked.");
+                LoggerUtils.logInfo(MainView.class.getName(), "Accounts-Button geklickt.");
                 showAccountsView();
             } catch (SQLException ex) {
-                System.err.println("MainView.setupNavigationBar: Error displaying AccountsView - " + ex.getMessage());
+                LoggerUtils.logError(MainView.class.getName(), "Fehler beim Anzeigen der AccountsView: " + ex.getMessage(), ex);
             }
         });
 
-        budgetButton.setOnAction(e -> showPlaceholderView("Budgets"));  // Platzhalter für Budgets
-
         categoryButton.setOnAction(e -> {
             try {
-                System.out.println("MainView.setupNavigationBar: Categories button clicked.");
+                LoggerUtils.logInfo(MainView.class.getName(), "Categories-Button geklickt.");
                 showCategoryView();
             } catch (SQLException ex) {
-                System.err.println("MainView.setupNavigationBar: Error displaying CategoryView - " + ex.getMessage());
+                LoggerUtils.logError(MainView.class.getName(), "Fehler beim Anzeigen der CategoryView: " + ex.getMessage(), ex);
             }
         });
 
         reportButton.setOnAction(e -> {
-            System.out.println("MainView.setupNavigationBar: Reports button clicked.");
+            LoggerUtils.logInfo(MainView.class.getName(), "Reports-Button geklickt.");
             showReportView();
         });
 
-        profileButton.setOnAction(e -> {
-            System.out.println("MainView.setupNavigationBar: Profile button clicked for user " + loggedInUserId);
-            showProfileView(loggedInUserId);
+        helpButton.setOnAction(e -> {
+            LoggerUtils.logInfo(MainView.class.getName(), "Help-Button geklickt.");
+            showHelpView();
         });
     }
 
-    // Methode zur Anzeige der AccountsView
+    /**
+     * Zeigt die AccountsView an.
+     * @throws SQLException Wenn ein Fehler beim Laden der AccountsView auftritt.
+     */
     private void showAccountsView() throws SQLException {
-        System.out.println("MainView.showAccountsView: Displaying AccountsView.");
+        LoggerUtils.logInfo(MainView.class.getName(), "AccountsView wird angezeigt.");
         AccountView accountView = new AccountView(loggedInUserId, accountController, transactionController);
         accountView.loadIntoPane(root);
     }
 
-    // Methode zur Anzeige der CategoryView
+    /**
+     * Zeigt die CategoryView an.
+     * @throws SQLException Wenn ein Fehler beim Laden der CategoryView auftritt.
+     */
     private void showCategoryView() throws SQLException {
-        System.out.println("MainView.showCategoryView: Displaying CategoryView.");
+        LoggerUtils.logInfo(MainView.class.getName(), "CategoryView wird angezeigt.");
         CategoryView categoryView = new CategoryView(loggedInUserId, categoryController, transactionController, accountController);
         categoryView.loadIntoPane(root);
     }
 
-    // Methode zur Anzeige der ReportView
+    /**
+     * Zeigt die ReportView an.
+     */
     private void showReportView() {
-        System.out.println("MainView.showReportView: Displaying ReportView.");
-        ReportView reportView = new ReportView(reportController);
-        reportView.loadIntoPane(root);  // ReportView-Layout in die Mitte des MainViews laden
+        LoggerUtils.logInfo(MainView.class.getName(), "ReportView wird angezeigt für Benutzer-ID: " + loggedInUserId);
+
+        ReportView reportView = new ReportView(reportController, loggedInUserId);
+        reportView.loadIntoPane(root);
     }
 
-    // Platzhalteransicht für noch nicht implementierte Bereiche
-    private void showPlaceholderView(String sectionName) {
-        System.out.println("MainView.showPlaceholderView: Displaying placeholder for " + sectionName);
+    /**
+     * Zeigt die HelpView an, die dem Benutzer erklärt, wie die Funktionen der Anwendung genutzt werden.
+     */
+    private void showHelpView() {
+        LoggerUtils.logInfo(MainView.class.getName(), "HelpView wird angezeigt.");
 
-        Label placeholder = new Label("This is the " + sectionName + " view.");
-        placeholder.getStyleClass().add("placeholder-label");
-
-        VBox contentArea = new VBox();
-        contentArea.setAlignment(Pos.CENTER);
-        contentArea.getChildren().add(placeholder);
-        contentArea.getStyleClass().add("content-area");
-        contentArea.setPrefSize(600, 400);  // Größe für den zentralen Bereich anpassen
-
-        root.setCenter(contentArea);  // Platzhalter in der Mitte setzen
-    }
-
-    // Methode zur Anzeige der Profilansicht
-    private void showProfileView(String loggedInUsername) {
-        System.out.println("MainView.showProfileView: Displaying profile view for " + loggedInUsername);
-
-        Label profileLabel = new Label("Profile for: " + loggedInUsername);
-        profileLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
-
-        VBox profileArea = new VBox();
-        profileArea.setAlignment(Pos.CENTER);
-        profileArea.getChildren().add(profileLabel);
-        profileArea.setStyle("-fx-background-color: #282a36;");
-        profileArea.setPrefSize(600, 400);  // Größe für den Profilbereich anpassen
-
-        root.setCenter(profileArea);  // Profilansicht in der Mitte setzen
+        HelpView helpView = new HelpView(root);
+        helpView.loadIntoPane();
     }
 }

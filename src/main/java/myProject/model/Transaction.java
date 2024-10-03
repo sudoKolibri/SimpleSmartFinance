@@ -1,9 +1,7 @@
 package myProject.model;
 
 import javafx.beans.property.*;
-
-import java.sql.Time;
-import java.util.Date;
+import java.sql.Time;  // Verwende java.sql.Time für Zeit
 import java.util.UUID;
 
 /**
@@ -15,7 +13,7 @@ public class Transaction {
 
     private final StringProperty id;  // Eindeutige ID der Transaktion
     private final StringProperty description;  // Beschreibung der Transaktion
-    private final ObjectProperty<Date> date;  // Datum der Transaktion
+    private final ObjectProperty<java.sql.Date> date;  // Verwende java.sql.Date anstelle von java.util.Date
     private final ObjectProperty<Time> time;  // Uhrzeit der Transaktion
     private final DoubleProperty amount;  // Betrag der Transaktion
     private final StringProperty type;  // Typ der Transaktion (z. B. "Einnahme" oder "Ausgabe")
@@ -25,33 +23,23 @@ public class Transaction {
     private final ObjectProperty<Account> account;  // Konto, dem die Transaktion zugeordnet ist
     private final ObjectProperty<Category> category;  // Kategorie der Transaktion
 
-    // Wiederkehrende Transaktionen
-    private final BooleanProperty isRecurring;  // Gibt an, ob die Transaktion wiederkehrend ist
-    private StringProperty recurrenceInterval;  // Wiederholungsintervall (z. B. "monatlich")
-    private final ObjectProperty<Date> endDate;  // Enddatum der wiederkehrenden Transaktion
-    private final StringProperty recurringTransactionId;  // ID der ursprünglichen wiederkehrenden Transaktion
-
-    private final StringProperty currency;  // Währung der Transaktion
-    private final StringProperty status;  // Status der Transaktion (z. B. "abgeschlossen" oder "ausstehend")
-
     // Zeitstempel
-    private final ObjectProperty<Date> createdAt;  // Zeitpunkt der Erstellung der Transaktion
-    private final ObjectProperty<Date> updatedAt;  // Zeitpunkt der letzten Aktualisierung der Transaktion
+    private final ObjectProperty<java.sql.Date> createdAt;  // Zeitpunkt der Erstellung der Transaktion
+    private final ObjectProperty<java.sql.Date> updatedAt;  // Zeitpunkt der letzten Aktualisierung der Transaktion
 
     /**
      * Konstruktor für die Erstellung einer neuen Transaktion.
      *
      * @param description Beschreibung der Transaktion.
-     * @param amount Betrag der Transaktion.
-     * @param type Typ der Transaktion (z. B. "Einnahme" oder "Ausgabe").
-     * @param user Benutzer, der die Transaktion erstellt hat.
-     * @param account Konto, dem die Transaktion zugeordnet ist.
-     * @param category Kategorie der Transaktion.
-     * @param date Datum der Transaktion.
-     * @param time Uhrzeit der Transaktion.
-     * @param status Status der Transaktion (z. B. "abgeschlossen" oder "ausstehend").
+     * @param amount      Betrag der Transaktion.
+     * @param type        Typ der Transaktion (z. B. "Einnahme" oder "Ausgabe").
+     * @param user        Benutzer, der die Transaktion erstellt hat.
+     * @param account     Konto, dem die Transaktion zugeordnet ist.
+     * @param category    Kategorie der Transaktion.
+     * @param date        Datum der Transaktion.
+     * @param time        Uhrzeit der Transaktion.
      */
-    public Transaction(String description, double amount, String type, User user, Account account, Category category, Date date, Time time, String status) {
+    public Transaction(String description, double amount, String type, User user, Account account, Category category, java.sql.Date date, Time time) {
         this.id = new SimpleStringProperty(UUID.randomUUID().toString());
         this.description = new SimpleStringProperty(description);
         this.amount = new SimpleDoubleProperty(amount);
@@ -61,14 +49,9 @@ public class Transaction {
         this.category = new SimpleObjectProperty<>(category);
         this.date = new SimpleObjectProperty<>(date);
         this.time = new SimpleObjectProperty<>(time);
-        this.isRecurring = new SimpleBooleanProperty(false);
-        this.recurrenceInterval = new SimpleStringProperty("");
-        this.endDate = new SimpleObjectProperty<>(null);
-        this.recurringTransactionId = new SimpleStringProperty(null);
-        this.currency = new SimpleStringProperty("USD");
-        this.status = new SimpleStringProperty(status);
-        this.createdAt = new SimpleObjectProperty<>(new Date());
-        this.updatedAt = new SimpleObjectProperty<>(new Date());
+
+        this.createdAt = new SimpleObjectProperty<>(new java.sql.Date(System.currentTimeMillis()));
+        this.updatedAt = new SimpleObjectProperty<>(new java.sql.Date(System.currentTimeMillis()));
     }
 
     // Getter- und Setter-Methoden für die Eigenschaften
@@ -89,11 +72,11 @@ public class Transaction {
         this.description.set(description);
     }
 
-    public Date getDate() {
+    public java.sql.Date getDate() {
         return date.get();
     }
 
-    public void setDate(Date date) {
+    public void setDate(java.sql.Date date) {
         this.date.set(date);
     }
 
@@ -145,68 +128,20 @@ public class Transaction {
         this.category.set(category);
     }
 
-    public boolean isRecurring() {
-        return isRecurring.get();
-    }
-
-    public void setRecurring(boolean isRecurring) {
-        this.isRecurring.set(isRecurring);
-    }
-
-    public String getRecurrenceInterval() {
-        return recurrenceInterval.get();
-    }
-
-    public void setRecurrenceInterval(String recurrenceInterval) {
-        this.recurrenceInterval.set(recurrenceInterval);
-    }
-
-    public Date getEndDate() {
-        return endDate.get();
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate.set(endDate);
-    }
-
-    public String getCurrency() {
-        return currency.get();
-    }
-
-    public void setCurrency(String currency) {
-        this.currency.set(currency);
-    }
-
-    public String getStatus() {
-        return status.get();
-    }
-
-    public void setStatus(String status) {
-        this.status.set(status);
-    }
-
-    public Date getCreatedAt() {
+    public java.sql.Date getCreatedAt() {
         return createdAt.get();
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(java.sql.Date createdAt) {
         this.createdAt.set(createdAt);
     }
 
-    public Date getUpdatedAt() {
+    public java.sql.Date getUpdatedAt() {
         return updatedAt.get();
     }
 
-    public void setUpdatedAt(Date updatedAt) {
+    public void setUpdatedAt(java.sql.Date updatedAt) {
         this.updatedAt.set(updatedAt);
-    }
-
-    public String getRecurringTransactionId() {
-        return recurringTransactionId.get();
-    }
-
-    public void setRecurringTransactionId(String recurringTransactionId) {
-        this.recurringTransactionId.set(recurringTransactionId);
     }
 
     public StringProperty descriptionProperty() {
@@ -217,27 +152,12 @@ public class Transaction {
         return amount;
     }
 
-    public ObjectProperty<Date> dateProperty() {
+    public ObjectProperty<java.sql.Date> dateProperty() {
         return date;
-    }
-
-    public StringProperty statusProperty() {
-        return status;
     }
 
     public StringProperty typeProperty() {
         return type;
     }
 
-    /**
-     * Markiert eine Transaktion als wiederkehrend und legt das Wiederholungsintervall und das Enddatum fest.
-     *
-     * @param interval Wiederholungsintervall (z. B. "monatlich").
-     * @param endDate Enddatum der wiederkehrenden Transaktion.
-     */
-    public void markAsRecurring(String interval, Date endDate) {
-        this.isRecurring.set(true);
-        this.recurrenceInterval.set(interval);
-        this.endDate.set(endDate);
-    }
 }

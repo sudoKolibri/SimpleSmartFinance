@@ -56,47 +56,46 @@ public class AccountView {
         try {
             System.out.println("AccountView.loadIntoPane: Loading AccountView...");
             this.root = root;
+
+            Label headerLabel = new Label("Accounts & Transactions");
+            headerLabel.getStyleClass().add("header-label");
+
             VBox mainLayout = new VBox(30);
-            mainLayout.setPadding(new Insets(20));
+            mainLayout.getStyleClass().add("main-layout");
             mainLayout.setAlignment(Pos.CENTER);
-            mainLayout.setSpacing(40);
 
             // Zusammenfassung oben
             VBox summaryLayout = new VBox(20);
-            summaryLayout.setPadding(new Insets(20));
             summaryLayout.setAlignment(Pos.CENTER);
 
             // Gesamtbilanz prominent anzeigen
             overallBalanceLabel = new Label();
-            overallBalanceLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #50fa7b;");
+            overallBalanceLabel.getStyleClass().add("balance-label");
+            updateOverallBalance();
+
             summaryLayout.getChildren().add(overallBalanceLabel);
 
             // Kontoliste unten
             VBox accountsLayout = new VBox(20);
-            accountsLayout.setPadding(new Insets(20));
             accountsLayout.setAlignment(Pos.CENTER);
-            accountsLayout.setMaxWidth(Double.MAX_VALUE);
 
             // Zeige Konten im Grid-Format
             showAccounts(accountsLayout);
 
             // Button zum Hinzufügen von Konten
             createAccountButton = new Button("+ Add Account");
-            createAccountButton.setPrefWidth(150);
-            createAccountButton.setMaxWidth(200);
+            createAccountButton.getStyleClass().add("button");
             createAccountButton.setOnAction(e -> showCreateAccountForm(accountsLayout));
 
             // Füge den Button zur Kontoliste hinzu
             accountsLayout.getChildren().add(createAccountButton);
 
             // Füge zusammenfassende Ansicht und Kontenliste hinzu
-            mainLayout.getChildren().addAll(summaryLayout, accountsLayout);
+            mainLayout.getChildren().addAll(headerLabel, summaryLayout, accountsLayout);
 
             // Setze das Layout in die Mitte des Root-Panes
             root.setCenter(mainLayout);
 
-            // Aktualisiere die Bilanz initial
-            updateOverallBalance();
             System.out.println("AccountView.loadIntoPane: AccountView loaded successfully.");
         } catch (SQLException e) {
             LoggerUtils.logError(AccountView.class.getName(), "Error while loading AccountView", e);
@@ -227,12 +226,12 @@ public class AccountView {
 
             // Überprüfen, ob ein Konto mit demselben Namen bereits existiert
             if (accountController.doesAccountExist(currentUserId, accountName)) {
-                ViewUtils.showAlert(Alert.AlertType.ERROR, "An account with this name already exists. Please choose a different name.");
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Account name already exists. Please chose a different name.");
                 return;
             }
 
             // Versuch, ein neues Konto hinzuzufügen
-            boolean success = accountController.addAccount(currentUserId, accountName, 0.0);  // Startbalance auf 0, da durch Transaktion verwaltet
+            boolean success = accountController.addAccount(currentUserId, accountName, 0.0);
             if (success) {
                 // Lade das neu erstellte Konto
                 Account createdAccount = accountController.findAccountByName(currentUserId, accountName);
@@ -246,24 +245,23 @@ public class AccountView {
                         createdAccount,    // Verknüpft mit neuem Konto
                         null,              // Keine spezifische Kategorie
                         new Date(System.currentTimeMillis()), // Aktuelles Datum
-                        new Time(System.currentTimeMillis()), // Aktuelle Uhrzeit
-                        "completed"        // Status der Transaktion
+                        new Time(System.currentTimeMillis()) // Aktuelle Uhrzeit
                 );
 
                 // Speichern der Transaktion
                 transactionController.createTransaction(initialTransaction);
-                System.out.println("AccountView.handleSaveButtonClick: Initial balance transaction created for account - " + accountName + " " + initialTransaction);
+                System.out.println("AccountView.handleSaveButtonClick: Erste Transaktion abgeschlossen. - " + accountName + " " + initialTransaction);
 
                 // Aktualisiere die Kontenübersicht und Gesamtbilanz
                 refreshAccountList(accountsLayout);
                 updateOverallBalance();
                 createAccountButton.setVisible(true);
             } else {
-                ViewUtils.showAlert(Alert.AlertType.ERROR, "Failed to create account. Please try again.");
+                ViewUtils.showAlert(Alert.AlertType.ERROR, "Account konnte nicht erzeugt werden. Versuche es erneut.");
             }
         } catch (NumberFormatException ex) {
             // Logge Fehler bei ungültigem Betrag
-            LoggerUtils.logError(AccountView.class.getName(), "Invalid balance format: " + balanceField.getText(), ex);
+            LoggerUtils.logError(AccountView.class.getName(), "Falsches Format: " + balanceField.getText(), ex);
             ViewUtils.showAlert(Alert.AlertType.ERROR, "Invalid balance. Please enter a valid number.");
         } catch (SQLException e) {
             // Logge Fehler beim Speichern des Kontos
@@ -290,7 +288,7 @@ public class AccountView {
             updateOverallBalance();
         } catch (SQLException e) {
             // Logge Fehler beim Aktualisieren der Kontenliste
-            LoggerUtils.logError(AccountView.class.getName(), "Error while refreshing account list for user: " + currentUserId, e);
+            LoggerUtils.logError(AccountView.class.getName(), "Fehler beim erneuern des Accountliste für user: " + currentUserId, e);
             throw e;
         }
     }
@@ -334,7 +332,7 @@ public class AccountView {
             return card;
         } catch (SQLException e) {
             // Logge Fehler beim Erstellen der Kontoübersicht
-            LoggerUtils.logError(AccountView.class.getName(), "Error while creating account card for account: " + account.getName(), e);
+            LoggerUtils.logError(AccountView.class.getName(), "Fehler beim kreieren des accounts: " + account.getName(), e);
             throw e;
         }
     }

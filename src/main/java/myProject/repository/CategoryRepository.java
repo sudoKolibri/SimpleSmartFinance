@@ -80,6 +80,43 @@ public class CategoryRepository {
         }
     }
 
+    // Methode zum Löschen einer Kategorie
+    public boolean deleteCategory(String categoryId) {
+        String sql = "DELETE FROM categories WHERE id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1, categoryId);
+            pstmt.executeUpdate();
+
+            LoggerUtils.logInfo(CategoryRepository.class.getName(), "Kategorie erfolgreich gelöscht: " + categoryId);
+            return true;
+
+        } catch (SQLException e) {
+            LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Löschen der Kategorie: " + categoryId, e);
+            return false;
+        }
+    }
+
+    // Methode zum Aktualisieren der Transaktionen auf "No Category"
+    public void updateTransactionsToNoCategory(String categoryId) {
+        String sql = "UPDATE transactions SET category_id = 'no_category_id' WHERE category_id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1, categoryId);
+            pstmt.executeUpdate();
+
+            LoggerUtils.logInfo(CategoryRepository.class.getName(), "Transaktionen erfolgreich auf 'No Category' gesetzt für Kategorie: " + categoryId);
+
+        } catch (SQLException e) {
+            LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Aktualisieren der Transaktionen für Kategorie: " + categoryId, e);
+        }
+    }
+
+
     /**
      * Methode zum Abrufen aller globalen (nicht benutzerdefinierten) Kategorien aus der Datenbank.
      * @return Eine Liste der globalen Kategorien.
@@ -99,32 +136,6 @@ public class CategoryRepository {
             LoggerUtils.logInfo(CategoryRepository.class.getName(), "Globale Kategorien erfolgreich abgerufen.");
         } catch (SQLException e) {
             LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Abrufen der globalen Kategorien.", e);
-        }
-
-        return categories;
-    }
-
-    /**
-     * Methode zum Abrufen aller Standardkategorien aus der Datenbank.
-     * @return Eine Liste der Standardkategorien.
-     * @throws SQLException Wenn ein Fehler bei der Datenbankabfrage auftritt.
-     */
-    public List<Category> getStandardCategories() throws SQLException {
-        List<Category> categories = new ArrayList<>();
-        String sql = "SELECT * FROM categories WHERE is_standard = true";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                categories.add(mapResultSetToCategory(rs));
-            }
-
-            LoggerUtils.logInfo(CategoryRepository.class.getName(), "Standardkategorien erfolgreich abgerufen.");
-        } catch (SQLException e) {
-            LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Abrufen der Standardkategorien.", e);
-            throw e;
         }
 
         return categories;
@@ -184,6 +195,33 @@ public class CategoryRepository {
             throw e;
         }
 
+        return null;
+    }
+
+    /**
+     * Findet eine Kategorie anhand ihres Namens für einen bestimmten Benutzer.
+     * @param userId Die ID des Benutzers.
+     * @param categoryName Der Name der Kategorie.
+     * @return Die gefundene Kategorie oder null, wenn keine Kategorie gefunden wurde.
+     * @throws SQLException Wenn ein Datenbankfehler auftritt.
+     */
+    public Category findCategoryByName(String userId, String categoryName) throws SQLException {
+        String sql = "SELECT * FROM categories WHERE (user_id = ? OR user_id IS NULL) AND name = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setString(2, categoryName);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCategory(rs);
+                }
+            }
+        } catch (SQLException e) {
+            LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Abrufen der Kategorie mit Namen: " + categoryName + " für Benutzer: " + userId, e);
+            throw e;
+        }
         return null;
     }
 

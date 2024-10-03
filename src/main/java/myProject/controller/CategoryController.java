@@ -49,39 +49,26 @@ public class CategoryController {
     }
 
     /**
-     * Methode zum Abrufen aller globalen Kategorien.
-     *
-     * @return Eine Liste globaler Kategorien.
-     */
-    public List<Category> getGlobalCategories() {
-        List<Category> categories = categoryService.getGlobalCategories();
-        LoggerUtils.logInfo(CategoryController.class.getName(), "Globale Kategorien erfolgreich abgerufen.");
-        return categories;
-    }
-
-    /**
-     * Methode zum Abrufen aller benutzerdefinierten Kategorien für einen bestimmten Benutzer.
-     *
-     * @param userId Die ID des Benutzers.
-     * @return Eine Liste benutzerdefinierter Kategorien.
-     */
-    public List<Category> getCustomCategoriesForUser(String userId) {
-        List<Category> categories = categoryService.getCustomCategoriesForUser(userId);
-        LoggerUtils.logInfo(CategoryController.class.getName(), "Benutzerdefinierte Kategorien erfolgreich abgerufen für Benutzer: " + userId);
-        return categories;
-    }
-
-    /**
      * Methode zum Abrufen aller Kategorien für einen bestimmten Benutzer.
      *
      * @param userId Die ID des Benutzers.
      * @return Eine Liste aller Kategorien des Benutzers.
      */
     public List<Category> getAllCategoriesForUser(String userId) {
-        List<Category> categories = categoryService.getAllCategoriesForUser(userId);
-        LoggerUtils.logInfo(CategoryController.class.getName(), "Alle Kategorien erfolgreich abgerufen für Benutzer: " + userId);
-        return categories;
+        return categoryService.getAllCategoriesForUser(userId);
     }
+
+    // Methode zum Löschen einer Kategorie und Aktualisieren der Transaktionen
+    public boolean deleteCategory(String categoryId) {
+        boolean success = categoryService.deleteCategoryAndUpdateTransactions(categoryId);
+        if (success) {
+            LoggerUtils.logInfo(CategoryController.class.getName(), "Kategorie und Transaktionen erfolgreich aktualisiert: " + categoryId);
+        } else {
+            LoggerUtils.logError(CategoryController.class.getName(), "Fehler beim Löschen der Kategorie: " + categoryId, null);
+        }
+        return success;
+    }
+
 
     /**
      * Methode zum Abrufen einer Kategorie anhand ihrer ID.

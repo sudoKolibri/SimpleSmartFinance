@@ -62,23 +62,6 @@ public class ViewUtils {
     }
 
     /**
-     * Überprüft, ob das in einem Textfeld eingegebene Zeichen eine gültige Zahl ist.
-     *
-     * @param textField Das Textfeld, das überprüft werden soll.
-     * @return true, wenn die Eingabe numerisch ist, andernfalls false.
-     */
-    public static boolean isNumeric(TextField textField) {
-        try {
-            Double.parseDouble(textField.getText());
-            LoggerUtils.logInfo(ViewUtils.class.getName(), "Eingabe im Textfeld ist numerisch: " + textField.getText());
-            return true;
-        } catch (NumberFormatException e) {
-            LoggerUtils.logError(ViewUtils.class.getName(), "Ungültige numerische Eingabe im Textfeld: " + textField.getText(), e);
-            return false;
-        }
-    }
-
-    /**
      * Formatiert einen Double-Wert als Währungsstring.
      *
      * @param amount Der zu formatierende Betrag.

@@ -20,6 +20,7 @@ public class UserService {
 
     /**
      * Authentifiziert einen Benutzer anhand seines Benutzernamens und Passworts.
+     *
      * @param username Der Benutzername des Benutzers.
      * @param password Das Passwort des Benutzers.
      * @return true, wenn die Authentifizierung erfolgreich war, false bei einem Fehler.
@@ -40,12 +41,11 @@ public class UserService {
 
     /**
      * Gibt den aktuell angemeldeten Benutzer zurück.
+     *
      * @return Der aktuell angemeldete Benutzer oder null, falls kein Benutzer angemeldet ist.
      */
     public User getLoggedInUser() {
-        if (loggedInUser != null) {
-            LoggerUtils.logInfo(UserService.class.getName(), "Angemeldeter Benutzer abgerufen: " + loggedInUser.getUsername());
-        } else {
+        if (loggedInUser == null) {
             LoggerUtils.logError(UserService.class.getName(), "Kein Benutzer ist aktuell angemeldet.", null);
         }
         return loggedInUser;
@@ -53,6 +53,7 @@ public class UserService {
 
     /**
      * Registriert einen neuen Benutzer.
+     *
      * @param username Der gewünschte Benutzername des neuen Benutzers.
      * @param password Das Passwort des neuen Benutzers.
      * @return true, wenn die Registrierung erfolgreich war, false, wenn der Benutzername bereits vergeben ist.
@@ -61,16 +62,15 @@ public class UserService {
         try {
             if (userRepository.findByUsername(username).isPresent()) {
                 LoggerUtils.logError(UserService.class.getName(), "Registrierung fehlgeschlagen: Benutzername bereits vergeben - " + username, null);
-                return false;  // Benutzername ist bereits vergeben
+                return false;
             }
 
             User newUser = new User(username, password);
             boolean success = userRepository.addUser(newUser);
-            if (success) {
-                LoggerUtils.logInfo(UserService.class.getName(), "Benutzer erfolgreich registriert: " + username);
-            } else {
+            if (!success) {
                 LoggerUtils.logError(UserService.class.getName(), "Fehler bei der Registrierung des Benutzers: " + username, null);
             }
+
             return success;
 
         } catch (Exception e) {

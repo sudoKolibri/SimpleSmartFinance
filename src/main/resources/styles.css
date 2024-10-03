@@ -176,3 +176,142 @@
     -fx-background-color: #282a36;
     -fx-border-color: transparent;
 }
+
+/* ============ Bar Chart ============ */
+.custom-bar-chart .chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 20px;
+}
+
+.custom-bar-chart .chart-legend-item-symbol {
+    -fx-background-radius: 0;
+}
+
+.custom-bar-chart .chart-legend-item {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* ============ HelpView Specific Styles ============ */
+.help-card {
+    -fx-background-color: #6272a4;
+    -fx-border-color: #ff79c6;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 20px;
+    -fx-alignment: center;
+    -fx-pref-width: 200px;
+    -fx-pref-height: 200px;
+    -fx-max-width: 300px;
+    -fx-transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.help-card:hover {
+    -fx-background-color: #7082b8;
+    -fx-cursor: hand;
+}
+
+.help-card-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f2;
+}
+
+.help-content {
+    -fx-background-color: #282a36;
+    -fx-padding: 40px;
+    -fx-alignment: center;
+}
+
+.help-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f2;
+}
+
+.help-text {
+    -fx-text-fill: #f8f8f2;
+    -fx-font-size: 14px;
+    -fx-padding: 10px;
+    -fx-line-spacing: 5px;
+}
+
+/* ============ Back Button ============ */
+.back-button {
+    -fx-background-color: #50fa7b;
+    -fx-text-fill: #282a36;
+    -fx-font-size: 16px;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 5px;
+    -fx-pref-width: 130px;
+}
+
+.back-button:hover {
+    -fx-background-color: #ff79c6;
+}
+
+/* ============ Neue Stile für ReportView ============ */
+.main-layout {
+    -fx-padding: 20px;
+    -fx-alignment: top-center;
+    -fx-spacing: 20px;
+    -fx-background-color: #282a36;
+}
+
+.header-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dashboard-info {
+    -fx-background-color: #44475a;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px;
+    -fx-max-width: 900px;
+}
+
+.chart-box {
+    -fx-background-color: #44475a;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px;
+}
+
+.filter-box {
+    -fx-background-color: #44475a;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px;
+    -fx-max-width: 900px;
+}
+
+.apply-button {
+    -fx-background-color: #50fa7b;
+    -fx-text-fill: #282a36;
+    -fx-padding: 10px;
+    -fx-border-radius: 5px;
+}
+
+.apply-button:hover {
+    -fx-background-color: #ff79c6;
+}
+
+/* ============ Header-Label-Stil ============ */
+.header-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f2;
+}
+
+/* ============ Balance-Label-Stil ============ */
+.balance-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #50fa7b;
+}
+
+/* ============ Main Layout Stil ============ */
+.main-layout {
+    -fx-padding: 20px;
+    -fx-alignment: top-center;
+    -fx-spacing: 20px;
+    -fx-background-color: #282a36;
+}

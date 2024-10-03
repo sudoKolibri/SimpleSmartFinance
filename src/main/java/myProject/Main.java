@@ -4,6 +4,7 @@ import myProject.db.DatabaseManager;
 import myProject.view.WelcomeView;
 import javafx.application.Application;
 import javafx.stage.Stage;
+import myProject.util.LoggerUtils;
 
 public class Main extends Application {
 
@@ -19,11 +20,11 @@ public class Main extends Application {
     // Methode zur Initialisierung der Datenbank
     private void initializeDatabase() {
         try {
-            System.out.println("Main.initializeDatabase: Initializing database.");
+            LoggerUtils.logInfo(Main.class.getName(), "Datenbank wird initialisiert.");
             DatabaseManager.initializeDatabase();
-            System.out.println("Main.initializeDatabase: Database initialized successfully.");
+            LoggerUtils.logInfo(Main.class.getName(), "Datenbank erfolgreich initialisiert.");
         } catch (Exception e) {
-            System.err.println("Main.initializeDatabase: Error during database initialization - " + e.getMessage());
+            LoggerUtils.logError(Main.class.getName(), "Fehler bei der Initialisierung der Datenbank: " + e.getMessage(), e);
         }
     }
 
@@ -31,11 +32,10 @@ public class Main extends Application {
     private void showWelcomeView(Stage primaryStage) {
         WelcomeView welcomeView = new WelcomeView();
         try {
-            System.out.println("Main.showWelcomeView: Displaying WelcomeView.");
             welcomeView.start(primaryStage);
-            System.out.println("Main.showWelcomeView: WelcomeView displayed successfully.");
+            LoggerUtils.logInfo(Main.class.getName(), "WelcomeView erfolgreich angezeigt.");
         } catch (Exception e) {
-            System.err.println("Main.showWelcomeView: Error loading WelcomeView - " + e.getMessage());
+            LoggerUtils.logError(Main.class.getName(), "Fehler beim Laden der WelcomeView: " + e.getMessage(), e);
         }
     }
 
@@ -43,4 +43,5 @@ public class Main extends Application {
         // Startet die JavaFX-Anwendung
         launch(args);
     }
+
 }

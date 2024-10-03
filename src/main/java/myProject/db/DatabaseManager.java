@@ -20,6 +20,7 @@ public class DatabaseManager {
 
     /**
      * Stellt eine Verbindung zur Datenbank her und gibt diese zurück.
+     *
      * @return Connection Objekt, das die Verbindung zur Datenbank darstellt.
      * @throws SQLException Wenn ein Fehler bei der Verbindung auftritt.
      */
@@ -41,7 +42,8 @@ public class DatabaseManager {
         try (Connection connection = getConnection();
              Statement stmt = connection.createStatement()) {
 
-            // Erstellen der Tabelle für Benutzer
+
+            // Erstellen der Tabelle für Benutzer, falls nicht bereits vorhanden
             stmt.execute("CREATE TABLE IF NOT EXISTS users ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "username VARCHAR(255) NOT NULL UNIQUE, "
@@ -66,6 +68,10 @@ public class DatabaseManager {
                     + "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL),"
                     + "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)");
 
+            // Hinzufügen der "No Category"-Kategorie
+            stmt.execute("MERGE INTO categories (id, name, color, is_standard, is_custom, budget, user_id) KEY (id) "
+                    + "VALUES ('no_category_id', 'No Category', '#6272a4', true, false, NULL, NULL)");
+
             // Erstellen der Tabelle für Konten
             stmt.execute("CREATE TABLE IF NOT EXISTS accounts ("
                     + "id VARCHAR(255) PRIMARY KEY, "
@@ -83,25 +89,7 @@ public class DatabaseManager {
                     + "description VARCHAR(255), "
                     + "category_id VARCHAR(255), "
                     + "type VARCHAR(255), "
-                    + "status VARCHAR(20) DEFAULT 'pending', "
                     + "account_id VARCHAR(255), "
-                    + "recurring_transaction_id VARCHAR(255), "
-                    + "FOREIGN KEY (category_id) REFERENCES categories(id), "
-                    + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
-
-            // Erstellen der Tabelle für wiederkehrende Transaktionen
-            stmt.execute("CREATE TABLE IF NOT EXISTS recurring_transactions ("
-                    + "id VARCHAR(255) PRIMARY KEY, "
-                    + "amount DOUBLE NOT NULL, "
-                    + "description VARCHAR(255), "
-                    + "category_id VARCHAR(255), "
-                    + "type VARCHAR(255), "
-                    + "account_id VARCHAR(255), "
-                    + "start_date DATE NOT NULL, "
-                    + "time TIME NOT NULL, "
-                    + "status VARCHAR(20) DEFAULT 'pending', "
-                    + "recurrence_interval VARCHAR(50) NOT NULL, "
-                    + "end_date DATE, "
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
 
@@ -125,4 +113,6 @@ public class DatabaseManager {
             LoggerUtils.logError(DatabaseManager.class.getName(), "Fehler bei der Datenbankinitialisierung.", e);
         }
     }
+
+
 }

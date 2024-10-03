@@ -12,13 +12,10 @@ import myProject.controller.AccountController;
 import myProject.controller.CategoryController;
 import myProject.controller.ReportController;
 import myProject.repository.TransactionRepository;
-import myProject.service.TransactionService;
+import myProject.service.*;
 import myProject.repository.AccountRepository;
-import myProject.service.AccountService;
 import myProject.repository.CategoryRepository;
-import myProject.service.CategoryService;
-import myProject.repository.BudgetRepository;
-import myProject.service.BudgetService;
+
 
 import java.sql.SQLException;
 import java.util.Objects;
@@ -102,19 +99,18 @@ public class WelcomeView {
         AccountRepository accountRepository = new AccountRepository();
         CategoryRepository categoryRepository = new CategoryRepository();
         TransactionRepository transactionRepository = new TransactionRepository(accountRepository, categoryRepository);
-        BudgetRepository budgetRepository = new BudgetRepository();
 
         // Services initialisieren
         CategoryService categoryService = new CategoryService(categoryRepository);
         TransactionService transactionService = new TransactionService(transactionRepository, categoryService, accountRepository);
-        AccountService accountService = new AccountService(accountRepository, transactionService);
-        BudgetService budgetService = new BudgetService(budgetRepository);
+        AccountService accountService = new AccountService(accountRepository);
+        ReportService reportService = new ReportService(transactionService,accountService,categoryService);
 
         // Controller initialisieren
         AccountController accountController = new AccountController(accountService, transactionService);
         TransactionController transactionController = new TransactionController(transactionService);
         CategoryController categoryController = new CategoryController(categoryService);
-        ReportController reportController = new ReportController(transactionService, accountService, categoryService, budgetService);
+        ReportController reportController = new ReportController(reportService);
 
         // MainView zurückgeben, initialisiert mit den benötigten Controllern
         return new MainView(transactionController, accountController, categoryController, reportController, loggedInUserId);

@@ -1,7 +1,6 @@
 package myProject.service;
 
 import myProject.model.Account;
-import myProject.model.Transaction;
 import myProject.repository.AccountRepository;
 import myProject.util.LoggerUtils;
 
@@ -18,12 +17,10 @@ import java.util.List;
 public class AccountService {
 
     private final AccountRepository accountRepository;
-    private final TransactionService transactionService;
 
     // Konstruktor, um AccountRepository und TransactionService zu initialisieren
-    public AccountService(AccountRepository accountRepository, TransactionService transactionService) {
+    public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
-        this.transactionService = transactionService;
     }
 
     /**
@@ -55,21 +52,6 @@ public class AccountService {
         } catch (Exception e) {
             LoggerUtils.logError(AccountService.class.getName(), "Fehler beim Aktualisieren des Kontos: " + account.getName(), e);
         }
-    }
-
-    /**
-     * Methode zur Berechnung der Bilanz basierend auf abgeschlossenen Transaktionen.
-     *
-     * @param account Das Konto, dessen Bilanz berechnet werden soll.
-     * @return Die berechnete Bilanz oder die aktuelle Bilanz im Fehlerfall.
-     */
-    public double calculateBalanceForCompletedTransactions(Account account) {
-        List<Transaction> completedTransactions = transactionService.getCompletedTransactionsByAccount(account.getName());
-        double transactionSum = completedTransactions.stream().mapToDouble(Transaction::getAmount).sum();
-        account.setBalance(transactionSum);
-        updateAccount(account);
-
-        return transactionSum;
     }
 
     /**

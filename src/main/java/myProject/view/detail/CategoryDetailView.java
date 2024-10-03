@@ -1,6 +1,7 @@
 package myProject.view.detail;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -9,8 +10,12 @@ import myProject.model.Category;
 import myProject.model.Transaction;
 import myProject.controller.TransactionController;
 import myProject.controller.CategoryController;
+import myProject.controller.AccountController;
 import myProject.util.LoggerUtils;
+import myProject.view.CategoryView;
 import myProject.view.util.ViewUtils;
+
+import java.sql.SQLException;
 
 /**
  * Die Klasse CategoryDetailView ist verantwortlich für die Anzeige, Bearbeitung und Verwaltung
@@ -21,18 +26,23 @@ import myProject.view.util.ViewUtils;
 public class CategoryDetailView {
     private final CategoryController categoryController;
     private final TransactionController transactionController;
+    private final AccountController accountController;
+    private final String loggedInUserId;
     private final BorderPane root;
+
 
     /**
      * Konstruktor zur Initialisierung der benötigten Controller und des Layouts.
      *
-     * @param categoryController Der Controller für Kategorien.
+     * @param categoryController    Der Controller für Kategorien.
      * @param transactionController Der Controller für Transaktionen.
-     * @param root Das Root-Layout, in das die Ansicht eingefügt wird.
+     * @param root                  Das Root-Layout, in das die Ansicht eingefügt wird.
      */
-    public CategoryDetailView(CategoryController categoryController, TransactionController transactionController, BorderPane root) {
+    public CategoryDetailView(CategoryController categoryController, TransactionController transactionController, AccountController accountController, String loggedInUserId, BorderPane root) {
         this.categoryController = categoryController;
         this.transactionController = transactionController;
+        this.accountController = accountController; // AccountController hinzufügen
+        this.loggedInUserId = loggedInUserId; // loggedInUserId hinzufügen
         if (root == null) {
             LoggerUtils.logError(CategoryDetailView.class.getName(), "Root-Layout darf nicht null sein.", null);
             throw new IllegalArgumentException("Root-Layout darf nicht null sein.");
@@ -81,6 +91,44 @@ public class CategoryDetailView {
         editButton.getStyleClass().add("edit-button");
         editButton.setOnAction(e -> showEditCategoryForm(category));
         detailView.getChildren().add(editButton);
+
+        Button deleteButton = new Button("Delete");
+        deleteButton.getStyleClass().add("edit-button");
+        deleteButton.setOnAction(e -> {
+            // Create a confirmation dialog
+            Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmationAlert.setTitle("Delete Category");
+            confirmationAlert.setHeaderText("Are you sure you want to delete the category: " + category.getName() + "?");
+            confirmationAlert.setContentText("All transactions in this category will be moved to 'No Category'.");
+
+            // Apply custom styling to the dialog pane
+            DialogPane dialogPane = confirmationAlert.getDialogPane();
+            dialogPane.getStyleClass().add("custom-alert");
+
+            // Wait for the user's response
+            confirmationAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    boolean success = categoryController.deleteCategory(category.getId());
+
+                    if (success) {
+                        LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Kategorie erfolgreich gelöscht: " + category.getId());
+                        try {
+                            CategoryView categoryView = new CategoryView(loggedInUserId, categoryController, transactionController, accountController);
+                            categoryView.loadIntoPane(root); // Reload the CategoryView
+                        } catch (SQLException ex) {
+                            LoggerUtils.logError(CategoryDetailView.class.getName(), "Fehler beim Laden der CategoryView nach dem Löschen", ex);
+                        }
+                    } else {
+                        LoggerUtils.logError(CategoryDetailView.class.getName(), "Fehler beim Löschen der Kategorie: " + category.getId(), null);
+                    }
+                }
+            });
+        });
+
+
+// Füge den Button zu deiner VBox hinzu
+        detailView.getChildren().add(deleteButton);
+
 
         Label transactionsLabel = new Label("Transactions for this category:");
         transactionsLabel.getStyleClass().add("transactions-label");
@@ -146,8 +194,8 @@ public class CategoryDetailView {
     /**
      * Speichert die Änderungen an der Kategorie, inklusive Name und Budget.
      *
-     * @param category Die zu aktualisierende Kategorie.
-     * @param nameField Das Textfeld für den neuen Namen der Kategorie.
+     * @param category    Die zu aktualisierende Kategorie.
+     * @param nameField   Das Textfeld für den neuen Namen der Kategorie.
      * @param budgetField Das Textfeld für das neue Budget der Kategorie.
      */
     private void saveCategoryChanges(Category category, TextField nameField, TextField budgetField) {
@@ -192,6 +240,8 @@ public class CategoryDetailView {
      * @param category Die Kategorie, deren Transaktionen angezeigt werden sollen.
      * @return Eine TableView mit den Transaktionen der Kategorie.
      */
+
+    @SuppressWarnings("unchecked")
     private TableView<Transaction> createTransactionsTable(Category category) {
         LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Erstelle Transaktionstabelle für Kategorie: " + category.getName());
 
@@ -217,8 +267,9 @@ public class CategoryDetailView {
 
         transactionsTable.getColumns().addAll(descriptionColumn, amountColumn, dateColumn, accountColumn);
 
-        ObservableList<Transaction> allTransactions = transactionController.getAllTransactions();
-        ObservableList<Transaction> filteredTransactions = allTransactions.filtered(transaction -> transaction.getCategory() != null && transaction.getCategory().getId().equals(category.getId()));
+        ObservableList<Transaction> filteredTransactions = FXCollections.observableArrayList(transactionController.getTransactionsByCategory(category));
+        transactionsTable.setItems(filteredTransactions);
+
 
         transactionsTable.setItems(filteredTransactions);
 

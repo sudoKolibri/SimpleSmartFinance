@@ -36,4 +36,7 @@ public class LoggerUtils {
     public static void logError(String className, String message, Exception e) {
         LOGGER.log(Level.SEVERE, className + ": " + message, e);
     }
+
+    public static void logError(String name, String s) {
+    }
 }

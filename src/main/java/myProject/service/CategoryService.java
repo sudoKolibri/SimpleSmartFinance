@@ -56,6 +56,34 @@ public class CategoryService {
         }
     }
 
+    public boolean deleteCategoryAndUpdateTransactions(String categoryId) {
+        try {
+            // Überprüfe, ob es sich um eine globale Kategorie handelt
+            Category category = categoryRepository.findCategoryById(categoryId);
+            if (category.isStandard()) {
+                LoggerUtils.logError(CategoryService.class.getName(), "Globale Kategorie kann nicht gelöscht werden: " + categoryId);
+                return false;  // Verhindert das Löschen der Kategorie
+            }
+
+            // Aktualisiere alle Transaktionen der Kategorie auf 'No Category'
+            categoryRepository.updateTransactionsToNoCategory(categoryId);
+
+            // Lösche die Kategorie
+            boolean success = categoryRepository.deleteCategory(categoryId);
+            if (success) {
+                LoggerUtils.logInfo(CategoryService.class.getName(), "Kategorie erfolgreich gelöscht und Transaktionen aktualisiert: " + categoryId);
+            }
+            return success;
+
+        } catch (Exception e) {
+            LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Löschen der Kategorie und Aktualisieren der Transaktionen: " + categoryId, e);
+            return false;
+        }
+    }
+
+
+
+
     /**
      * Ruft alle globalen Kategorien ab.
      * @return Eine Liste globaler Kategorien.
@@ -97,10 +125,30 @@ public class CategoryService {
             List<Category> globalCategories = getGlobalCategories();
             List<Category> customCategories = getCustomCategoriesForUser(userId);
             globalCategories.addAll(customCategories);
-            LoggerUtils.logInfo(CategoryService.class.getName(), "Alle Kategorien erfolgreich abgerufen für Benutzer: " + userId);
             return globalCategories;
         } catch (Exception e) {
             LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen aller Kategorien für Benutzer: " + userId, e);
+            return null;
+        }
+    }
+
+    /**
+     * Ruft eine Kategorie anhand ihres Namens für einen bestimmten Benutzer ab.
+     * @param userId Die ID des Benutzers.
+     * @param categoryName Der Name der Kategorie.
+     * @return Die gefundene Kategorie oder null, wenn keine Kategorie gefunden wurde.
+     */
+    public Category getCategoryByName(String userId, String categoryName) {
+        try {
+            Category category = categoryRepository.findCategoryByName(userId, categoryName);
+            if (category != null) {
+                LoggerUtils.logInfo(CategoryService.class.getName(), "Kategorie erfolgreich abgerufen: " + categoryName + " für Benutzer: " + userId);
+            } else {
+                LoggerUtils.logInfo(CategoryService.class.getName(), "Keine Kategorie gefunden mit Namen: " + categoryName + " für Benutzer: " + userId);
+            }
+            return category;
+        } catch (Exception e) {
+            LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen der Kategorie: " + categoryName + " für Benutzer: " + userId, e);
             return null;
         }
     }

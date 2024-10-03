@@ -58,7 +58,6 @@ public class CategoryView {
      * @throws SQLException Wenn ein Fehler beim Laden der Kategorien auftritt.
      */
     public void loadIntoPane(BorderPane root) throws SQLException {
-        LoggerUtils.logInfo(CategoryView.class.getName(), "Lade CategoryView in das Root-Layout.");
         if (root == null) {
             LoggerUtils.logError(CategoryView.class.getName(), "Root-Layout ist null. Kann CategoryView nicht laden.", null);
             return;
@@ -66,8 +65,13 @@ public class CategoryView {
 
         this.root = root;
         mainLayout = new VBox(10);
-        mainLayout.setPadding(new Insets(20));
+        mainLayout.getStyleClass().add("main-layout");
         mainLayout.setAlignment(Pos.CENTER);
+
+        // Header Label
+        Label headerLabel = new Label("Categories & Budgets");
+        headerLabel.getStyleClass().add("header-label");
+        mainLayout.getChildren().add(headerLabel);
 
         // Erstelle und füge das Summary-Layout hinzu
         VBox summaryLayout = createSummaryLayout();
@@ -78,16 +82,16 @@ public class CategoryView {
 
         // Button zum Hinzufügen neuer Kategorien konfigurieren
         createCategoryButton = new Button("+ Add Category");
-        createCategoryButton.setPrefWidth(150);
-        createCategoryButton.setMaxWidth(200);
+        createCategoryButton.getStyleClass().add("create-button");
         createCategoryButton.setOnAction(e -> {
-            createCategoryButton.setVisible(false); // Button ausblenden, wenn das Formular angezeigt wird
+            createCategoryButton.setVisible(false);
             showCreateCategoryForm(root);
         });
 
         mainLayout.getChildren().add(createCategoryButton);
         this.root.setCenter(mainLayout);
     }
+
 
     /**
      * Erstellt das Summary-Layout zur Anzeige der Gesamtbilanz und einzelner Kontenbilanzen.
@@ -139,6 +143,7 @@ public class CategoryView {
 
         List<Category> categories = categoryController.getAllCategoriesForUser(currentUserId)
                 .stream()
+                .filter(category -> !category.getId().equals("no_category_id"))
                 .sorted(Comparator.comparing(Category::isStandard).reversed())
                 .toList();
 
@@ -172,6 +177,8 @@ public class CategoryView {
         Label nameLabel = new Label(category.getName());
         nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         card.getChildren().add(nameLabel);
+
+
 
         if (category.getBudget() != null && category.getBudget() > 0) {
             Label budgetLabel = new Label("$" + category.getBudget() + " Budget");
@@ -218,10 +225,17 @@ public class CategoryView {
             return;
         }
 
-        CategoryDetailView categoryDetailView = new CategoryDetailView(categoryController, transactionController, root);
+        // Überprüfen, ob die Kategorie die "No Category" Kategorie ist
+        if (category.getId().equals("no_category_id")) {
+            LoggerUtils.logInfo(CategoryView.class.getName(), "'No Category' kann nicht gelöscht oder bearbeitet werden.");
+        }
+
+        CategoryDetailView categoryDetailView = new CategoryDetailView(categoryController, transactionController, accountController, currentUserId, root);
         categoryDetailView.showCategoryDetailView(category);
+
         LoggerUtils.logInfo(CategoryView.class.getName(), "Detailansicht für Kategorie angezeigt: " + category.getName());
     }
+
 
     /**
      * Zeigt das Formular zur Erstellung einer neuen Kategorie an.
@@ -266,6 +280,7 @@ public class CategoryView {
      * @return Der erstellte Button.
      */
     private Button createSubmitButton(TextField nameField, TextField budgetField, BorderPane root) {
+        this.root = root;
         Button submitButton = new Button("Create");
         submitButton.setOnAction(e -> {
             String categoryName = nameField.getText();

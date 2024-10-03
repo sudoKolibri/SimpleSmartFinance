@@ -1,6 +1,7 @@
 package myProject.controller;
 
 import myProject.model.Account;
+import myProject.model.Transaction;
 import myProject.service.AccountService;
 import myProject.service.TransactionService;
 import myProject.util.LoggerUtils;
@@ -136,20 +137,18 @@ public class AccountController {
     }
 
     /**
-     * Methode zur Berechnung der Bilanz basierend auf abgeschlossenen Transaktionen.
+     * Berechnet die Bilanz für abgeschlossene Transaktionen eines Kontos.
      *
-     * @param account Das Konto, dessen Bilanz berechnet werden soll.
+     * @param account Das Konto, für das die Bilanz berechnet werden soll.
      * @return Die berechnete Bilanz.
-     * @throws SQLException bei einem Datenbankfehler.
      */
     public double calculateUpdatedBalanceForCompletedTransactions(Account account) throws SQLException {
-        try {
-            double updatedBalance = transactionService.calculateBalanceForCompletedTransactions(account);
-            LoggerUtils.logInfo(AccountController.class.getName(), "Bilanz für abgeschlossene Transaktionen erfolgreich berechnet für Konto: " + account.getName());
-            return updatedBalance;
-        } catch (SQLException e) {
-            LoggerUtils.logError(AccountController.class.getName(), "Fehler bei der Bilanzberechnung für Konto: " + account.getName(), e);
-            throw e;
-        }
+        List<Transaction> completedTransactions = transactionService.getCompletedTransactionsByAccount(account.getName());
+
+        // Summiere alle abgeschlossenen Transaktionen und berechne die Bilanz
+        return completedTransactions.stream()
+                .mapToDouble(Transaction::getAmount)
+                .sum();
     }
+
 }
