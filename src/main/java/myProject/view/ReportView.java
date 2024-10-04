@@ -48,7 +48,7 @@ public class ReportView {
         mainLayout.getStyleClass().add("main-layout");
 
         // Header Label
-        Label headerLabel = new Label("Financial Reports Dashboard");
+        Label headerLabel = new Label("Financial Reports");
         headerLabel.getStyleClass().add("header-label");
 
         // Erstellen des Zeitfilter-Containers

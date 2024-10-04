@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import myProject.util.LoggerUtils;
@@ -58,10 +59,10 @@ public class HelpView {
     private VBox createHelpCard(String title, Runnable action) {
         VBox card = new VBox();
         card.setAlignment(Pos.CENTER);
-        card.getStyleClass().add("help-card"); // Style from CSS
+        card.getStyleClass().add("help-card");
 
         Label label = new Label(title);
-        label.getStyleClass().add("help-card-label"); // Label styling from CSS
+        label.getStyleClass().add("help-card-label");
 
         card.getChildren().add(label);
         card.setOnMouseClicked(e -> action.run());
@@ -76,28 +77,40 @@ public class HelpView {
         VBox helpContent = new VBox(20);
         helpContent.setAlignment(Pos.CENTER);
         helpContent.setPadding(new Insets(20));
-        helpContent.getStyleClass().add("help-content"); // Content style from CSS
+        helpContent.getStyleClass().add("help-content");
 
         Label helpTitle = new Label("Account Section - Guide");
         helpTitle.getStyleClass().add("help-title");
 
-        Label helpText = new Label("In the Accounts section, you can manage all your financial accounts. "
-                + "This is where you can add, edit, or delete accounts, as well as view important details like the current balance of each account.\n\n"
-                + "Adding a new account is easy! Simply click on the 'Add Account' button, provide the account name "
-                + "(for example, 'Savings Account' or 'Credit Card'), and set an initial balance.\n\n"
-                + "If you want to update an existing account, just click on the account in the list, make the necessary changes, "
-                + "and save them. You can adjust balances, update account names, or delete an account you no longer use.\n\n"
-                + "The system automatically updates your balances as you record transactions. Each account’s balance reflects your "
-                + "real-time spending and income, helping you keep track of your finances effortlessly.");
+        Label helpText = new Label("""
+                In the Accounts section, you can manage all your financial accounts. \
+                This is where you can add, edit, or delete accounts, as well as view important details like the current balance of each account.
+                
+                Adding a new account is easy! Simply click on the 'Add Account' button, provide the account name \
+                (for example, 'Savings Account' or 'Credit Card'), and set an initial balance.
+                
+                If you want to update an existing account, just click on the account in the list, make the necessary changes, \
+                and save them. You can adjust balances, update account names, or delete an account you no longer use.
+                
+                The system automatically updates your balances as you record transactions. Each account’s balance reflects your \
+                spending and income, helping you keep track of your finances effortlessly.""");
         helpText.getStyleClass().add("help-text");
+        helpText.setWrapText(true);
 
-        // Back Button to return to HelpView
+        // Back Button
         Button backButton = new Button("Back to Help");
-        backButton.getStyleClass().add("back-button"); // Back button styling from CSS
+        backButton.getStyleClass().add("back-button");
         backButton.setOnAction(e -> loadIntoPane());
 
         helpContent.getChildren().addAll(helpTitle, helpText, backButton);
-        root.setCenter(helpContent);
+
+        // ScrollPane hinzufügen
+        ScrollPane scrollPane = new ScrollPane(helpContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        root.setCenter(scrollPane);
     }
 
     /**
@@ -112,10 +125,13 @@ public class HelpView {
         Label helpTitle = new Label("Category Section - Guide");
         helpTitle.getStyleClass().add("help-title");
 
-        Label helpText = new Label("In the Categories section, you can organize your transactions by assigning them to categories "
-                + "(e.g., 'Food', 'Rent', 'Entertainment').\n\n"
-                + "You can create new categories or edit existing ones, ensuring that your transactions are properly categorized for better analysis.");
+        Label helpText = new Label("""
+                In the Categories section, you can organize your transactions by assigning them to categories \
+                (e.g., 'Food', 'Rent', 'Entertainment').
+                
+                You can create new categories or edit existing ones, ensuring that your transactions are properly categorized for better analysis.""");
         helpText.getStyleClass().add("help-text");
+        helpText.setWrapText(true);
 
         // Back Button to return to HelpView
         Button backButton = new Button("Back to Help");
@@ -123,19 +139,20 @@ public class HelpView {
         backButton.setOnAction(e -> loadIntoPane());
 
         helpContent.getChildren().addAll(helpTitle, helpText, backButton);
-        root.setCenter(helpContent);
+
+        // ScrollPane hinzufügen
+        ScrollPane scrollPane = new ScrollPane(helpContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        root.setCenter(scrollPane);
     }
 
     /**
      * Zeigt den Hilfetext für den Berichts-Bereich.
      */
     private void showReportsHelp() {
-
-        // Header Label
-        Label headerLabel = new Label("Manual");
-        headerLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
-
-
         VBox helpContent = new VBox(20);
         helpContent.setAlignment(Pos.CENTER);
         helpContent.setPadding(new Insets(20));
@@ -144,10 +161,13 @@ public class HelpView {
         Label helpTitle = new Label("Reports Section - Guide");
         helpTitle.getStyleClass().add("help-title");
 
-        Label helpText = new Label("In the Reports section, you can view detailed analytics on your spending and income.\n\n"
-                + "You can generate reports to see how your money is being spent, track your progress towards financial goals, "
-                + "and gain insights into your overall financial health.");
+        Label helpText = new Label("""
+                In the Reports section, you can view detailed analytics on your spending and income.
+                
+                You can generate reports to see how your money is being spent, track your progress towards financial goals, \
+                and gain insights into your overall financial health.""");
         helpText.getStyleClass().add("help-text");
+        helpText.setWrapText(true);
 
         // Back Button to return to HelpView
         Button backButton = new Button("Back to Help");
@@ -155,6 +175,13 @@ public class HelpView {
         backButton.setOnAction(e -> loadIntoPane());
 
         helpContent.getChildren().addAll(helpTitle, helpText, backButton);
-        root.setCenter(helpContent);
+
+        // ScrollPane hinzufügen
+        ScrollPane scrollPane = new ScrollPane(helpContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        root.setCenter(scrollPane);
     }
 }

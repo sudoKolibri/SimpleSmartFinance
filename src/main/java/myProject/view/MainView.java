@@ -1,10 +1,8 @@
 package myProject.view;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -46,7 +44,7 @@ public class MainView {
         this.categoryController = categoryController;
         this.reportController = reportController;
         this.loggedInUserId = loggedInUserId;
-        this.root = new BorderPane();  // Root-Layout initialisieren
+        this.root = new BorderPane();
     }
 
     /**
@@ -65,11 +63,11 @@ public class MainView {
 
         // ScrollPane für das Root-Layout hinzufügen
         ScrollPane scrollPane = new ScrollPane(root);
-        scrollPane.setFitToWidth(true);  // Breite anpassen
-        scrollPane.setFitToHeight(true); // Höhe anpassen
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
 
         // Szene setzen und anzeigen
-        Scene scene = new Scene(scrollPane, 700, 400);
+        Scene scene = new Scene(scrollPane, 800, 800);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
 
         primaryStage.setScene(scene);
@@ -83,15 +81,15 @@ public class MainView {
     private void setupNavigationBar() {
         LoggerUtils.logInfo(MainView.class.getName(), "Navigationsleiste wird eingerichtet.");
 
-        VBox navBar = new VBox(20);  // Vertikales Layout mit Abständen zwischen den Buttons
+        VBox navBar = new VBox(20);
         navBar.setPadding(new Insets(20, 10, 20, 10));
         navBar.getStyleClass().add("nav-bar");
 
         navBar.setPrefWidth(150);
 
-        // Navigations-Buttons erstellen
-        Button accountButton = new Button("Accounts");
-        Button categoryButton = new Button("Categories");
+        // Navigation-Buttons erstellen
+        Button accountButton = new Button("Finance");
+        Button categoryButton = new Button("Limits");
         Button reportButton = new Button("Reports");
         Button helpButton = new Button("Help");
 
@@ -101,7 +99,8 @@ public class MainView {
         // Navbar zum Root-Layout hinzufügen
         root.setLeft(navBar);
 
-        // ==================== Aktionen für die Buttons ====================
+
+
         accountButton.setOnAction(e -> {
             try {
                 LoggerUtils.logInfo(MainView.class.getName(), "Accounts-Button geklickt.");

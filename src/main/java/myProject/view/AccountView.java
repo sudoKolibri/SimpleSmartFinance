@@ -57,25 +57,26 @@ public class AccountView {
             System.out.println("AccountView.loadIntoPane: Loading AccountView...");
             this.root = root;
 
+            // Header bleibt oben
             Label headerLabel = new Label("Accounts & Transactions");
             headerLabel.getStyleClass().add("header-label");
 
-            VBox mainLayout = new VBox(30);
+            // Hauptlayout für die Ansicht, mit Header oben
+            VBox mainLayout = new VBox();
             mainLayout.getStyleClass().add("main-layout");
-            mainLayout.setAlignment(Pos.CENTER);
+            mainLayout.setAlignment(Pos.TOP_CENTER);  // Header oben zentriert
 
-            // Zusammenfassung oben
-            VBox summaryLayout = new VBox(20);
-            summaryLayout.setAlignment(Pos.CENTER);
+            // Layout für den zentralen Inhalt (Bilanz, Konten, Add-Button)
+            VBox centerContent = new VBox(30);
+            centerContent.setAlignment(Pos.CENTER);  // Inhalt zentrieren
+            centerContent.setPadding(new Insets(50, 50, 50, 50)); // optionaler Abstand
 
             // Gesamtbilanz prominent anzeigen
             overallBalanceLabel = new Label();
             overallBalanceLabel.getStyleClass().add("balance-label");
             updateOverallBalance();
 
-            summaryLayout.getChildren().add(overallBalanceLabel);
-
-            // Kontoliste unten
+            // Layout für die Kontoliste
             VBox accountsLayout = new VBox(20);
             accountsLayout.setAlignment(Pos.CENTER);
 
@@ -90,10 +91,13 @@ public class AccountView {
             // Füge den Button zur Kontoliste hinzu
             accountsLayout.getChildren().add(createAccountButton);
 
-            // Füge zusammenfassende Ansicht und Kontenliste hinzu
-            mainLayout.getChildren().addAll(headerLabel, summaryLayout, accountsLayout);
+            // Füge Bilanz und Kontoliste zum zentralen Inhalt hinzu
+            centerContent.getChildren().addAll(overallBalanceLabel, accountsLayout);
 
-            // Setze das Layout in die Mitte des Root-Panes
+            // Füge Header oben und den zentrierten Inhalt darunter hinzu
+            mainLayout.getChildren().addAll(headerLabel, centerContent);
+
+            // Setze das Hauptlayout in die Mitte des Root-Panes
             root.setCenter(mainLayout);
 
             System.out.println("AccountView.loadIntoPane: AccountView loaded successfully.");
@@ -102,6 +106,8 @@ public class AccountView {
             throw e;
         }
     }
+
+
 
     /**
      * Aktualisiert die Gesamtbilanz des Benutzers basierend auf abgeschlossenen Transaktionen.

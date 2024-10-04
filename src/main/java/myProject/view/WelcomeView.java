@@ -52,10 +52,10 @@ public class WelcomeView {
         // VBox in eine ScrollPane einfügen
         ScrollPane scrollPane = new ScrollPane(vbox);
         scrollPane.setFitToWidth(true);  // Passt den Inhalt an die Breite des ScrollPane an
-        scrollPane.setFitToHeight(true); // Passt den Inhalt an die Höhe des ScrollPane an
+        scrollPane.setFitToHeight(true);
 
         // Szene und Layout erstellen
-        Scene scene = new Scene(scrollPane, 400, 400);
+        Scene scene = new Scene(scrollPane, 800, 800);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
 
         // Szene anzeigen
