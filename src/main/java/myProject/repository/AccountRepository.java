@@ -65,6 +65,25 @@ public class AccountRepository {
     }
 
     /**
+     * Löscht einen Account mit dieser spezifischen ID
+     *
+     * @param accountId ID des zu löschenden Accounts
+     * @throws SQLException Error Exception
+     */
+    public void deleteAccount(String accountId) throws SQLException {
+        String sql = "DELETE FROM accounts WHERE id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, accountId);
+            pstmt.executeUpdate();
+            LoggerUtils.logInfo(AccountRepository.class.getName(), "Deleted account: " + accountId);
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountRepository.class.getName(), "Error deleting account: " + accountId, e);
+            throw e;
+        }
+    }
+
+    /**
      * Methode zum Abrufen aller Kontonamen aus der Datenbank.
      *
      * @return Eine Liste aller Kontonamen.

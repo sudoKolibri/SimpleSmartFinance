@@ -89,24 +89,24 @@ public class TransactionRepository {
     }
 
     /**
-     * Ruft alle Transaktionen aus der Datenbank ab.
+     * Löscht alle Transaktionen die mit einem bestimmten Account in Verbindung stehen
      *
-     * @return Eine Liste aller Transaktionen.
+     * @param accountId ID des Accounts dessen Transaktionen gelöscht werden
+     * @throws SQLException Error Exception
      */
-    public List<Transaction> getAllTransactions() {
-        List<Transaction> transactions = new ArrayList<>();
-        String sql = "SELECT * FROM transactions";
-        try (Connection connection = DatabaseManager.getConnection(); Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                Transaction transaction = mapResultSetToTransaction(rs);
-                transactions.add(transaction);
-            }
-            LoggerUtils.logInfo(TransactionRepository.class.getName(), "Alle Transaktionen erfolgreich abgerufen.");
+    public void deleteTransactionsByAccount(String accountId) throws SQLException {
+        String sql = "DELETE FROM transactions WHERE account_id = ?";
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, accountId);
+            pstmt.executeUpdate();
+            LoggerUtils.logInfo(TransactionRepository.class.getName(), "Deleted all transactions for account: " + accountId);
         } catch (SQLException e) {
-            LoggerUtils.logError(TransactionRepository.class.getName(), "Fehler beim Abrufen aller Transaktionen: " + e.getMessage(), e);
+            LoggerUtils.logError(TransactionRepository.class.getName(), "Error deleting transactions for account: " + accountId, e);
+            throw e;
         }
-        return transactions;
     }
+
 
     /**
      * Ruft alle Transaktionen für einen bestimmten Benutzer ab.

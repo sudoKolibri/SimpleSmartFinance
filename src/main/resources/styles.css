@@ -189,9 +189,41 @@
 
 .custom-bar-chart .chart-legend-item {
     -fx-text-fill: #f8f8f2;
+    -fx-font-size: 14px;
 }
 
-/* ============ HelpView Specific Styles ============ */
+/* BarChart Achsen*/
+.custom-bar-chart .axis-label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.custom-bar-chart .axis-tick-mark .text {
+    -fx-fill: #f8f8f2;
+}
+
+/* PieChart Legende*/
+.custom-pie-chart .chart-legend {
+    -fx-padding: 10px;
+    -fx-background-color: transparent;
+    -fx-padding: 20px;
+}
+
+.custom-pie-chart .chart-legend-item-symbol {
+    -fx-background-radius: 0;
+}
+
+.custom-pie-chart .chart-legend-item {
+    -fx-text-fill: #f8f8f2;
+    -fx-font-size: 14px;
+}
+
+/* Tooltip customization */
+.custom-pie-chart .chart-legend-item-symbol .chart-legend-item {
+    -fx-text-fill: #44475a;
+}
+
+
+/* ============ HelpView  ============ */
 .help-card {
     -fx-background-color: #6272a4;
     -fx-border-color: #ff79c6;
@@ -292,13 +324,6 @@
 
 .apply-button:hover {
     -fx-background-color: #ff79c6;
-}
-
-/* ============ Header-Label-Stil ============ */
-.header-label {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #f8f8f2;
 }
 
 /* ============ Balance-Label-Stil ============ */

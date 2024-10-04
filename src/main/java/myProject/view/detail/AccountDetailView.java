@@ -16,7 +16,6 @@ import myProject.model.Category;
 import myProject.model.Transaction;
 import myProject.util.LoggerUtils;
 import myProject.view.util.ViewUtils;
-
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -41,11 +41,11 @@ import java.util.stream.Collectors;
  * - Hinzufügen, Bearbeiten und Löschen von Transaktionen
  * - Überweisungen zwischen Konten
  * - Verwaltung von wiederkehrenden Transaktionen
+ * - Löschen des Kontos und aller zugehörigen Transaktionen
  * <p>
  * Diese Klasse nutzt die Controller AccountController und TransactionController zur
  * Interaktion mit der zugrunde liegenden Logik.
  */
-
 public class AccountDetailView {
     private final AccountController accountController;
     private final TransactionController transactionController;
@@ -64,7 +64,6 @@ public class AccountDetailView {
         this.root = root;
     }
 
-    // Methode zum Anzeigen der Kontodetails
     // Methode zum Anzeigen der Detailansicht eines Kontos
     public void showAccountDetailView(Account account) {
         this.account = account;
@@ -92,7 +91,7 @@ public class AccountDetailView {
         StackPane tableContainer = new StackPane(transactionsTable);
         tableContainer.setAlignment(Pos.CENTER);
 
-        // Untere Sektion: Buttons für Aktionen (Einnahme, Ausgabe, Überweisung)
+        // Untere Sektion: Buttons für Aktionen (Einnahme, Ausgabe, Überweisung, Löschen)
         HBox buttonBox = new HBox(20);
         buttonBox.setPadding(new Insets(10, 0, 10, 0));
         buttonBox.setAlignment(Pos.CENTER);
@@ -102,10 +101,14 @@ public class AccountDetailView {
 
         Button expenseButton = createRoundIconButton("/icons/icons8-delete-dollar-50.png");
         expenseButton.setOnAction(e -> showTransactionForm("expense"));
+
         Button transferButton = createRoundIconButton("/icons/icons8-exchange-48.png");
         transferButton.setOnAction(e -> showTransferForm());
 
-        buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton);
+        Button deleteAccountButton = new Button("Delete Account");
+        deleteAccountButton.setOnAction(e -> confirmAndDeleteAccount());
+
+        buttonBox.getChildren().addAll(incomeButton, expenseButton, transferButton, deleteAccountButton);
 
         VBox mainLayout = new VBox(20);
         mainLayout.getChildren().addAll(topSection, tableContainer, buttonBox);
@@ -175,7 +178,7 @@ public class AccountDetailView {
 
         // Button für den Transfer des gesamten verfügbaren Betrags
         Button transferAllButton = new Button("Transfer All");
-        transferAllButton.setOnAction(e -> amountSlider.setValue(account.getBalance())); // Setze den Slider auf den maximalen Kontostand
+        transferAllButton.setOnAction(e -> amountSlider.setValue(account.getBalance()));
 
         // Button zum Ausführen des Transfers
         Button transferButton = new Button("Execute Transfer");
@@ -192,6 +195,44 @@ public class AccountDetailView {
 
         // Setze das Transferformular in den zentralen Bereich des Root-Panes
         root.setCenter(transferForm);
+    }
+
+    // Methode zum Bestätigen und Löschen des Kontos
+    private void confirmAndDeleteAccount() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Account");
+        alert.setHeaderText("Delete Account: " + account.getName());
+        alert.setContentText("Are you sure you want to delete this account? All related transactions will be permanently deleted.");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            deleteAccountAndTransactions();
+        }
+    }
+
+    // Methode zum Löschen des Kontos und aller zugehörigen Transaktionen
+    private void deleteAccountAndTransactions() {
+        try {
+            // Lösche alle Transaktionen, die mit diesem Konto verbunden sind
+            transactionController.deleteTransactionsByAccount(account.getId());
+
+            // Lösche das Konto
+            accountController.deleteAccount(account.getId());
+
+            // Logge die erfolgreiche Löschung
+            LoggerUtils.logInfo(AccountDetailView.class.getName(), "Konto und zugehörige Transaktionen gelöscht: " + account.getName());
+
+            // Zeige eine Erfolgsmeldung
+            ViewUtils.showAlert(Alert.AlertType.INFORMATION, "Account and all related transactions have been deleted successfully.");
+
+
+
+            root.setCenter(null);
+
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountDetailView.class.getName(), "Fehler beim Löschen des Kontos und der Transaktionen: " + e.getMessage(), e);
+            ViewUtils.showAlert(Alert.AlertType.ERROR, "An error occurred while deleting the account. Please try again.");
+        }
     }
 
 

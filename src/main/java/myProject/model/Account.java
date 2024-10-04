@@ -49,7 +49,7 @@ public class Account {
         this.balance = new SimpleDoubleProperty(balance);
     }
 
-    // Getter und Setter für die Eigenschaften (Properties)
+    // Getter und Setter für die Eigenschaften
 
 
     public StringProperty idProperty() {

@@ -101,11 +101,11 @@ public class Category {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Category category = (Category) o;
-        return Objects.equals(id.get(), category.id.get());  // Vergleich anhand der 'id'
+        return Objects.equals(id.get(), category.id.get());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id.get());  // Hash basierend auf der 'id'
+        return Objects.hash(id.get());
     }
 }

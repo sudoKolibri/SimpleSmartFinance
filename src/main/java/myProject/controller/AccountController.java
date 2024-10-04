@@ -42,6 +42,22 @@ public class AccountController {
     }
 
     /**
+     * Löscht einen Account mit der spezifischen ID
+     *
+     * @param accountId ID des Accounts
+     * @throws SQLException Error Exception
+     */
+    public void deleteAccount(String accountId) throws SQLException {
+        try {
+            accountService.deleteAccount(accountId);
+            LoggerUtils.logInfo(AccountController.class.getName(), "Account deleted: " + accountId);
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountController.class.getName(), "Error deleting account: " + accountId, e);
+            throw e;
+        }
+    }
+
+    /**
      * Überprüft, ob ein Konto mit einem bestimmten Namen für den Benutzer existiert.
      *
      * @param userId Die ID des Benutzers.

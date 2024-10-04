@@ -55,6 +55,21 @@ public class AccountService {
     }
 
     /**
+     * Löscht einen Account mit spezifischer ID
+     *
+     * @param accountId ID des zuj Löschenden Accounts
+     * @throws SQLException Error Exception
+     */
+    public void deleteAccount(String accountId) throws SQLException {
+        try {
+            accountRepository.deleteAccount(accountId);
+        } catch (SQLException e) {
+            LoggerUtils.logError(AccountService.class.getName(), "Error deleting account: " + accountId, e);
+            throw e;
+        }
+    }
+
+    /**
      * Methode zum Abrufen aller Konten eines bestimmten Benutzers.
      *
      * @param userId Die ID des Benutzers.

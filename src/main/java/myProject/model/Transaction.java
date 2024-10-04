@@ -7,7 +7,6 @@ import java.util.UUID;
 /**
  * Die Transaction-Klasse repräsentiert eine finanzielle Transaktion,
  * die mit einem Benutzer, einem Konto und einer Kategorie verknüpft ist.
- * Eine Transaktion kann wiederkehrend sein und wird mit einem Datum und einer Uhrzeit erfasst.
  */
 public class Transaction {
 
@@ -100,17 +99,6 @@ public class Transaction {
         return type.get();
     }
 
-    public void setType(String type) {
-        this.type.set(type);
-    }
-
-    public User getUser() {
-        return user.get();
-    }
-
-    public void setUser(User user) {
-        this.user.set(user);
-    }
 
     public Account getAccount() {
         return account.get();
@@ -126,22 +114,6 @@ public class Transaction {
 
     public void setCategory(Category category) {
         this.category.set(category);
-    }
-
-    public java.sql.Date getCreatedAt() {
-        return createdAt.get();
-    }
-
-    public void setCreatedAt(java.sql.Date createdAt) {
-        this.createdAt.set(createdAt);
-    }
-
-    public java.sql.Date getUpdatedAt() {
-        return updatedAt.get();
-    }
-
-    public void setUpdatedAt(java.sql.Date updatedAt) {
-        this.updatedAt.set(updatedAt);
     }
 
     public StringProperty descriptionProperty() {

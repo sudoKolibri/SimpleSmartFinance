@@ -4,7 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.GridPane;
@@ -37,17 +36,6 @@ public class BudgetView {
         // Initialize the controllers
         this.categoryController = new CategoryController(new CategoryService(new CategoryRepository()));
         this.budgetController = new BudgetController(new BudgetService(new BudgetRepository()));
-    }
-
-    // Load BudgetView into the dynamic content area of MainView
-    public void loadIntoPane(BorderPane root) {
-        mainLayout = new VBox(30);
-        mainLayout.setPadding(new Insets(20));
-        mainLayout.setAlignment(Pos.CENTER);
-        mainLayout.setSpacing(40);
-
-        loadBudgets();
-        root.setCenter(mainLayout);
     }
 
     // Helper method to add the "+ Add Budget" button

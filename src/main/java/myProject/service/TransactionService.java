@@ -31,18 +31,13 @@ public class TransactionService {
         this.accountRepository = accountRepository;
     }
 
+
     /**
      * Fügt eine neue Transaktion hinzu.
      *
      * @param transaction Die hinzuzufügende Transaktion.
      */
-    /**
-     * Fügt eine neue Transaktion hinzu.
-     *
-     * @param transaction Die hinzuzufügende Transaktion.
-     * @throws SQLException Wenn ein Fehler beim Speichern der Transaktion auftritt.
-     */
-    public void addTransaction(Transaction transaction) throws SQLException {
+    public void addTransaction(Transaction transaction) {
         // Überprüfe, ob die Transaktion in der Zukunft liegt
         LocalDate transactionDate = transaction.getDate().toLocalDate();
         LocalTime transactionTime = transaction.getTime().toLocalTime();
@@ -85,7 +80,7 @@ public class TransactionService {
             transactionRepository.updateTransaction(transaction);
         } catch (Exception e) {
             LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Aktualisieren der Transaktion: " + transaction.getId(), e);
-            throw e; // SQLException weiterwerfen
+            throw e; // SQLException weiter werfen
         }
     }
 
@@ -99,22 +94,22 @@ public class TransactionService {
             transactionRepository.deleteTransaction(transaction);
         } catch (Exception e) {
             LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Löschen der Transaktion: " + transaction.getId(), e);
-            throw e; // SQLException weiterwerfen
+            throw e; // SQLException weiter werfen
         }
     }
 
-
     /**
-     * Ruft alle Transaktionen ab.
+     * Löscht alle Transaktionen die mit einem bestimmten Account assoziiert werden.
      *
-     * @return Liste aller Transaktionen.
+     * @param accountId ID des Accounts
+     * @throws SQLException Error Exception
      */
-    public List<Transaction> getAllTransactions() {
+    public void deleteTransactionsByAccount(String accountId) throws SQLException {
         try {
-            return transactionRepository.getAllTransactions();
-        } catch (Exception e) {
-            LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Abrufen aller Transaktionen: " + e.getMessage(), e);
-            return new ArrayList<>();
+            transactionRepository.deleteTransactionsByAccount(accountId);
+        } catch (SQLException e) {
+            LoggerUtils.logError(TransactionService.class.getName(), "Error deleting transactions for account: " + accountId, e);
+            throw e;
         }
     }
 
@@ -132,20 +127,6 @@ public class TransactionService {
             return new ArrayList<>();
         }
     }
-
-    /**
-     * Ruft alle Transaktionen für einen bestimmten Benutzer ab.
-     *
-     * @param userId Die ID des Benutzers.
-     * @return Liste der Transaktionen für den Benutzer.
-     */
-    public List<Transaction> getTransactionsByUserId(String userId) {
-        return transactionRepository.getTransactionsByUserId(userId);
-    }
-
-
-
-
 
     /**
      * Ruft die abgeschlossenen Transaktionen für ein Konto ab.
@@ -185,20 +166,6 @@ public class TransactionService {
             return transactionRepository.getTransactionsByCategory(category.getId());
         } catch (Exception e) {
             LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Abrufen der Transaktionen für Kategorie: " + category.getName(), e);
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Ruft alle Kontonamen ab.
-     *
-     * @return Liste der Kontonamen.
-     */
-    public List<String> getAllAccountNames() {
-        try {
-            return accountRepository.getAllAccountNames();
-        } catch (SQLException e) {
-            LoggerUtils.logError(TransactionService.class.getName(), "Fehler beim Abrufen der Kontonamen: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }

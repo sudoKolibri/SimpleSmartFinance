@@ -1,8 +1,8 @@
 package myProject.view;
 
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -63,7 +63,9 @@ public class ReportView {
         // Erstellen der zwei Diagramme (Tortendiagramm und Balkendiagramm)
         categorySpendingChart = createCategorySpendingChart();
         VBox pieChartBox = new VBox(10, new Label("Expenses by Category"), categorySpendingChart);
+        pieChartBox.setPrefWidth(500);
         pieChartBox.getStyleClass().add("chart-box");
+
 
         transactionBarChart = createTransactionBarChart();
         VBox barChartBox = new VBox(10, new Label("Monthly Income and Expenses"), transactionBarChart);
@@ -102,12 +104,16 @@ public class ReportView {
         Button applyFilterButton = new Button("Apply Filter");
         applyFilterButton.getStyleClass().add("apply-button");
 
+        // Bind the button click to applyFilters
+        applyFilterButton.setOnAction(e -> applyFilters());
+
         HBox filterBox = new HBox(10, new Label("Start Date:"), startDatePicker, new Label("End Date:"), endDatePicker, applyFilterButton);
         filterBox.getStyleClass().add("filter-box");
         filterBox.setAlignment(Pos.CENTER);
 
         return filterBox;
     }
+
 
     /**
      * Erstellt das Tortendiagramm für Kategorieausgaben.
@@ -119,9 +125,11 @@ public class ReportView {
         pieChart.setLabelsVisible(true);
         pieChart.setLegendVisible(true);
         pieChart.setLegendSide(Side.RIGHT);
-        pieChart.setStyle("-fx-pie-label-visible: false; -fx-legend-side: right; -fx-legend-item-text-fill: #f8f8f2;");
+        pieChart.getStyleClass().add("custom-pie-chart");
+        pieChart.setStyle("-fx-pie-label-visible: false; -fx-legend-side: right;");
         return pieChart;
     }
+
 
     /**
      * Erstellt das Balkendiagramm für monatliche Einnahmen und Ausgaben.
@@ -130,14 +138,23 @@ public class ReportView {
     private BarChart<String, Number> createTransactionBarChart() {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
+
+
+        xAxis.setTickLabelFill(javafx.scene.paint.Color.web("#f8f8f2"));
+        yAxis.setTickLabelFill(javafx.scene.paint.Color.web("#f8f8f2"));
+
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Monthly Income and Expenses");
         xAxis.setLabel("Month");
         yAxis.setLabel("Amount");
+
+
         barChart.setLegendSide(Side.RIGHT);
         barChart.getStyleClass().add("custom-bar-chart");
+
         return barChart;
     }
+
 
     /**
      * Wendet die ausgewählten Filter an und aktualisiert die Ansicht.
@@ -150,6 +167,10 @@ public class ReportView {
             Map<String, Double> categoryExpenses = reportController.getCategoryExpenses(loggedInUserId, startDate, endDate);
             Map<String, Map<String, Double>> monthlyData = reportController.getMonthlyIncomeAndExpenses(loggedInUserId, startDate, endDate);
 
+
+            System.out.println("Category Expenses: " + categoryExpenses);
+            System.out.println("Monthly Data: " + monthlyData);
+
             updatePieChart(categoryExpenses);
             updateBarChart(monthlyData);
             updateDashboardInfo(startDate, endDate);
@@ -158,6 +179,7 @@ public class ReportView {
             showErrorAlert();
         }
     }
+
 
     /**
      * Aktualisiert das Tortendiagramm mit den Kategorieausgaben.
@@ -175,11 +197,17 @@ public class ReportView {
             categorySpendingChart.getData().add(new PieChart.Data("No Expenses", 1));
         }
 
+        // Add tooltips to each pie slice
         categorySpendingChart.getData().forEach(data -> {
             Tooltip tooltip = new Tooltip(String.format("%s: $%.2f", data.getName(), data.getPieValue()));
             Tooltip.install(data.getNode(), tooltip);
         });
+
+
+        categorySpendingChart.layout();
     }
+
+
 
     /**
      * Aktualisiert das Balkendiagramm mit den monatlichen Einnahmen und Ausgaben.
@@ -196,11 +224,36 @@ public class ReportView {
         XYChart.Series<String, Number> expenseSeries = new XYChart.Series<>();
         expenseSeries.setName("Expenses");
 
+        // Füge die Daten hinzu
         monthlyData.get("income").forEach((month, amount) -> incomeSeries.getData().add(new XYChart.Data<>(month, amount)));
         monthlyData.get("expense").forEach((month, amount) -> expenseSeries.getData().add(new XYChart.Data<>(month, amount)));
 
         transactionBarChart.getData().addAll(incomeSeries, expenseSeries);
+
+        // Weisen wir feste Farben für die Balken zu
+        incomeSeries.getData().forEach(data ->
+                data.getNode().setStyle("-fx-bar-fill: #50fa7b;")
+        );
+        expenseSeries.getData().forEach(data ->
+                data.getNode().setStyle("-fx-bar-fill: #bc4363;")
+        );
+
+        // Weisen wir feste Farben für die Legende zu
+        for (Node legend : transactionBarChart.lookupAll(".chart-legend-item")) {
+            if (legend instanceof Label legendLabel) {
+                if (legendLabel.getText().equals("Income")) {
+                    legendLabel.setStyle("-fx-text-fill: #50fa7b;");  // Grün für Income in der Legende
+                } else if (legendLabel.getText().equals("Expenses")) {
+                    legendLabel.setStyle("-fx-text-fill: #bc4363;");  // Rot für Expenses in der Legende
+                }
+            }
+        }
+
+        transactionBarChart.layout();  // Aktualisiere das Layout
     }
+
+
+
 
     /**
      * Aktualisiert die Dashboard-Informationen.

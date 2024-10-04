@@ -44,14 +44,14 @@ public class WelcomeView {
         Button registerButton = createRegisterButton(usernameField, passwordField);
 
         // **Enter-KeyTrigger für Login aktivieren**
-        setEnterKeyTriggers(usernameField, passwordField, loginButton);  // Aufruf der Methode hier
+        setEnterKeyTriggers(usernameField, passwordField, loginButton);
 
         // Eingabefelder und Buttons zum Layout hinzufügen
         vbox.getChildren().addAll(welcomeLabel, usernameField, passwordField, loginButton, registerButton);
 
         // VBox in eine ScrollPane einfügen
         ScrollPane scrollPane = new ScrollPane(vbox);
-        scrollPane.setFitToWidth(true);  // Passt den Inhalt an die Breite des ScrollPane an
+        scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
 
         // Szene und Layout erstellen

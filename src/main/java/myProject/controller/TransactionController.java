@@ -10,7 +10,6 @@ import myProject.service.TransactionService;
 import myProject.util.LoggerUtils;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,32 +64,18 @@ public class TransactionController {
     }
 
     /**
-     * Methode zum Überweisen von Geld zwischen zwei Konten.
-     * @param transferOut Die abgehende Transaktion.
-     * @param transferIn Die eingehende Transaktion.
+     * Methode zum Löschen aller Transaktionen eines Accounts
+     *
+     * @param accountId ID des Accounts
+     * @throws SQLException Error Exception
      */
-    public void transferBetweenAccounts(Transaction transferOut, Transaction transferIn) {
+    public void deleteTransactionsByAccount(String accountId) throws SQLException {
         try {
-            transactionService.addTransaction(transferOut);
-            transactionService.addTransaction(transferIn);
-            LoggerUtils.logInfo(TransactionController.class.getName(), "Geldüberweisung zwischen Konten erfolgreich.");
+            transactionService.deleteTransactionsByAccount(accountId);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "All transactions deleted for account: " + accountId);
         } catch (SQLException e) {
-            LoggerUtils.logError(TransactionController.class.getName(), "Fehler bei der Geldüberweisung: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Methode zum Abrufen aller Transaktionen als ObservableList.
-     * @return ObservableList aller Transaktionen.
-     */
-    public ObservableList<Transaction> getAllTransactions() {
-        try {
-            List<Transaction> transactions = transactionService.getAllTransactions();
-            LoggerUtils.logInfo(TransactionController.class.getName(), "Alle Transaktionen abgerufen.");
-            return FXCollections.observableArrayList(transactions);
-        } catch (Exception e) {
-            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen: " + e.getMessage(), e);
-            return FXCollections.observableArrayList();
+            LoggerUtils.logError(TransactionController.class.getName(), "Error deleting transactions for account: " + accountId, e);
+            throw e;
         }
     }
 
@@ -110,8 +95,21 @@ public class TransactionController {
         }
     }
 
-
-
+    /**
+     * Methode zum Abrufen aller Transaktionen für eine bestimmte Kategorie.
+     * @param category Die Kategorie, für die Transaktionen abgerufen werden sollen.
+     * @return Liste der Transaktionen für die angegebene Kategorie.
+     */
+    public List<Transaction> getTransactionsForCategory(Category category) {
+        try {
+            List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
+            LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktionen für Kategorie " + category.getName() + " abgerufen.");
+            return transactions;
+        } catch (Exception e) {
+            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen für Kategorie: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
 
     /**
      * Methode zur Ermittlung des ausgegebenen Betrags für eine bestimmte Kategorie (inklusive wiederkehrender Transaktionen).
@@ -125,7 +123,7 @@ public class TransactionController {
 
             // Nur Ausgaben (expense) Transaktionen summieren
             double totalSpent = allTransactions.stream()
-                    .filter(transaction -> "expense".equals(transaction.getType()) && transaction.getAmount() < 0)  // Filter auf Ausgaben
+                    .filter(transaction -> "expense".equals(transaction.getType()) && transaction.getAmount() < 0)
                     .mapToDouble(Transaction::getAmount)
                     .sum();
 
@@ -152,7 +150,7 @@ public class TransactionController {
                 double totalSpent = transactions.stream()
                         .filter(t -> t.getAccount() != null && t.getAccount().getId().equals(account.getId()) &&
                                 t.getType().equalsIgnoreCase("expense"))
-                        .mapToDouble(t -> Math.abs(t.getAmount()))  // Nur positive Werte für Ausgaben anzeigen
+                        .mapToDouble(t -> Math.abs(t.getAmount()))
                         .sum();
                 categorySpendingMap.put(category.getName(), totalSpent);
             }
@@ -177,24 +175,6 @@ public class TransactionController {
     }
 
     /**
-     * Methode zum Abrufen aller Transaktionen für eine bestimmte Kategorie.
-     * @param category Die Kategorie, für die Transaktionen abgerufen werden sollen.
-     * @return Liste der Transaktionen für die angegebene Kategorie.
-     */
-    public List<Transaction> getTransactionsForCategory(Category category) {
-        try {
-            List<Transaction> transactions = transactionService.getTransactionsByCategory(category);
-            LoggerUtils.logInfo(TransactionController.class.getName(), "Transaktionen für Kategorie " + category.getName() + " abgerufen.");
-            return transactions;
-        } catch (Exception e) {
-            LoggerUtils.logError(TransactionController.class.getName(), "Fehler beim Abrufen der Transaktionen für Kategorie: " + e.getMessage(), e);
-            return new ArrayList<>();
-        }
-    }
-
-
-
-    /**
      * Methode zum Filtern von Transaktionen nach Konto und Rückgabe als ObservableList.
      * @param accountName Der Name des Kontos, für das die Transaktionen gefiltert werden sollen.
      * @return ObservableList der gefilterten Transaktionen.
@@ -209,7 +189,6 @@ public class TransactionController {
             return FXCollections.observableArrayList();
         }
     }
-
 
     /**
      * Methode zum Abrufen aller Kategorien für einen bestimmten Benutzer als ObservableList.

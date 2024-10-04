@@ -71,7 +71,7 @@ public class MainView {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Smart Finance - Main View");
+        primaryStage.setTitle("Smart Finance");
         primaryStage.show();
     }
 
