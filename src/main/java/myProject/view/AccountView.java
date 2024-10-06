@@ -242,21 +242,23 @@ public class AccountView {
                 // Lade das neu erstellte Konto
                 Account createdAccount = accountController.findAccountByName(currentUserId, accountName);
 
-                // Erstelle eine Transaktion für den Startbetrag
-                Transaction initialTransaction = new Transaction(
-                        "Initial Balance", // Beschreibung der Transaktion
-                        initialBalance,    // Betrag (positiv oder negativ)
-                        initialBalance >= 0 ? "income" : "expense", // Einnahme oder Ausgabe basierend auf Betrag
-                        null,              // Keine Kategorie nötig
-                        createdAccount,    // Verknüpft mit neuem Konto
-                        null,              // Keine spezifische Kategorie
-                        new Date(System.currentTimeMillis()), // Aktuelles Datum
-                        new Time(System.currentTimeMillis()) // Aktuelle Uhrzeit
-                );
+                // Erstelle eine Transaktion für den Startbetrag, nur wenn initialBalance != 0
+                if (initialBalance != 0.0) {
+                    Transaction initialTransaction = new Transaction(
+                            "Initial Balance",
+                            initialBalance,
+                            initialBalance >= 0 ? "income" : "expense",
+                            null,
+                            createdAccount,
+                            null,
+                            new java.sql.Date(System.currentTimeMillis()),
+                            new java.sql.Time(System.currentTimeMillis())
+                    );
 
-                // Speichern der Transaktion
-                transactionController.createTransaction(initialTransaction);
-                System.out.println("AccountView.handleSaveButtonClick: Erste Transaktion abgeschlossen. - " + accountName + " " + initialTransaction);
+                    // Speichern der Transaktion
+                    transactionController.createTransaction(initialTransaction);
+                    System.out.println("AccountView.handleSaveButtonClick: Erste Transaktion abgeschlossen. - " + accountName + " " + initialTransaction);
+                }
 
                 // Aktualisiere die Kontenübersicht und Gesamtbilanz
                 refreshAccountList(accountsLayout);
@@ -279,6 +281,7 @@ public class AccountView {
             createAccountButton.setVisible(true);
         }
     }
+
 
     /**
      * Aktualisiert die Kontenliste und fügt den "Add Account"-Button erneut hinzu.

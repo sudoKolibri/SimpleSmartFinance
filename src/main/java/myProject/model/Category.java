@@ -1,6 +1,7 @@
 package myProject.model;
 
 import javafx.beans.property.*;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -12,24 +13,18 @@ public class Category {
 
     private final StringProperty id;  // Eindeutige ID der Kategorie
     private final StringProperty name;  // Name der Kategorie
-    private boolean isStandard;  // Gibt an, ob es sich um eine Standardkategorie handelt
-    private boolean isCustom;  // Gibt an, ob es sich um eine benutzerdefinierte Kategorie handelt
     private ObjectProperty<Double> budget;  // Optionales Budget der Kategorie
 
     /**
      * Konstruktor zur Erstellung einer benutzerdefinierten Kategorie.
      *
-     * @param id Eindeutige ID der Kategorie. Wenn null, wird eine UUID generiert.
-     * @param name Name der Kategorie.
-     * @param isStandard Gibt an, ob die Kategorie eine Standardkategorie ist.
-     * @param isCustom Gibt an, ob die Kategorie eine benutzerdefinierte Kategorie ist.
+     * @param id     Eindeutige ID der Kategorie. Wenn null, wird eine UUID generiert.
+     * @param name   Name der Kategorie.
      * @param budget Optionales Budget der Kategorie. Kann null sein.
      */
-    public Category(String id, String name, boolean isStandard, boolean isCustom, Double budget) {
+    public Category(String id, String name, Double budget) {
         this.id = new SimpleStringProperty((id == null) ? UUID.randomUUID().toString() : id);
         this.name = new SimpleStringProperty(name);
-        this.isStandard = isStandard;
-        this.isCustom = isCustom;
         this.budget = new SimpleObjectProperty<>(budget);
     }
 
@@ -56,22 +51,6 @@ public class Category {
 
     public void setName(String name) {
         this.name.set(name);
-    }
-
-    public boolean isStandard() {
-        return isStandard;
-    }
-
-    public void setStandard(boolean standard) {
-        isStandard = standard;
-    }
-
-    public boolean isCustom() {
-        return isCustom;
-    }
-
-    public void setCustom(boolean custom) {
-        isCustom = custom;
     }
 
     public Double getBudget() {

@@ -177,7 +177,32 @@
     -fx-border-color: transparent;
 }
 
-/* ============ Bar Chart ============ */
+/* BarChart Achsen */
+.custom-bar-chart .axis-label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.custom-bar-chart .axis-tick-mark .text {
+    -fx-fill: #f8f8f2;
+}
+
+/* BarChart Series Farben und Legende */
+.custom-bar-chart .chart-bar.series0 {
+    -fx-bar-fill: #50fa7b;
+}
+
+.custom-bar-chart .chart-bar.series1 {
+    -fx-bar-fill: #3498db;
+}
+
+.custom-bar-chart .chart-legend-item-symbol.series0 {
+    -fx-background-color: #50fa7b;
+}
+
+.custom-bar-chart .chart-legend-item-symbol.series1 {
+    -fx-background-color: #3498db;
+}
+
 .custom-bar-chart .chart-legend {
     -fx-background-color: transparent;
     -fx-padding: 20px;
@@ -192,16 +217,7 @@
     -fx-font-size: 14px;
 }
 
-/* BarChart Achsen*/
-.custom-bar-chart .axis-label {
-    -fx-text-fill: #f8f8f2;
-}
-
-.custom-bar-chart .axis-tick-mark .text {
-    -fx-fill: #f8f8f2;
-}
-
-/* PieChart Legende*/
+/* PieChart Legende */
 .custom-pie-chart .chart-legend {
     -fx-padding: 10px;
     -fx-background-color: transparent;
@@ -221,7 +237,6 @@
 .custom-pie-chart .chart-legend-item-symbol .chart-legend-item {
     -fx-text-fill: #44475a;
 }
-
 
 /* ============ HelpView  ============ */
 .help-card {
@@ -331,12 +346,4 @@
     -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #50fa7b;
-}
-
-/* ============ Main Layout Stil ============ */
-.main-layout {
-    -fx-padding: 20px;
-    -fx-alignment: top-center;
-    -fx-spacing: 20px;
-    -fx-background-color: #282a36;
 }

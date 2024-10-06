@@ -16,7 +16,8 @@ import myProject.view.util.ViewUtils;
 import myProject.util.LoggerUtils;
 
 import java.sql.SQLException;
-import java.util.Comparator;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 import static myProject.view.util.ViewUtils.getCategoryBudget;
@@ -29,12 +30,12 @@ public class CategoryView {
 
     private final CategoryController categoryController;
     private final TransactionController transactionController;
-    private final AccountController accountController; // AccountController zur Verwaltung von Konten
+    private final AccountController accountController;
     private final String currentUserId;
-    private VBox mainLayout;  // Hauptlayout zur Anzeige des Inhalts
+    private VBox mainLayout;
     private BorderPane root;
-    private Label overallBalanceLabel; // Label zur Anzeige der Gesamtbilanz
-    private Button createCategoryButton;  // Button zur Erstellung neuer Kategorien
+    private Label overallBalanceLabel;
+    private Button createCategoryButton;
 
     /**
      * Konstruktor zur Initialisierung der View mit den notwendigen Abhängigkeiten.
@@ -48,7 +49,7 @@ public class CategoryView {
         this.currentUserId = currentUserId;
         this.categoryController = categoryController;
         this.transactionController = transactionController;
-        this.accountController = accountController; // AccountController initialisieren
+        this.accountController = accountController;
     }
 
     /**
@@ -78,7 +79,7 @@ public class CategoryView {
         mainLayout.getChildren().add(summaryLayout);
 
         // Zeige die Kategorien an
-        showCategories();
+        showCategoriesForCurrentMonth();
 
         // Button zum Hinzufügen neuer Kategorien konfigurieren
         createCategoryButton = new Button("+ Add Category");
@@ -91,7 +92,6 @@ public class CategoryView {
         mainLayout.getChildren().add(createCategoryButton);
         this.root.setCenter(mainLayout);
     }
-
 
     /**
      * Erstellt das Summary-Layout zur Anzeige der Gesamtbilanz und einzelner Kontenbilanzen.
@@ -133,8 +133,9 @@ public class CategoryView {
 
     /**
      * Zeigt alle Kategorien (Standard- und benutzerdefinierte) in einem Grid-Layout an.
+     * Fortschritte werden für den aktuellen Monat berechnet.
      */
-    private void showCategories() {
+    private void showCategoriesForCurrentMonth() {
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(20));
         gridPane.setHgap(20);
@@ -144,12 +145,14 @@ public class CategoryView {
         List<Category> categories = categoryController.getAllCategoriesForUser(currentUserId)
                 .stream()
                 .filter(category -> !category.getId().equals("no_category_id"))
-                .sorted(Comparator.comparing(Category::isStandard).reversed())
                 .toList();
+
+        LocalDate startOfMonth = YearMonth.now().atDay(1);
+        LocalDate endOfMonth = YearMonth.now().atEndOfMonth();
 
         int row = 0, col = 0;
         for (Category category : categories) {
-            VBox categoryCard = createCategoryCard(category);
+            VBox categoryCard = createCategoryCard(category, startOfMonth, endOfMonth); // Always use current month
             gridPane.add(categoryCard, col, row);
 
             col++;
@@ -167,7 +170,7 @@ public class CategoryView {
      * @param category Die Kategorie, für die die Karte erstellt wird.
      * @return Das erstellte VBox-Layout für die Kategorie-Karte.
      */
-    private VBox createCategoryCard(Category category) {
+    private VBox createCategoryCard(Category category, LocalDate startDate, LocalDate endDate) {
         VBox card = new VBox(10);
         card.setPadding(new Insets(20));
         card.setAlignment(Pos.CENTER);
@@ -178,22 +181,25 @@ public class CategoryView {
         nameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #f8f8f2;");
         card.getChildren().add(nameLabel);
 
-
-
-        if (category.getBudget() != null && category.getBudget() > 0) {
+        if (category.getBudget() != null) { // Check if budget is set
             Label budgetLabel = new Label("$" + category.getBudget() + " Budget");
             budgetLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #8be9fd;");
             card.getChildren().add(budgetLabel);
 
-            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));  // Betrag absolut anzeigen
-            Label spentLabel = new Label("$" + spent + " Spent");  // Ausgaben anzeigen
+
+            double spent = Math.abs(categoryController.getCategoryBudgetProgress(currentUserId, startDate, endDate)
+                    .getOrDefault(category, 0.0));
+
+            Label spentLabel = new Label("$" + spent + " Spent");
             spentLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ff79c6;");
             card.getChildren().add(spentLabel);
 
-            ProgressBar progressBar = new ProgressBar(spent / category.getBudget());  // Fortschritt basierend auf Ausgaben
+
+            double budgetValue = category.getBudget();
+            ProgressBar progressBar = new ProgressBar(Math.max(spent / budgetValue, 0));
             progressBar.setPrefWidth(150);
             progressBar.setMaxWidth(Double.MAX_VALUE);
-            progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, category.getBudget()) + ";");
+            progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             card.getChildren().add(progressBar);
         } else {
             Label noBudgetLabel = new Label("No Budget Set");
@@ -213,6 +219,7 @@ public class CategoryView {
 
         return card;
     }
+
 
     /**
      * Zeigt die Detailansicht einer Kategorie an.
@@ -235,7 +242,6 @@ public class CategoryView {
 
         LoggerUtils.logInfo(CategoryView.class.getName(), "Detailansicht für Kategorie angezeigt: " + category.getName());
     }
-
 
     /**
      * Zeigt das Formular zur Erstellung einer neuen Kategorie an.
@@ -263,8 +269,8 @@ public class CategoryView {
         // Erstelle den "Cancel"-Button zum Abbrechen des Formulars
         Button cancelButton = new Button("Cancel");
         cancelButton.setOnAction(e -> {
-            mainLayout.getChildren().remove(formCard);  // Entferne das Formular
-            createCategoryButton.setVisible(true);  // Zeige den "Add Category"-Button wieder an
+            mainLayout.getChildren().remove(formCard);
+            createCategoryButton.setVisible(true);
         });
 
         formCard.getChildren().addAll(new Label("New Category"), nameField, budgetField, submitButton, cancelButton);
@@ -286,13 +292,13 @@ public class CategoryView {
             String categoryName = nameField.getText();
             Double categoryBudget = getCategoryBudget(budgetField);
 
-            Category newCategory = new Category(null, categoryName, false, true, categoryBudget);
+            Category newCategory = new Category(null, categoryName, categoryBudget);
             categoryController.addCategory(newCategory, currentUserId);
             LoggerUtils.logInfo(CategoryView.class.getName(), "Neue Kategorie erstellt: " + categoryName);
 
             mainLayout.getChildren().clear();
             try {
-                loadIntoPane(this.root);  // Lade die Ansicht neu, um die Kategorien zu aktualisieren
+                loadIntoPane(this.root);
             } catch (SQLException ex) {
                 LoggerUtils.logError(CategoryView.class.getName(), "Fehler beim Neuladen der CategoryView nach dem Erstellen der Kategorie", ex);
                 throw new RuntimeException(ex);

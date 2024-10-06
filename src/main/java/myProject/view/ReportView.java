@@ -2,14 +2,13 @@ package myProject.view;
 
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
-import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import myProject.controller.ReportController;
 import myProject.model.Account;
 import myProject.model.Category;
-import myProject.util.LoggerUtils;
+import myProject.util.LoggerUtils; 
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,8 +30,9 @@ public class ReportView {
 
     /**
      * Konstruktor für die ReportView.
+     *
      * @param reportController Der Controller für Berichtsoperationen.
-     * @param loggedInUserId Die ID des angemeldeten Benutzers.
+     * @param loggedInUserId   Die ID des angemeldeten Benutzers.
      */
     public ReportView(ReportController reportController, String loggedInUserId) {
         this.reportController = reportController;
@@ -41,6 +41,7 @@ public class ReportView {
 
     /**
      * Lädt die ReportView in das übergeordnete BorderPane.
+     *
      * @param parentPane Das übergeordnete BorderPane, in das die Ansicht geladen wird.
      */
     public void loadIntoPane(BorderPane parentPane) {
@@ -92,9 +93,9 @@ public class ReportView {
     }
 
 
-
     /**
      * Erstellt die Filterfunktionen für den Bericht.
+     *
      * @return Eine HBox mit Datumswählern und einem Anwenden-Button.
      */
     private HBox createFilterBox() {
@@ -117,6 +118,7 @@ public class ReportView {
 
     /**
      * Erstellt das Tortendiagramm für Kategorieausgaben.
+     *
      * @return Ein PieChart-Objekt für Kategorieausgaben.
      */
     private PieChart createCategorySpendingChart() {
@@ -133,21 +135,20 @@ public class ReportView {
 
     /**
      * Erstellt das Balkendiagramm für monatliche Einnahmen und Ausgaben.
+     *
      * @return Ein BarChart-Objekt für monatliche Transaktionen.
      */
     private BarChart<String, Number> createTransactionBarChart() {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
 
-
         xAxis.setTickLabelFill(javafx.scene.paint.Color.web("#f8f8f2"));
         yAxis.setTickLabelFill(javafx.scene.paint.Color.web("#f8f8f2"));
 
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Monthly Income and Expenses");
-        xAxis.setLabel("Month");
+        xAxis.setLabel("Month)");
         yAxis.setLabel("Amount");
-
 
         barChart.setLegendSide(Side.RIGHT);
         barChart.getStyleClass().add("custom-bar-chart");
@@ -155,6 +156,11 @@ public class ReportView {
         return barChart;
     }
 
+
+
+    /*
+     * Wendet die ausgewählten Filter an und aktualisiert die Ansicht.
+     */
 
     /**
      * Wendet die ausgewählten Filter an und aktualisiert die Ansicht.
@@ -167,9 +173,9 @@ public class ReportView {
             Map<String, Double> categoryExpenses = reportController.getCategoryExpenses(loggedInUserId, startDate, endDate);
             Map<String, Map<String, Double>> monthlyData = reportController.getMonthlyIncomeAndExpenses(loggedInUserId, startDate, endDate);
 
-
-            System.out.println("Category Expenses: " + categoryExpenses);
-            System.out.println("Monthly Data: " + monthlyData);
+            // Zusätzliche Logs zur Überprüfung der Daten
+            LoggerUtils.logInfo(ReportView.class.getName(), "Category Expenses: " + categoryExpenses);
+            LoggerUtils.logInfo(ReportView.class.getName(), "Monthly Data: " + monthlyData);
 
             updatePieChart(categoryExpenses);
             updateBarChart(monthlyData);
@@ -183,6 +189,7 @@ public class ReportView {
 
     /**
      * Aktualisiert das Tortendiagramm mit den Kategorieausgaben.
+     *
      * @param categoryExpenses Die Ausgaben pro Kategorie.
      */
     private void updatePieChart(Map<String, Double> categoryExpenses) {
@@ -197,7 +204,7 @@ public class ReportView {
             categorySpendingChart.getData().add(new PieChart.Data("No Expenses", 1));
         }
 
-        // Add tooltips to each pie slice
+
         categorySpendingChart.getData().forEach(data -> {
             Tooltip tooltip = new Tooltip(String.format("%s: $%.2f", data.getName(), data.getPieValue()));
             Tooltip.install(data.getNode(), tooltip);
@@ -207,14 +214,12 @@ public class ReportView {
         categorySpendingChart.layout();
     }
 
-
-
     /**
      * Aktualisiert das Balkendiagramm mit den monatlichen Einnahmen und Ausgaben.
+     *
      * @param monthlyData Die monatlichen Einnahmen und Ausgaben.
      */
     @SuppressWarnings("unchecked")
-
     private void updateBarChart(Map<String, Map<String, Double>> monthlyData) {
         transactionBarChart.getData().clear();
 
@@ -224,41 +229,40 @@ public class ReportView {
         XYChart.Series<String, Number> expenseSeries = new XYChart.Series<>();
         expenseSeries.setName("Expenses");
 
-        // Füge die Daten hinzu
-        monthlyData.get("income").forEach((month, amount) -> incomeSeries.getData().add(new XYChart.Data<>(month, amount)));
-        monthlyData.get("expense").forEach((month, amount) -> expenseSeries.getData().add(new XYChart.Data<>(month, amount)));
+        if (monthlyData.containsKey("income")) {
+            monthlyData.get("income").forEach((month, amount) -> incomeSeries.getData().add(new XYChart.Data<>(month, amount)));
+        }
+
+        if (monthlyData.containsKey("expense")) {
+            monthlyData.get("expense").forEach((month, amount) -> expenseSeries.getData().add(new XYChart.Data<>(month, amount)));
+        }
 
         transactionBarChart.getData().addAll(incomeSeries, expenseSeries);
 
-        // Weisen wir feste Farben für die Balken zu
+        // Setze die Farben für die Balken direkt
         incomeSeries.getData().forEach(data ->
-                data.getNode().setStyle("-fx-bar-fill: #50fa7b;")
+                data.getNode().setStyle("-fx-bar-fill: #50fa7b;")  // Grün für Income
         );
         expenseSeries.getData().forEach(data ->
-                data.getNode().setStyle("-fx-bar-fill: #bc4363;")
+                data.getNode().setStyle("-fx-bar-fill: #3498db;")  // Blau für Expenses
         );
 
-        // Weisen wir feste Farben für die Legende zu
-        for (Node legend : transactionBarChart.lookupAll(".chart-legend-item")) {
-            if (legend instanceof Label legendLabel) {
-                if (legendLabel.getText().equals("Income")) {
-                    legendLabel.setStyle("-fx-text-fill: #50fa7b;");  // Grün für Income in der Legende
-                } else if (legendLabel.getText().equals("Expenses")) {
-                    legendLabel.setStyle("-fx-text-fill: #bc4363;");  // Rot für Expenses in der Legende
-                }
-            }
-        }
+        transactionBarChart.layout();
 
-        transactionBarChart.layout();  // Aktualisiere das Layout
+        // Log-Ausgaben beibehalten
+        System.out.println("Income Series Data:");
+        incomeSeries.getData().forEach(data -> System.out.println(data.getXValue() + ": " + data.getYValue()));
+
+        System.out.println("Expense Series Data:");
+        expenseSeries.getData().forEach(data -> System.out.println(data.getXValue() + ": " + data.getYValue()));
     }
-
-
 
 
     /**
      * Aktualisiert die Dashboard-Informationen.
+     *
      * @param startDate Das Startdatum des Berichtszeitraums.
-     * @param endDate Das Enddatum des Berichtszeitraums.
+     * @param endDate   Das Enddatum des Berichtszeitraums.
      */
     private void updateDashboardInfo(LocalDate startDate, LocalDate endDate) {
         dashboardInfo.getChildren().clear();
@@ -283,10 +287,16 @@ public class ReportView {
         mostSpentCategoryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
 
         VBox budgetProgressInfo = new VBox(5);
-        Label budgetProgressLabel = new Label("Budget Progress:");
+        Label budgetProgressLabel = new Label("Budget Progress for THIS month:");
         budgetProgressLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #f8f8f2;");
         budgetProgressInfo.getChildren().add(budgetProgressLabel);
-        Map<Category, Double> budgetProgress = reportController.getCategoryBudgetProgress(loggedInUserId);
+
+
+        LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate endOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+
+
+        Map<Category, Double> budgetProgress = reportController.getCategoryBudgetProgress(loggedInUserId, startOfMonth, endOfMonth);
         for (Map.Entry<Category, Double> entry : budgetProgress.entrySet()) {
             ProgressBar progressBar = new ProgressBar(entry.getValue());
             progressBar.setStyle("-fx-accent: " + getProgressBarColor(entry.getValue()));
@@ -299,8 +309,10 @@ public class ReportView {
         dashboardInfo.getChildren().addAll(totalBalanceLabel, accountsInfo, mostSpentCategoryLabel, budgetProgressInfo);
     }
 
+
     /**
      * Bestimmt die Farbe für den Fortschrittsbalken basierend auf dem Fortschritt.
+     *
      * @param progress Der Fortschrittswert zwischen 0 und 1.
      * @return Der Farbcode für den Fortschrittsbalken.
      */

@@ -104,13 +104,15 @@ public class ReportController {
     }
 
     /**
-     * Ruft den Budgetfortschritt für alle Kategorien des Benutzers ab.
+     * Ruft den Budgetfortschritt für alle Kategorien des Benutzers für einen bestimmten Zeitraum ab.
      * @param userId Die ID des Benutzers.
+     * @param startDate Das Startdatum des Zeitraums.
+     * @param endDate Das Enddatum des Zeitraums.
      * @return Eine Map mit dem Budgetfortschritt pro Kategorie.
      */
-    public Map<Category, Double> getCategoryBudgetProgress(String userId) {
+    public Map<Category, Double> getCategoryBudgetProgress(String userId, LocalDate startDate, LocalDate endDate) {
         try {
-            return reportService.getCategoryBudgetProgress(userId);
+            return reportService.getCategoryBudgetProgress(userId, startDate, endDate);
         } catch (Exception e) {
             LoggerUtils.logError(ReportController.class.getName(), "Fehler beim Abrufen des Kategorie-Budgetfortschritts: " + e.getMessage(), e);
             return new HashMap<>();

@@ -4,7 +4,10 @@ import myProject.model.Category;
 import myProject.repository.CategoryRepository;
 import myProject.util.LoggerUtils;
 
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Der CategoryService verwaltet die Geschäftslogik für Kategorien.
@@ -56,17 +59,18 @@ public class CategoryService {
         }
     }
 
-    public boolean deleteCategoryAndUpdateTransactions(String categoryId) {
-        try {
-            // Überprüfe, ob es sich um eine globale Kategorie handelt
-            Category category = categoryRepository.findCategoryById(categoryId);
-            if (category.isStandard()) {
-                LoggerUtils.logError(CategoryService.class.getName(), "Globale Kategorie kann nicht gelöscht werden: " + categoryId);
-                return false;  // Verhindert das Löschen der Kategorie
-            }
 
-            // Aktualisiere alle Transaktionen der Kategorie auf 'No Category'
-            categoryRepository.updateTransactionsToNoCategory(categoryId);
+    /**
+     * Löscht eine Kategorie und aktualisiert alle zugehörigen Transaktionen auf die "No Category" des Benutzers.
+     *
+     * @param categoryId Die ID der zu löschenden Kategorie.
+     * @param userId     Die ID des Benutzers.
+     * @return true, wenn das Löschen und Aktualisieren erfolgreich war, false bei einem Fehler.
+     */
+    public boolean deleteCategoryAndUpdateTransactions(String categoryId, String userId) {
+        try {
+            // Aktualisiere Transaktionen auf die "No Category" des Benutzers
+            categoryRepository.updateTransactionsToNoCategory(categoryId, userId);
 
             // Lösche die Kategorie
             boolean success = categoryRepository.deleteCategory(categoryId);
@@ -82,55 +86,16 @@ public class CategoryService {
     }
 
 
-
-
     /**
-     * Ruft alle globalen Kategorien ab.
-     * @return Eine Liste globaler Kategorien.
-     */
-    public List<Category> getGlobalCategories() {
-        try {
-            List<Category> globalCategories = categoryRepository.getGlobalCategories();
-            LoggerUtils.logInfo(CategoryService.class.getName(), "Globale Kategorien erfolgreich abgerufen.");
-            return globalCategories;
-        } catch (Exception e) {
-            LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen der globalen Kategorien.", e);
-            return null;
-        }
-    }
-
-    /**
-     * Ruft alle benutzerdefinierten Kategorien für einen bestimmten Benutzer ab.
-     * @param userId Die ID des Benutzers.
-     * @return Eine Liste benutzerdefinierter Kategorien.
-     */
-    public List<Category> getCustomCategoriesForUser(String userId) {
-        try {
-            List<Category> customCategories = categoryRepository.getCustomCategoriesForUser(userId);
-            LoggerUtils.logInfo(CategoryService.class.getName(), "Benutzerdefinierte Kategorien erfolgreich abgerufen für Benutzer: " + userId);
-            return customCategories;
-        } catch (Exception e) {
-            LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen der benutzerdefinierten Kategorien für Benutzer: " + userId, e);
-            return null;
-        }
-    }
-
-    /**
-     * Ruft alle Kategorien (globale und benutzerdefinierte) für einen bestimmten Benutzer ab.
+     * Ruft alle Kategorien für einen bestimmten Benutzer ab.
+     *
      * @param userId Die ID des Benutzers.
      * @return Eine Liste aller Kategorien des Benutzers.
      */
     public List<Category> getAllCategoriesForUser(String userId) {
-        try {
-            List<Category> globalCategories = getGlobalCategories();
-            List<Category> customCategories = getCustomCategoriesForUser(userId);
-            globalCategories.addAll(customCategories);
-            return globalCategories;
-        } catch (Exception e) {
-            LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen aller Kategorien für Benutzer: " + userId, e);
-            return null;
-        }
+        return categoryRepository.getAllCategoriesForUser(userId);
     }
+
 
     /**
      * Ruft eine Kategorie anhand ihres Namens für einen bestimmten Benutzer ab.
@@ -152,4 +117,31 @@ public class CategoryService {
             return null;
         }
     }
+
+
+
+    /**
+     * Berechnet den Budgetfortschritt für alle Kategorien eines Benutzers in einem bestimmten Zeitraum.
+     *
+     * @param userId Die ID des Benutzers.
+     * @param startDate Das Startdatum des Zeitraums.
+     * @param endDate Das Enddatum des Zeitraums.
+     * @return Map mit Kategorien als Schlüssel und ihrem Budgetfortschritt als Werte.
+     */
+    public Map<Category, Double> getCategoryBudgetProgress(String userId, LocalDate startDate, LocalDate endDate) {
+        List<Category> categories = categoryRepository.getAllCategoriesForUser(userId);
+        Map<Category, Double> budgetProgress = new HashMap<>();
+
+        for (Category category : categories) {
+            if (category.getBudget() != null) {
+
+                double spent = Math.abs(categoryRepository.getSpentAmountForCategoryInPeriod(category.getId(), startDate, endDate));
+
+                budgetProgress.put(category, spent);
+            }
+        }
+        return budgetProgress;
+    }
+
 }
+

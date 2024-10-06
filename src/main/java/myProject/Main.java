@@ -10,6 +10,12 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        System.out.println("Reached the loop");
+        System.out.println("Hello World");
+
+        for (int i = 1; i<= 5; i++) {
+            System.out.println("Number" + i);
+        }
         // Datenbank initialisieren
         initializeDatabase();
 

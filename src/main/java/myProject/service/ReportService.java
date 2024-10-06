@@ -64,15 +64,28 @@ public class ReportService {
             List<Transaction> transactions = transactionService.getTransactionsByUserAndPeriod(userId, startDate, endDate);
 
             Map<String, Map<String, Double>> result = new HashMap<>();
-            result.put("income", new HashMap<>());
-            result.put("expense", new HashMap<>());
+            result.put("income", new TreeMap<>());  // Verwenden Sie TreeMap für sortierte Schlüssel
+            result.put("expense", new TreeMap<>());
 
             transactions.forEach(t -> {
-                String month = t.getDate().toLocalDate().getMonth().toString() + " " + t.getDate().toLocalDate().getYear();
-                String type = t.getType().toLowerCase();
-                double amount = Math.abs(t.getAmount());
+                // Exkludiere Transaktionen mit der Beschreibung "Initial Balance"
+                if (t.getCategory() == null
+                        || "No Category".equalsIgnoreCase(t.getCategory().getName())
+                        || "Initial Balance".equalsIgnoreCase(t.getDescription())) {
+                    return;
+                }
 
-                result.get(type).merge(month, amount, Double::sum);
+                String month = String.format("%d-%02d", t.getDate().toLocalDate().getYear(), t.getDate().toLocalDate().getMonthValue());
+                String type = t.getType().toLowerCase();
+                double amount = "expense".equalsIgnoreCase(type) ? Math.abs(t.getAmount()) : t.getAmount();
+
+                LoggerUtils.logInfo(ReportService.class.getName(), "Processing Transaction - Month: " + month + ", Type: " + type + ", Amount: " + amount);
+
+                if (result.containsKey(type)) {
+                    result.get(type).merge(month, amount, Double::sum);
+                } else {
+                    LoggerUtils.logError(ReportService.class.getName(), "Unknown transaction type: " + type, null);
+                }
             });
 
             return result;
@@ -81,6 +94,8 @@ public class ReportService {
             return new HashMap<>();
         }
     }
+
+
 
     /**
      * Berechnet den Gesamtkontostand eines Benutzers.
@@ -130,21 +145,22 @@ public class ReportService {
         }
     }
 
+
     /**
      * Berechnet den Budgetfortschritt für alle Kategorien eines Benutzers.
      * @param userId ID des Benutzers.
+     * @param startDate Startdatum des Zeitraums.
+     * @param endDate Enddatum des Zeitraums.
      * @return Map mit Kategorien als Schlüssel und ihrem Budgetfortschritt als Werte.
      */
-    public Map<Category, Double> getCategoryBudgetProgress(String userId) {
+    public Map<Category, Double> getCategoryBudgetProgress(String userId, LocalDate startDate, LocalDate endDate) {
         try {
             List<Category> categories = categoryService.getAllCategoriesForUser(userId);
             Map<Category, Double> budgetProgress = new HashMap<>();
-            LocalDate now = LocalDate.now();
-            LocalDate startOfMonth = now.withDayOfMonth(1);
 
             for (Category category : categories) {
                 if (category.getBudget() != null && category.getBudget() > 0) {
-                    double spent = Math.abs(getCategoryExpenses(userId, startOfMonth, now).getOrDefault(category.getName(), 0.0));
+                    double spent = Math.abs(getCategoryExpenses(userId, startDate, endDate).getOrDefault(category.getName(), 0.0));
                     double progress = spent / category.getBudget();
                     budgetProgress.put(category, progress);
                 }

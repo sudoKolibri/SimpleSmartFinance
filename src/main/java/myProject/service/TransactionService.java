@@ -45,7 +45,7 @@ public class TransactionService {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
 
-        // Check if the transaction date is in the future
+
         if (transactionDate.isAfter(currentDate) ||
                 (transactionDate.equals(currentDate) && transactionTime.isAfter(currentTime))) {
             LoggerUtils.logError(TransactionService.class.getName(), "Die Transaktion kann nicht in der Zukunft liegen.");
@@ -143,7 +143,7 @@ public class TransactionService {
                         LocalDate transactionDate = t.getDate().toLocalDate();
                         LocalTime transactionTime = t.getTime().toLocalTime();
 
-                        // Prüfe, ob das Datum in der Vergangenheit liegt oder das Datum heute ist, aber die Zeit in der Vergangenheit liegt
+
                         return transactionDate.isBefore(LocalDate.now()) ||
                                 (transactionDate.isEqual(LocalDate.now()) && transactionTime.isBefore(LocalTime.now()));
                     })

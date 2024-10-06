@@ -31,13 +31,13 @@ public class ViewUtils {
         ratio = Math.max(0, Math.min(1, ratio));  // Sicherstellen, dass das Verhältnis zwischen 0 und 1 liegt
 
         if (ratio < 0.5) {
-            return "#50fa7b";  // Grün für unter 50 % Auslastung des Budgets
+            return "#50fa7b";
         } else if (ratio < 0.75) {
-            return "#f1fa8c";  // Gelb für 50 % bis 75 % Auslastung
+            return "#f1fa8c";
         } else if (ratio < 0.9) {
-            return "#ffb86c";  // Orange für 75 % bis 90 % Auslastung
+            return "#ffb86c";
         } else {
-            return "#ff5555";  // Rot für über 90 % Auslastung (kritisch)
+            return "#ff5555";
         }
     }
 
@@ -85,11 +85,11 @@ public class ViewUtils {
         alert.setHeaderText(null);
         alert.initStyle(StageStyle.UTILITY);
 
-        // Anwenden benutzerdefinierter Styles
+
         alert.getDialogPane().getStylesheets().add(Objects.requireNonNull(ViewUtils.class.getResource("/styles.css")).toExternalForm());
         alert.getDialogPane().getStyleClass().add("custom-alert");
 
-        // Hintergrundstil setzen
+
         Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
         stage.getScene().getRoot().setStyle("-fx-background-color: #282a36;");
         stage.showAndWait();

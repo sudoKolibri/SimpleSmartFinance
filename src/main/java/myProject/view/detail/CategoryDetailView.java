@@ -15,6 +15,9 @@ import myProject.util.LoggerUtils;
 import myProject.view.CategoryView;
 import myProject.view.util.ViewUtils;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+
 import java.sql.SQLException;
 
 /**
@@ -41,8 +44,8 @@ public class CategoryDetailView {
     public CategoryDetailView(CategoryController categoryController, TransactionController transactionController, AccountController accountController, String loggedInUserId, BorderPane root) {
         this.categoryController = categoryController;
         this.transactionController = transactionController;
-        this.accountController = accountController; // AccountController hinzufügen
-        this.loggedInUserId = loggedInUserId; // loggedInUserId hinzufügen
+        this.accountController = accountController;
+        this.loggedInUserId = loggedInUserId;
         if (root == null) {
             LoggerUtils.logError(CategoryDetailView.class.getName(), "Root-Layout darf nicht null sein.", null);
             throw new IllegalArgumentException("Root-Layout darf nicht null sein.");
@@ -66,18 +69,26 @@ public class CategoryDetailView {
         nameLabel.getStyleClass().add("detail-label");
         detailView.getChildren().add(nameLabel);
 
-        if (category.getBudget() != null && category.getBudget() > 0) {
+
+        LocalDate startOfMonth = YearMonth.now().atDay(1);
+        LocalDate endOfMonth = YearMonth.now().atEndOfMonth();
+
+        if (category.getBudget() != null) { // Check if budget is set
             Label budgetLabel = new Label("Budget: $" + category.getBudget());
             budgetLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #8be9fd;");
             detailView.getChildren().add(budgetLabel);
 
-            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));
-            Label spentLabel = new Label("Already Spent: $" + spent);
+
+            double spent = Math.abs(categoryController.getCategoryBudgetProgress(loggedInUserId, startOfMonth, endOfMonth)
+                    .getOrDefault(category, 0.0));
+
+            Label spentLabel = new Label(String.format("Already Spent this month: $%.2f", spent));
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             detailView.getChildren().add(spentLabel);
 
-            double budgetValue = category.getBudget() != null ? category.getBudget() : 1;
-            ProgressBar progressBar = new ProgressBar(Math.abs(spent) / budgetValue);
+
+            double budgetValue = category.getBudget();
+            ProgressBar progressBar = new ProgressBar(Math.max(spent / budgetValue, 0));
             progressBar.setPrefWidth(600);
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             detailView.getChildren().add(progressBar);
@@ -87,6 +98,8 @@ public class CategoryDetailView {
             detailView.getChildren().add(noBudgetLabel);
         }
 
+
+
         Button editButton = new Button("Edit");
         editButton.getStyleClass().add("edit-button");
         editButton.setOnAction(e -> showEditCategoryForm(category));
@@ -95,26 +108,26 @@ public class CategoryDetailView {
         Button deleteButton = new Button("Delete");
         deleteButton.getStyleClass().add("edit-button");
         deleteButton.setOnAction(e -> {
-            // Create a confirmation dialog
+
             Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
             confirmationAlert.setTitle("Delete Category");
             confirmationAlert.setHeaderText("Are you sure you want to delete the category: " + category.getName() + "?");
             confirmationAlert.setContentText("All transactions in this category will be moved to 'No Category'.");
 
-            // Apply custom styling to the dialog pane
+
             DialogPane dialogPane = confirmationAlert.getDialogPane();
             dialogPane.getStyleClass().add("custom-alert");
 
-            // Wait for the user's response
+
             confirmationAlert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    boolean success = categoryController.deleteCategory(category.getId());
+                    boolean success = categoryController.deleteCategory(category.getId(), loggedInUserId);
 
                     if (success) {
                         LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Kategorie erfolgreich gelöscht: " + category.getId());
                         try {
                             CategoryView categoryView = new CategoryView(loggedInUserId, categoryController, transactionController, accountController);
-                            categoryView.loadIntoPane(root); // Reload the CategoryView
+                            categoryView.loadIntoPane(root);
                         } catch (SQLException ex) {
                             LoggerUtils.logError(CategoryDetailView.class.getName(), "Fehler beim Laden der CategoryView nach dem Löschen", ex);
                         }
@@ -163,14 +176,22 @@ public class CategoryDetailView {
         budgetField.setStyle("-fx-font-size: 20px; -fx-text-fill: #ffb86c;");
         editView.getChildren().add(budgetField);
 
-        if (category.getBudget() != null && category.getBudget() > 0) {
-            double spent = Math.abs(transactionController.getSpentAmountForCategory(category));
-            Label spentLabel = new Label(String.format("Already Spent: $%.2f", spent));
+        if (category.getBudget() != null) {
+
+            LocalDate startOfMonth = YearMonth.now().atDay(1);
+            LocalDate endOfMonth = YearMonth.now().atEndOfMonth();
+
+
+            double spent = Math.abs(categoryController.getCategoryBudgetProgress(loggedInUserId, startOfMonth, endOfMonth)
+                    .getOrDefault(category, 0.0));
+
+            Label spentLabel = new Label(String.format("Already Spent this month: $%.2f", spent));
             spentLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #ff79c6;");
             editView.getChildren().add(spentLabel);
 
-            double budgetValue = category.getBudget() != null ? category.getBudget() : 1;
-            ProgressBar progressBar = new ProgressBar(spent / budgetValue);
+
+            double budgetValue = category.getBudget();
+            ProgressBar progressBar = new ProgressBar(Math.max(spent / budgetValue, 0));
             progressBar.setPrefWidth(600);
             progressBar.setStyle("-fx-accent: " + ViewUtils.getProgressBarColor(spent, budgetValue) + ";");
             editView.getChildren().add(progressBar);
@@ -203,6 +224,7 @@ public class CategoryDetailView {
             String newName = nameField.getText();
             Double newBudget = null;
 
+
             if (!budgetField.getText().isEmpty()) {
                 try {
                     newBudget = Double.parseDouble(budgetField.getText());
@@ -214,6 +236,7 @@ public class CategoryDetailView {
                 }
             }
 
+
             if (categoryController.isCategoryNameDuplicate(newName, category.getId())) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Category name already exists.", ButtonType.OK);
                 alert.showAndWait();
@@ -221,8 +244,10 @@ public class CategoryDetailView {
                 return;
             }
 
+
             category.setName(newName);
             category.setBudget(newBudget);
+
 
             categoryController.updateCategory(category);
             LoggerUtils.logInfo(CategoryDetailView.class.getName(), "Kategorie erfolgreich aktualisiert: " + category.getName());
@@ -233,6 +258,7 @@ public class CategoryDetailView {
             LoggerUtils.logError(CategoryDetailView.class.getName(), "Fehler beim Aktualisieren der Kategorie: " + category.getName(), ex);
         }
     }
+
 
     /**
      * Erstellt eine Transaktionstabelle für die gegebene Kategorie.

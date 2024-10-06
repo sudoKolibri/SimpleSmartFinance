@@ -49,28 +49,13 @@ public class DatabaseManager {
                     + "username VARCHAR(255) NOT NULL UNIQUE, "
                     + "password VARCHAR(255) NOT NULL)");
 
-            // Erstellen der Tabelle für Kategorien
+            // Erstellen der Tabelle für Kategorien ohne is_standard, is_custom und color
             stmt.execute("CREATE TABLE IF NOT EXISTS categories ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "name VARCHAR(255) NOT NULL, "
-                    + "color VARCHAR(10), "
-                    + "is_standard BOOLEAN NOT NULL, "
-                    + "is_custom BOOLEAN NOT NULL, "
                     + "budget DOUBLE DEFAULT NULL, "
                     + "user_id VARCHAR(255), "
                     + "FOREIGN KEY (user_id) REFERENCES users(id))");
-
-            // Standardkategorien einfügen, falls nicht bereits vorhanden
-            stmt.execute("MERGE INTO categories (id, name, color, is_standard, is_custom, budget, user_id) KEY (id) "
-                    + "VALUES ('1', 'Income', '#50fa7b', true, false, NULL, NULL),"
-                    + "('2', 'Housing', '#ff5555', true, false, NULL, NULL),"
-                    + "('3', 'Food', '#f1fa8c', true, false, NULL, NULL),"
-                    + "('4', 'Transportation', '#8be9fd', true, false, NULL, NULL),"
-                    + "('5', 'Healthcare', '#ff79c6', true, false, NULL, NULL)");
-
-            // Hinzufügen der "No Category"-Kategorie
-            stmt.execute("MERGE INTO categories (id, name, color, is_standard, is_custom, budget, user_id) KEY (id) "
-                    + "VALUES ('no_category_id', 'No Category', '#6272a4', true, false, NULL, NULL)");
 
             // Erstellen der Tabelle für Konten
             stmt.execute("CREATE TABLE IF NOT EXISTS accounts ("

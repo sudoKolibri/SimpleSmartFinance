@@ -57,12 +57,16 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <mainClass>myProject.Main</mainClass>
+                    <arguments>
+                        <argument>--module-path</argument>
+                        <argument>${java.home}/lib</argument>
+                        <argument>--add-modules=javafx.controls,javafx.fxml</argument>
+                    </arguments>
                 </configuration>
             </plugin>
 

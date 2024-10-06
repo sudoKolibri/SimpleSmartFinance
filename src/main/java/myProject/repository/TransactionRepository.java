@@ -107,32 +107,6 @@ public class TransactionRepository {
         }
     }
 
-
-    /**
-     * Ruft alle Transaktionen für einen bestimmten Benutzer ab.
-     *
-     * @param userId Die ID des Benutzers.
-     * @return Eine Liste der Transaktionen für den Benutzer.
-     */
-    public List<Transaction> getTransactionsByUserId(String userId) {
-        List<Transaction> transactions = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE account_id IN (SELECT id FROM accounts WHERE user_id = ?)";
-        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Transaction transaction = mapResultSetToTransaction(rs);
-                    transactions.add(transaction);
-                }
-            }
-            LoggerUtils.logInfo(TransactionRepository.class.getName(), "Transaktionen erfolgreich abgerufen für Benutzer-ID: " + userId);
-        } catch (SQLException e) {
-            LoggerUtils.logError(TransactionRepository.class.getName(), "Fehler beim Abrufen der Transaktionen für Benutzer-ID: " + userId, e);
-        }
-        return transactions;
-    }
-
-
     /**
      * Ruft die Transaktionen für ein bestimmtes Konto ab.
      *
@@ -183,20 +157,6 @@ public class TransactionRepository {
         return transactions;
     }
 
-
-    // Hilfsmethode zum Mapping eines ResultSet auf ein Transaction-Objekt, mit Berücksichtigung von wiederkehrenden Transaktionen.
-    private Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
-        Category category = categoryRepository.findCategoryById(rs.getString("category_id"));
-        Account account = accountRepository.findAccountById(rs.getString("account_id"));
-        Date date = rs.getDate("date");  // Korrigiert, um immer "date" zu verwenden
-        Time time = rs.getTime("time");
-
-        Transaction transaction = new Transaction(rs.getString("description"), rs.getDouble("amount"), rs.getString("type"), null, account, category, date, time);
-        transaction.setId(rs.getString("id"));
-
-        return transaction;
-    }
-
     public List<Transaction> getTransactionsByUserAndPeriod(String userId, LocalDate startDate, LocalDate endDate) {
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE account_id IN (SELECT id FROM accounts WHERE user_id = ?) " +
@@ -218,6 +178,22 @@ public class TransactionRepository {
         }
         return transactions;
     }
+
+
+    // Hilfsmethode zum Mapping eines ResultSet auf ein Transaction-Objekt, mit Berücksichtigung von wiederkehrenden Transaktionen.
+    private Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
+        Category category = categoryRepository.findCategoryById(rs.getString("category_id"));
+        Account account = accountRepository.findAccountById(rs.getString("account_id"));
+        Date date = rs.getDate("date");  // Korrigiert, um immer "date" zu verwenden
+        Time time = rs.getTime("time");
+
+        Transaction transaction = new Transaction(rs.getString("description"), rs.getDouble("amount"), rs.getString("type"), null, account, category, date, time);
+        transaction.setId(rs.getString("id"));
+
+        return transaction;
+    }
+
+
 
 
 }
