@@ -45,7 +45,6 @@
             <version>2.1.214</version>
         </dependency>
 
-
         <!-- Optional: ControlsFX -->
         <dependency>
             <groupId>org.controlsfx</groupId>
@@ -56,20 +55,7 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <mainClass>myProject.Main</mainClass>
-                    <arguments>
-                        <argument>--module-path</argument>
-                        <argument>${java.home}/lib</argument>
-                        <argument>--add-modules=javafx.controls,javafx.fxml</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-
+            <!-- JavaFX Maven Plugin -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -80,14 +66,36 @@
                             <goal>run</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>debug</id>
+                        <configuration>
+                            <mainClass>myProject.Main</mainClass>
+                            <options>
+                                <option>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:44541</option>
+                            </options>
+                        </configuration>
+                    </execution>
                 </executions>
                 <configuration>
                     <mainClass>myProject.Main</mainClass>
                     <options>
+                        <!-- Use Maven's .m2 repository for JavaFX modules -->
                         <option>--module-path</option>
-                        <option>${java.home}/lib</option>
+                        <option>${env.HOME}/.m2/repository</option>
                         <option>--add-modules=javafx.controls,javafx.fxml,javafx.graphics</option>
                     </options>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <debug>true</debug>
                 </configuration>
             </plugin>
         </plugins>
