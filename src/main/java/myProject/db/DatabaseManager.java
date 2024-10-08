@@ -43,13 +43,13 @@ public class DatabaseManager {
              Statement stmt = connection.createStatement()) {
 
 
-            // Erstellen der Tabelle für Benutzer, falls nicht bereits vorhanden
+            // Erstellen der Tabelle für Benutzer
             stmt.execute("CREATE TABLE IF NOT EXISTS users ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "username VARCHAR(255) NOT NULL UNIQUE, "
                     + "password VARCHAR(255) NOT NULL)");
 
-            // Erstellen der Tabelle für Kategorien ohne is_standard, is_custom und color
+            // Erstellen der Tabelle für Kategorien
             stmt.execute("CREATE TABLE IF NOT EXISTS categories ("
                     + "id VARCHAR(255) PRIMARY KEY, "
                     + "name VARCHAR(255) NOT NULL, "
@@ -77,22 +77,6 @@ public class DatabaseManager {
                     + "account_id VARCHAR(255), "
                     + "FOREIGN KEY (category_id) REFERENCES categories(id), "
                     + "FOREIGN KEY (account_id) REFERENCES accounts(id))");
-
-            // Erstellen der Tabelle für Budgets
-            stmt.execute("CREATE TABLE IF NOT EXISTS budgets ("
-                    + "id VARCHAR(255) PRIMARY KEY, "
-                    + "user_id VARCHAR(255) NOT NULL, "
-                    + "amount DOUBLE NOT NULL, "
-                    + "start_date DATE NOT NULL, "
-                    + "end_date DATE NOT NULL, "
-                    + "FOREIGN KEY (user_id) REFERENCES users(id))");
-
-            // Erstellen der Tabelle für Budget-Kategorien
-            stmt.execute("CREATE TABLE IF NOT EXISTS budget_categories ("
-                    + "budget_id VARCHAR(255), "
-                    + "category_id VARCHAR(255), "
-                    + "FOREIGN KEY (budget_id) REFERENCES budgets(id), "
-                    + "FOREIGN KEY (category_id) REFERENCES categories(id))");
 
         } catch (SQLException e) {
             LoggerUtils.logError(DatabaseManager.class.getName(), "Fehler bei der Datenbankinitialisierung.", e);

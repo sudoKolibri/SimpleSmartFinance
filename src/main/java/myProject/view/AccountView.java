@@ -15,9 +15,7 @@ import myProject.view.detail.AccountDetailView;
 import myProject.view.util.ViewUtils;
 import myProject.util.LoggerUtils;
 
-import java.sql.Date;
 import java.sql.SQLException;
-import java.sql.Time;
 import java.util.List;
 
 /**
