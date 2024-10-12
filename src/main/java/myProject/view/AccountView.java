@@ -3,10 +3,7 @@ package myProject.view;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import myProject.controller.AccountController;
 import myProject.controller.TransactionController;
 import myProject.model.Account;
@@ -62,7 +59,7 @@ public class AccountView {
             // Hauptlayout für die Ansicht, mit Header oben
             VBox mainLayout = new VBox();
             mainLayout.getStyleClass().add("main-layout");
-            mainLayout.setAlignment(Pos.TOP_CENTER);  // Header oben zentriert
+            mainLayout.setAlignment(Pos.TOP_CENTER);
 
             // Layout für den zentralen Inhalt (Bilanz, Konten, Add-Button)
             VBox centerContent = new VBox(30);
@@ -259,8 +256,9 @@ public class AccountView {
                 }
 
                 // Aktualisiere die Kontenübersicht und Gesamtbilanz
-                refreshAccountList(accountsLayout);
                 updateOverallBalance();
+                refreshAccountList(accountsLayout);
+
                 createAccountButton.setVisible(true);
             } else {
                 ViewUtils.showAlert(Alert.AlertType.ERROR, "Account konnte nicht erzeugt werden. Versuche es erneut.");
@@ -313,6 +311,10 @@ public class AccountView {
             card.getStyleClass().add("account-card");
             card.setPadding(new Insets(20));
             card.setAlignment(Pos.CENTER);
+            card.setSpacing(10);
+            card.setMaxWidth(Double.MAX_VALUE);
+
+            HBox.setHgrow(card, Priority.ALWAYS);
 
             Label nameLabel = new Label(account.getName());
             nameLabel.setStyle("-fx-font-size: 20px; -fx-text-fill: #f8f8f2;");

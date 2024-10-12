@@ -262,61 +262,6 @@ public class CategoryRepository {
         return totalSpent;
     }
 
-    public void insertDefaultCategoriesForUser(String userId) {
-        String sql = "INSERT INTO categories (id, name, budget, user_id) VALUES (?, ?, ?, ?)";
-        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            // Standardkategorie 1: Income
-            pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setString(2, "Income");
-            pstmt.setNull(3, Types.DOUBLE);  // Kein Budget initial
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            // Standardkategorie 2: Housing
-            pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setString(2, "Housing");
-            pstmt.setNull(3, Types.DOUBLE);
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            // Standardkategorie 3: Food
-            pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setString(2, "Food");
-            pstmt.setNull(3, Types.DOUBLE);
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            // Standardkategorie 4: Transportation
-            pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setString(2, "Transportation");
-            pstmt.setNull(3, Types.DOUBLE);
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            // Standardkategorie 5: Healthcare
-            pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setString(2, "Healthcare");
-            pstmt.setNull(3, Types.DOUBLE);
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            // "No Category" mit eindeutiger ID pro Benutzer
-            pstmt.setString(1, "no_category_id_" + userId);  // Eindeutige ID für "No Category"
-            pstmt.setString(2, "No Category");
-            pstmt.setNull(3, Types.DOUBLE);
-            pstmt.setString(4, userId);
-            pstmt.addBatch();
-
-            pstmt.executeBatch();
-            LoggerUtils.logInfo(CategoryRepository.class.getName(), "Standardkategorien erfolgreich für Benutzer: " + userId + " hinzugefügt.");
-
-        } catch (SQLException e) {
-            LoggerUtils.logError(CategoryRepository.class.getName(), "Fehler beim Hinzufügen der Standardkategorien für Benutzer: " + userId, e);
-        }
-    }
-
-
     /**
      * Hilfsmethode zum Mapping eines ResultSet auf ein Category-Objekt.
      *

@@ -116,9 +116,9 @@ public class CategoryService {
             LoggerUtils.logError(CategoryService.class.getName(), "Fehler beim Abrufen der Kategorie: " + categoryName + " für Benutzer: " + userId, e);
             return null;
         }
+
+
     }
-
-
 
     /**
      * Berechnet den Budgetfortschritt für alle Kategorien eines Benutzers in einem bestimmten Zeitraum.
